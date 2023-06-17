@@ -21,15 +21,15 @@
   <form id='setting' name='setting'>
   <div class="tab-content" id="nav-tabContent">
     {{ macros.m_tab_content_start('wavve', true) }}
-      {{ macros.setting_checkbox('use_wavve', '웨이브', value=arg['use_wavve'], desc=['계정 정보 없을 경우 10분간 재생', '무료 계정 HD 재생', '유료계정 FHD 재생']) }}
+      {{ macros.setting_checkbox('use_wavve', '웨이브', value=arg['use_wavve'], desc=['support site 플러그인을 설치하고 계정 정보를 입력하세요','계정 정보 유무, 스트리밍 타입, 플레이어에 따라 달라질 수 있음']) }}
       <div id="use_wavve_div" class="collapse">
         {{ macros.setting_select('wavve_quality', '웨이브 화질', [['FHD','FHD'], ['HD','HD'], ['SD', 'SD']], col='3', value=arg['wavve_quality'])}}
-        {{ macros.setting_radio_with_value('wavve_streaming_type', 'Wavve 스트리밍 타입', [['direct', 'Direct'], ['proxy', 'Proxy'], ['redirect', 'Redirect']], value=arg['wavve_streaming_type'], desc=['웨이브는 방송 요청을 한 IP와 Player IP가 일치해야만 합니다.', ' - Redirect: 가장 좋지만 Player에 따라 10분 후 중지될 수 있습니다. 중지가 안된다면 이 방법으로 사용하세요. 동일 네트워크의 Tvheadend에 연결할 때 사용합니다.', ' - Direct: FF와 Player가 동일 네트워크 일 때 사용합니다. Proxy 옵션보다 성능이 좋습니다.', ' - Proxy: 타 네트워크에서 재생할 때 사용합니다. FF가 방송 데이터를 받아서 Player에 보냅니다.']) }}
+        {{ macros.setting_radio_with_value('wavve_streaming_type', '웨이브 스트리밍 타입', [['direct', 'Direct'], ['proxy', 'Proxy'], ['redirect', 'Redirect']], value=arg['wavve_streaming_type'], desc=['웨이브는 방송 요청을 한 IP와 Player IP가 일치해야만 합니다.', ' - Redirect: 가장 좋지만 Player에 따라 10분 후 중지될 수 있습니다. 중지가 안된다면 이 방법으로 사용하세요. 동일 네트워크의 Tvheadend에 연결할 때 사용합니다.', ' - Direct: FF와 Player가 동일 네트워크 일 때 사용합니다. Proxy 옵션보다 성능이 좋습니다.', ' - Proxy: 타 네트워크에서 재생할 때 사용합니다. FF가 방송 데이터를 받아서 Player에 보냅니다.']) }}
       </div>
     {{ macros.m_tab_content_end() }} 
 
     {{ macros.m_tab_content_start('tving', false) }}
-      {{ macros.setting_checkbox('use_tving', 'tving', value=arg['use_tving'], desc=['무료 계정 HD 재생', '유료계정 FHD 재생. OCN는 DRM채널 불가']) }}
+      {{ macros.setting_checkbox('use_tving', '티빙', value=arg['use_tving'], desc=['support site 플러그인을 설치하고 티빙 토큰을 입력하세요']) }}
       <div id="use_tving_div" class="collapse">
         {{ macros.setting_select('tving_quality', '티빙 화질', [['FHD','FHD'], ['HD','HD'], ['SD', 'SD']], col='3', value=arg['tving_quality'])}}
         {{ macros.setting_checkbox('tving_include_drm', 'DRM 채널 포함', value=arg['tving_include_drm'], desc=['On: OCN 등 DRM 채널 포함.']) }}

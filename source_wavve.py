@@ -44,10 +44,8 @@ class SourceWavve(SourceBase):
         ret = []
         data = cls.mod.live_all_channels()
         for item in data["list"]:
-            img = "https://" + item["tvimage"] if item["tvimage"] != "" else ""
-            c = ChannelItem(
-                cls.source_name, item["channelid"], item["channelname"], quote(img), item["type"] == "video"
-            )
+            img = "https://" + quote(item["tvimage"]) if item["tvimage"] != "" else ""
+            c = ChannelItem(cls.source_name, item["channelid"], item["channelname"], img, item["type"] == "video")
             c.current = item["title"]
             ret.append(c)
         return ret
