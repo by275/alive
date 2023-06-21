@@ -9,7 +9,7 @@ ModelSetting = P.ModelSetting
 
 
 class SourceYoutubedl(SourceBase):
-    source_name = "youtubedl"
+    source_id = "youtubedl"
 
     @staticmethod
     def is_installed():
@@ -20,24 +20,22 @@ class SourceYoutubedl(SourceBase):
         except ImportError:
             return False
 
-    @classmethod
-    def get_channel_list(cls):
+    def get_channel_list(self):
         ret = []
-        cls.channel_cache = {}
-        for item in map(str.strip, ModelSetting.get(f"{cls.source_name}_list").splitlines()):
+        self.channel_cache = {}
+        for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
             if not item:
                 continue
             tmp = item.split("|")
             if len(tmp) != 3:
                 continue
             cid, title, url = tmp
-            c = ChannelItem(cls.source_name, cid, title, None, True)
-            cls.channel_cache[cid] = SimpleItem(cid, title, url)
+            c = ChannelItem(self.source_id, cid, title, None, True)
+            self.channel_cache[cid] = SimpleItem(cid, title, url)
             ret.append(c)
         return ret
 
-    @classmethod
-    def get_url(cls, channel_id, mode, quality=None):
+    def get_url(self, channel_id, mode, quality=None):
         # logger.debug('channel_id:%s, quality:%s, mode:%s', channel_id, quality, mode)
         # import youtube_dl
         import yt_dlp
@@ -47,7 +45,7 @@ class SourceYoutubedl(SourceBase):
             ydl_opts["proxy"] = ModelSetting.get("youtubedl_proxy_url")
         # ydl = youtube_dl.YoutubeDL(ydl_opts)
         ydl = yt_dlp.YoutubeDL(ydl_opts)
-        target_url = cls.channel_cache[channel_id].url
+        target_url = self.channel_cache[channel_id].url
         result = ydl.extract_info(target_url, download=False)
         # logger.warning('Formats len : %s', len(result['formats']))
         # logger.warning(d(result))

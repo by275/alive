@@ -9,7 +9,7 @@ ModelSetting = P.ModelSetting
 
 
 class SourceStreamlink(SourceBase):
-    source_name = "streamlink"
+    source_id = "streamlink"
 
     @staticmethod
     def is_installed():
@@ -20,36 +20,34 @@ class SourceStreamlink(SourceBase):
         except ImportError:
             return False
 
-    @classmethod
-    def get_channel_list(cls):
+    def get_channel_list(self):
         ret = []
-        cls.channel_dict = {}
-        for item in map(str.strip, ModelSetting.get(f"{cls.source_name}_list").splitlines()):
+        self.channel_cache = {}
+        for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
             if not item:
                 continue
             tmp = item.split("|")
             if len(tmp) != 3:
                 continue
             cid, title, url = tmp
-            c = ChannelItem(cls.source_name, cid, title, None, True)
-            cls.channel_dict[cid] = SimpleItem(cid, title, url)
+            c = ChannelItem(self.source_id, cid, title, None, True)
+            self.channel_cache[cid] = SimpleItem(cid, title, url)
             ret.append(c)
         return ret
 
-    @classmethod
-    def get_url(cls, channel_id, mode, quality=None):
+    def get_url(self, channel_id, mode, quality=None):
         # logger.debug('channel_id:%s, quality:%s, mode:%s', channel_id, quality, mode)
         from streamlink import Streamlink
 
         s = Streamlink()
         # logger.debug(StreamlinkItem.ch_list[channel_id].url)
-        data = s.streams(cls.channel_dict[channel_id].url)
+        data = s.streams(self.channel_cache[channel_id].url)
 
         try:
             stream = data[ModelSetting.get("streamlink_quality")]
             url = stream.url
         except Exception:
-            if "youtube" in cls.channel_dict[channel_id].url.lower():
+            if "youtube" in self.channel_cache[channel_id].url.lower():
                 for t in data.values():
                     try:
                         url = t.url

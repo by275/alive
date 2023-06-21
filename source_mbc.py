@@ -13,7 +13,7 @@ ModelSetting = P.ModelSetting
 
 
 class SourceMBC(SourceBase):
-    source_name = "mbc"
+    source_id = "mbc"
     code = {
         "MBC": "0",
         "P_everyone": "2",
@@ -32,24 +32,22 @@ class SourceMBC(SourceBase):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36",
     }
 
-    @classmethod
-    def get_channel_list(cls):
+    def get_channel_list(self):
         ret = []
         url = "https://control.imbc.com/Schedule/PCONAIR"
         data = requests.get(url, headers=default_headers, timeout=30).json()
         for cate in ["TVList", "RadioList"]:
             for item in data[cate]:
-                if item["ScheduleCode"] not in cls.code:
+                if item["ScheduleCode"] not in self.code:
                     continue
                 c = ChannelItem(
-                    cls.source_name, cls.code[item["ScheduleCode"]], item["TypeTitle"], None, cate == "TVList"
+                    self.source_id, self.code[item["ScheduleCode"]], item["TypeTitle"], None, cate == "TVList"
                 )
                 c.current = item["Title"]
                 ret.append(c)
         return ret
 
-    @classmethod
-    def get_url(cls, channel_id, mode, quality=None):
+    def get_url(self, channel_id, mode, quality=None):
         if len(channel_id) == 3:
             url = f"https://sminiplay.imbc.com/aacplay.ashx?channel={channel_id}&protocol=M3U8&agent=webapp"
             # logger.debug(url)
@@ -61,14 +59,13 @@ class SourceMBC(SourceBase):
             url = f"https://mediaapi.imbc.com/Player/OnAirPlusURLUtil?ch={channel_id}&type=PC&t={int(time.time())}"
         else:
             url = f"https://mediaapi.imbc.com/Player/OnAirURLUtil?type=PC&t={int(time.time())}"
-        data = requests.get(url, headers=cls.headers, timeout=30, verify=False).json()
+        data = requests.get(url, headers=self.headers, timeout=30, verify=False).json()
         url = data["MediaInfo"]["MediaURL"].replace("playlist", "chunklist")
         return "return_after_read", url
 
-    @classmethod
-    def get_return_data(cls, url, mode=None):
+    def get_return_data(self, url, mode=None):
         data = requests.get(url, headers=default_headers, timeout=30).text
-        # data = cls.change_redirect_data(data)
+        # data = self.change_redirect_data(data)
         tmp = url.split("chunklist")
         data = data.replace("media", tmp[0] + "media")
         return data

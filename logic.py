@@ -3,6 +3,7 @@ import platform
 import subprocess
 import threading
 import time
+from datetime import datetime
 from urllib.parse import unquote
 
 import requests
@@ -83,6 +84,8 @@ def generate(url):
 
 class Logic(PluginModuleBase):
     db_default = {
+        "channel_list_updated_at": "1970-01-01T00:00:00",
+        "channel_list_max_age": "60",  # minutes
         # wavve
         "use_wavve": "False",
         "wavve_quality": "HD",
@@ -93,8 +96,10 @@ class Logic(PluginModuleBase):
         "tving_include_drm": "False",
         # kbs mbc sbs
         "use_kbs": "False",
+        "kbs_include_vod_ch": "False",
         "use_mbc": "False",
         "use_sbs": "False",
+        "sbs_include_vod_ch": "False",
         "sbs_use_proxy": "False",
         "sbs_proxy_url": "",
         # youtube-dl
@@ -126,11 +131,7 @@ class Logic(PluginModuleBase):
 
     def plugin_load(self):
         try:
-
-            def func():
-                LogicKlive.channel_load_from_site()
-
-            t = threading.Thread(target=func, args=(), daemon=True)
+            t = threading.Thread(target=LogicKlive.get_channel_list, args=(), daemon=True)
             t.start()
         except Exception:
             logger.exception("플러그인 로딩 중 예외:")
@@ -179,7 +180,8 @@ class Logic(PluginModuleBase):
             if sub == "proxy":
                 return redirect(f"/{package_name}/proxy/discover.json")
             if sub == "group":
-                return render_template(f"{package_name}_{sub}.html", channel_group=make_channel_group())
+                channel_group = make_channel_group()
+                arg["channel_group"] = channel_group
             return render_template(f"{package_name}_{sub}.html", sub=sub, arg=arg)
         except Exception:
             logger.exception("메뉴 처리 중 예외:")
@@ -188,18 +190,24 @@ class Logic(PluginModuleBase):
     def process_ajax(self, sub, req):
         # logger.debug('AJAX %s %s', package_name, sub)
         try:
-            if sub == "setting_save":
-                # old = '%s%s%s%s%s%s' % (ModelSetting.get('use_wavve'), ModelSetting.get('use_tving'), ModelSetting.get('use_videoportal'), ModelSetting.get('use_everyon'), ModelSetting.get('use_streamlink'), ModelSetting.get('streamlink_list'))
-                ret = ModelSetting.setting_save(request)
-                # new = '%s%s%s%s%s%s' % (ModelSetting.get('use_wavve'), ModelSetting.get('use_tving'), ModelSetting.get('use_videoportal'), ModelSetting.get('use_everyon'), ModelSetting.get('use_streamlink'), ModelSetting.get('streamlink_list'))
-                # if new != old:
-                LogicKlive.get_channel_list(from_site=True)
+            if sub == "setting_save_and_reload":
+                ret = ModelSetting.setting_save(req)
+                LogicKlive.get_channel_list(reload=True)
                 return jsonify(ret)
             if sub == "channel_list":
-                from_site = req.form.get("from_site", "") == "true"
-                ret = LogicKlive.get_channel_list(from_site=from_site)
-                # logger.debug("channel_list: %s", len(ret))
-                return jsonify([x.as_dict() for x in ret])
+                reload = req.form.get("reload", "false") == "true"
+                ret = LogicKlive.get_channel_list(reload=reload)
+                updated_at = ModelSetting.get("channel_list_updated_at")
+                updated_at = datetime.fromisoformat(updated_at).strftime("%Y-%m-%d %H:%M")
+                return jsonify({"list": [x.as_dict() for x in ret], "updated_at": updated_at})
+            if sub == "play_url":
+                args = req.form.to_dict()
+                c = LogicKlive.get_channel(args["source"], args["channel_id"])
+                if c is None:
+                    return None
+                mode = "web_play" if args.get("web_play", "false") == "true" else "url"
+                data = {"url": c.url(mode=mode), "title": c.current}
+                return jsonify({"data": data})
             # 커스텀 생성
             # elif sub == "custom":
             #     ret = {}
@@ -223,19 +231,14 @@ class Logic(PluginModuleBase):
 
     def process_api(self, sub, req):
         if sub == "url.m3u8":
-            mode = request.args.get("m")
-            source = request.args.get("s")
-            channel_id = request.args.get("i")
-            quality = request.args.get("q")
+            mode = req.args.get("m")
+            source = req.args.get("s")
+            channel_id = req.args.get("i")
+            quality = req.args.get("q")
             # logger.debug("m=%s, s=%s, i=%s, q=%s", mode, source, channel_id, quality)
 
             if mode == "plex":
-                new_url = f'{SystemModelSetting.get("ddns")}/{package_name}'
-                new_url += f"/api/url.m3u8?m=url&s={source}&i={channel_id}&q={quality}"
-                if SystemModelSetting.get_bool("use_apikey"):
-                    new_url += f'&apikey={SystemModelSetting.get("apikey")}'
-
-                return Response(generate(new_url), mimetype="video/MP2T")
+                return Response(generate(req.url.replace("m=plex", "m=url")), mimetype="video/MP2T")
 
             action, ret = LogicKlive.get_url(source, channel_id, mode, quality=quality)
             # logger.debug('action:%s, url:%s', action, ret)

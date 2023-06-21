@@ -13,11 +13,11 @@ ModelSetting = P.ModelSetting
 
 
 class SourceKBS(SourceBase):
-    source_name = "kbs"
+    source_id = "kbs"
 
-    @classmethod
-    def get_channel_list(cls):
+    def get_channel_list(self):
         ret = []
+        include_vod_ch = ModelSetting.get_bool("kbs_include_vod_ch")
         url = "http://onair.kbs.co.kr"
         data = requests.get(url, timeout=30).text
         idx1 = data.find("var channelList = JSON.parse") + 30
@@ -28,10 +28,12 @@ class SourceKBS(SourceBase):
             for channel_master in channel["channel_master"]:
                 if "_" in channel_master["channel_code"]:
                     continue
+                if not include_vod_ch and channel_master["channel_code"].startswith("nvod"):
+                    continue
                 if channel_master["channel_type"] == "DMB":
                     continue
                 c = ChannelItem(
-                    cls.source_name,
+                    self.source_id,
                     channel_master["channel_code"],
                     channel_master["title"],
                     channel_master["image_path_channel_logo"],
@@ -40,16 +42,14 @@ class SourceKBS(SourceBase):
                 ret.append(c)
         return ret
 
-    @classmethod
-    def __get_url(cls, channel_id):
+    def __get_url(self, channel_id):
         tmp = f"https://cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/{channel_id}"
         # logger.error(tmp)
         data = requests.get(tmp, headers=default_headers, timeout=30).json()
         return data["channel_item"][0]["service_url"]
 
-    @classmethod
-    def get_url(cls, channel_id, mode, quality=None):
-        url = cls.__get_url(channel_id)
+    def get_url(self, channel_id, mode, quality=None):
+        url = self.__get_url(channel_id)
         # logger.info(url)
         if mode == "web_play":
             return "return_after_read", url

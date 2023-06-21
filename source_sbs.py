@@ -11,28 +11,27 @@ ModelSetting = P.ModelSetting
 
 
 class SourceSBS(SourceBase):
-    source_name = "sbs"
+    source_id = "sbs"
 
-    @classmethod
-    def get_channel_list(cls):
+    def get_channel_list(self):
         ret = []
-        url_list = [
-            "http://static.apis.sbs.co.kr/play-api/1.0/onair/channels",
-            "http://static.apis.sbs.co.kr/play-api/1.0/onair/virtual/channels",
-        ]
+        url_list = ["http://static.apis.sbs.co.kr/play-api/1.0/onair/channels"]
+        if ModelSetting.get_bool("sbs_include_vod_ch"):
+            url_list += ["http://static.apis.sbs.co.kr/play-api/1.0/onair/virtual/channels"]
         for url in url_list:
             data = requests.get(url, timeout=30).json()
             for item in data["list"]:
+                if item.get("onair_yn", "N") != "Y":
+                    continue
                 title = item["channelname"]
                 if item["channelid"] in ["S17", "S18"]:
-                    title += " (보이는 라디오)"
-                c = ChannelItem(cls.source_name, item["channelid"], title, None, item.get("type", "TV") == "TV")
+                    title += " (보는 라디오)"
+                c = ChannelItem(self.source_id, item["channelid"], title, None, item.get("type", "TV") == "TV")
                 c.current = item["title"]
                 ret.append(c)
         return ret
 
-    @classmethod
-    def __get_url(cls, channel_id):
+    def __get_url(self, channel_id):
         prefix = "" if channel_id != "SBS" and int(channel_id[1:]) < 21 else "virtual/"
         # tmp = 'http://apis.sbs.co.kr/play-api/1.0/onair/%schannel/%s?v_type=2&platform=pcweb&protocol=hls&ssl=N&jwt-token=%s&rnd=462' % (prefix, channel_id, '')
         tmp = f"https://apis.sbs.co.kr/play-api/1.0/onair/{prefix}channel/{channel_id}?v_type=2&platform=pcweb&protocol=hls&ssl=N&rscuse=&jwt-token=&sbsmain="
@@ -48,9 +47,8 @@ class SourceSBS(SourceBase):
         url = data["onair"]["source"]["mediasource"]["mediaurl"]
         return url
 
-    @classmethod
-    def get_url(cls, channel_id, mode, quality=None):
-        url = cls.__get_url(channel_id)
+    def get_url(self, channel_id, mode, quality=None):
+        url = self.__get_url(channel_id)
         url = url.replace("playlist.m3u8", "chunklist.m3u8")
         # 2022-03-30
         return "return_after_read", url
@@ -59,8 +57,7 @@ class SourceSBS(SourceBase):
         #     return "return_after_read", url
         # return "redirect", url
 
-    @classmethod
-    def get_return_data(cls, url, mode=None):
+    def get_return_data(self, url, mode=None):
         data = requests.get(url, headers=default_headers, timeout=30).text
         tmp = url.split("chunklist")
         data = data.replace("media", tmp[0] + "media")

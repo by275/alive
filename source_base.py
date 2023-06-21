@@ -16,36 +16,27 @@ ModelSetting = P.ModelSetting
 
 
 class SourceBase:
-    source_name = None
-    channel_cache = None
+    source_id: str = None
+    channel_cache: dict = None
 
-    @classmethod
-    def __init__(cls, *args, **kwargs):
-        cls.prepare(*args, **kwargs)
-
-    @classmethod
-    def prepare(cls, *args, **kwargs):
+    def __init__(self):
         pass
 
-    @classmethod
-    def get_channel_list(cls):
+    def get_channel_list(self):
         pass
 
-    @classmethod
-    def get_url(cls, channel_id, mode, quality=None):
+    def get_url(self, channel_id, mode, quality=None):
         pass
 
-    @classmethod
-    def get_return_data(cls, url, mode=None):
+    def get_return_data(self, url, mode=None):
         try:
             data = requests.get(url, headers=default_headers, timeout=30).text
-            return cls.change_redirect_data(data)
+            return self.change_redirect_data(data)
         except Exception:
             logger.exception("Streaming URL을 분석 중 예외:")
             return url
 
-    @classmethod
-    def change_redirect_data(cls, data, proxy=None):
+    def change_redirect_data(self, data, proxy=None):
         base_url = f"{SystemModelSetting.get('ddns')}/{package_name}/api/redirect"
         for m in re.compile(r"http(.*?)$", re.MULTILINE).finditer(data):
             u = m.group(0)

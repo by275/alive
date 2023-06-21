@@ -13,13 +13,12 @@ ModelSetting = P.ModelSetting
 
 
 class SourceNavertv(SourceBase):
-    source_name = "navertv"
+    source_id = "navertv"
 
-    @classmethod
-    def get_channel_list(cls):
+    def get_channel_list(self):
         ret = []
-        cls.channel_cache = {}
-        for item in map(str.strip, ModelSetting.get(f"{cls.source_name}_list").splitlines()):
+        self.channel_cache = {}
+        for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
             if not item:
                 continue
             tmp = item.split("|")
@@ -30,13 +29,12 @@ class SourceNavertv(SourceBase):
                 cid, title, url, quality = tmp
             else:
                 continue
-            c = ChannelItem(cls.source_name, cid, title, None, True)
-            cls.channel_cache[cid] = SimpleItem(cid, title, url, quality)
+            c = ChannelItem(self.source_id, cid, title, None, True)
+            self.channel_cache[cid] = SimpleItem(cid, title, url, quality)
             ret.append(c)
         return ret
 
-    @classmethod
-    def __get_url(cls, target_url, quality):
+    def __get_url(self, target_url, quality):
         if target_url.startswith("SPORTS_"):
             target_ch = target_url.split("_")[1]
             if not target_ch.startswith("ad") and not target_ch.startswith("ch"):
@@ -61,11 +59,10 @@ class SourceNavertv(SourceBase):
                 url = data["media"][0]["path"]
         return url
 
-    @classmethod
-    def get_url(cls, channel_id, mode, quality=None):
+    def get_url(self, channel_id, mode, quality=None):
         # logger.debug('channel_id:%s, quality:%s, mode:%s', channel_id, quality, mode)
-        target_url = cls.channel_cache[channel_id].url
-        url = cls.__get_url(target_url, cls.channel_cache[channel_id].quality)
+        target_url = self.channel_cache[channel_id].url
+        url = self.__get_url(target_url, self.channel_cache[channel_id].quality)
         if mode == "web_play":
             return "return_after_read", url
         return "redirect", url

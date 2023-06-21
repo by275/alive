@@ -9,27 +9,25 @@ ModelSetting = P.ModelSetting
 
 
 class SourceFixURL(SourceBase):
-    source_name = "fix_url"
+    source_id = "fix_url"
 
-    @classmethod
-    def get_channel_list(cls):
+    def get_channel_list(self):
         ret = []
-        cls.channel_cache = {}
-        for item in map(str.strip, ModelSetting.get(f"{cls.source_name}_list").splitlines()):
+        self.channel_cache = {}
+        for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
             if not item:
                 continue
             tmp = item.split("|")
             if len(tmp) != 4:
                 continue
             cid, title, url, is_radio = tmp
-            c = ChannelItem(cls.source_name, cid, title, None, is_radio == "Y")
-            cls.channel_cache[cid] = SimpleItem(cid, title, url)
+            c = ChannelItem(self.source_id, cid, title, None, is_radio == "Y")
+            self.channel_cache[cid] = SimpleItem(cid, title, url)
             ret.append(c)
         return ret
 
-    @classmethod
-    def get_url(cls, channel_id, mode, quality=None):
-        url = cls.channel_cache[channel_id].url
+    def get_url(self, channel_id, mode, quality=None):
+        url = self.channel_cache[channel_id].url
         if mode == "web_play":
             return "return_after_read", url
         return "redirect", url

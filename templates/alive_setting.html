@@ -2,12 +2,13 @@
 {% block content %}
 
 <div>
-  {{ macros.m_button_group([['globalSettingSaveBtn', '설정 저장']])}}
+  {{ macros.m_button_group([['localSettingSaveBtn', '설정 저장']])}}
   {{ macros.m_row_start('5') }}
   {{ macros.m_row_end() }}
   <nav>
     {{ macros.m_tab_head_start() }}
-      {{ macros.m_tab_head('wavve', '웨이브', true) }}
+      {{ macros.m_tab_head('basic', '기본', true) }}
+      {{ macros.m_tab_head('wavve', '웨이브', false) }}
       {{ macros.m_tab_head('tving', '티빙', false) }}
       {{ macros.m_tab_head('ott_etc', '기타', false) }}
       {{ macros.m_tab_head('youtubedl', 'Youtube-dl', false) }}
@@ -20,7 +21,11 @@
   </nav>
   <form id='setting' name='setting'>
   <div class="tab-content" id="nav-tabContent">
-    {{ macros.m_tab_content_start('wavve', true) }}
+    {{ macros.m_tab_content_start('basic', true) }}
+      {{ macros.setting_input_int('channel_list_max_age', '채널 목록 유효 시간', value=arg['channel_list_max_age'], min='1', desc=['마지막으로 채널 목록을 얻어 온 후 이 시간이 지나면 강제로 새로고침 합니다. 단위: 분']) }}
+    {{ macros.m_tab_content_end() }}
+
+    {{ macros.m_tab_content_start('wavve', false) }}
       {{ macros.setting_checkbox('use_wavve', '웨이브', value=arg['use_wavve'], desc=['support site 플러그인을 설치하고 계정 정보를 입력하세요','계정 정보 유무, 스트리밍 타입, 플레이어에 따라 달라질 수 있음']) }}
       <div id="use_wavve_div" class="collapse">
         {{ macros.setting_select('wavve_quality', '웨이브 화질', [['FHD','FHD'], ['HD','HD'], ['SD', 'SD']], col='3', value=arg['wavve_quality'])}}
@@ -38,16 +43,22 @@
 
     {{ macros.m_tab_content_start('ott_etc', false) }}
       {{ macros.setting_checkbox('use_kbs', 'KBS', value=arg['use_kbs'], desc=None) }}
+      <div id="use_kbs_div" class="collapse">
+        {{ macros.setting_checkbox('kbs_include_vod_ch', '정주행 채널 포함', value=arg['kbs_include_vod_ch'], desc=None) }}
+      </div>
       {{ macros.m_hr() }}
       {{ macros.setting_checkbox('use_mbc', 'MBC', value=arg['use_mbc'], desc=None) }}
       {{ macros.m_hr() }}
       {{ macros.setting_checkbox('use_sbs', 'SBS', value=arg['use_sbs'], desc=None) }}
-      {{ macros.setting_checkbox('sbs_use_proxy', 'Proxy 사용', value=arg['sbs_use_proxy'], desc=['URL을 얻을 때만 사용']) }}
-      {{ macros.setting_input_text('sbs_proxy_url', 'Proxy URL', value=arg['sbs_proxy_url'], desc=None) }}
+      <div id="use_sbs_div" class="collapse">
+        {{ macros.setting_checkbox('sbs_include_vod_ch', '정주행 채널 포함', value=arg['sbs_include_vod_ch'], desc=None) }}
+        {{ macros.setting_checkbox('sbs_use_proxy', 'Proxy 사용', value=arg['sbs_use_proxy'], desc=['URL을 얻을 때만 사용']) }}
+        {{ macros.setting_input_text('sbs_proxy_url', 'Proxy URL', value=arg['sbs_proxy_url'], desc=None) }}
+      </div>
     {{ macros.m_tab_content_end() }} 
 
     {{ macros.m_tab_content_start('youtubedl', false) }}
-      {{ macros.setting_checkbox('use_youtubedl', 'Youtube-dl', value=arg['use_youtubedl'], desc=None) }}
+      {{ macros.setting_checkbox('use_youtubedl', 'Youtube-dl', value=arg['use_youtubedl'], desc=['pip install yt-dlp로 직접 설치 후 사용']) }}
       <div id="use_youtubedl_div" class="collapse">
         {{ macros.info_text('tmp_is_youtubedl_installed', '설치상태', value=arg['tmp_is_youtubedl_installed']) }}
         {{ macros.setting_checkbox('youtubedl_use_proxy', 'Proxy 사용', value=arg['youtubedl_use_proxy'], desc=['URL을 얻을 때만 사용']) }}
@@ -57,7 +68,7 @@
     {{ macros.m_tab_content_end() }} 
     
     {{ macros.m_tab_content_start('streamlink', false) }}
-      {{ macros.setting_checkbox('use_streamlink', 'Streamlink', value=arg['use_streamlink'], desc=None) }}
+      {{ macros.setting_checkbox('use_streamlink', 'Streamlink', value=arg['use_streamlink'], desc=['pip install streamlink로 직접 설치 후 사용']) }}
       <div id="use_streamlink_div" class="collapse">
         {{ macros.info_text('tmp_is_streamlink_installed', '설치상태', value=arg['tmp_is_streamlink_installed']) }}
         {{ macros.setting_input_text('streamlink_quality', 'streamlink 화질', col='3', value=arg['streamlink_quality']) }}
@@ -91,7 +102,7 @@
       {{ macros.info_text_go('api_m3u', 'M3U', value=arg['api_m3u'], desc=['Custom 채널에 대한 M3U']) }}
       {{ macros.info_text_go('api_m3utvh', 'M3U for Tvheadend', value=arg['api_m3utvh'], desc=['Tvheadend 채널 등록시 사용하는 M3U']) }}
       {{ macros.info_text_go('xmltv', 'XMLTV', value=arg['xmltv'], desc=['일반 EPG']) }}
-      {{ macros.info_text_go('api_m3uall', 'M3U (All)', value=arg['api_m3uall']) }}
+      {{ macros.info_text_go_buttons('api_m3uall', 'M3U (All)', [['globalCliboardBtn','클립보드에 복사', [['text', arg['api_m3uall']]]]], value=arg['api_m3uall'], desc=None) }}
       {{ macros.setting_checkbox('use_plex_proxy', 'Plex Proxy API 사용', value=arg['use_plex_proxy'], desc=['On: Plex Proxy API 사용.', '/klive/proxy/lineup.json 주소를 통한 apikey 노출 됨.']) }}
       <div id="use_plex_proxy_div" class="collapse">
         {{ macros.info_text_go('plex_proxy', 'Plex Proxy', value=arg['plex_proxy']) }}
@@ -110,6 +121,8 @@ var streamlink_installed = "{{ arg['tmp_is_streamlink_installed'] }}"  == 'Insta
 $(document).ready(function(){
   use_collapse("use_wavve")
   use_collapse("use_tving")
+  use_collapse("use_kbs")
+  use_collapse("use_sbs")
   use_collapse("use_streamlink")
   use_collapse("use_youtubedl")
   use_collapse("use_navertv")
@@ -120,6 +133,8 @@ $(document).ready(function(){
 
 $('#use_wavve').change(function() {use_collapse('use_wavve');});
 $('#use_tving').change(function() {use_collapse('use_tving');});
+$('#use_kbs').change(function() {use_collapse('use_kbs');});
+$('#use_sbs').change(function() {use_collapse('use_sbs');});
 $('#use_streamlink').change(function() {use_collapse('use_streamlink');});
 $('#use_youtubedl').change(function() {use_collapse('use_youtubedl');});
 $('#use_navertv').change(function() {use_collapse('use_navertv');});
@@ -127,32 +142,29 @@ $('#use_kakaotv').change(function() {use_collapse('use_kakaotv');});
 $('#use_fix_url').change(function() {use_collapse('use_fix_url');});
 $('#use_plex_proxy').change(function() {use_collapse('use_plex_proxy');});
 
-
-$("body").on('click', '#get_tving_logindata_btn', function(e){
+$("body").on('click', '#localSettingSaveBtn', function(e){
   e.preventDefault();
-  get_logindata('tving');
-});
-
-$("body").on('click', '#get_wavve_logindata_btn', function(e){
-  e.preventDefault();
-  get_logindata('wavve');
-});
-
-function get_logindata(site) {
+  var formData = getFormdata('#setting');
   $.ajax({
-    url: '/' + package_name + '/ajax/get_logindata',
+    url: '/' + PACKAGE_NAME + '/ajax/setting_save_and_reload',
     type: "POST", 
     cache: false,
-    data:{site:site},
+    data: formData,
     dataType: "json",
-    success: function (data) {
-      document.getElementById("modal_title").innerHTML = "로그인 정보";
-      document.getElementById("modal_body").innerHTML = "<pre>"+data + "</pre>";
-      $("#large_modal").modal();
+    success: function (ret) {
+      if (ret) {
+        $.notify('<strong>설정을 저장하였습니다.</strong>', {
+          type: 'success'
+        });
+        globalSettingSaveAfter();
+      } else {
+        $.notify('<strong>설정 저장에 실패하였습니다.</strong>', {
+          type: 'warning'
+        });
+      }
     }
   });
-}
-
+});
 
 
 
