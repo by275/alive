@@ -21,18 +21,22 @@ class SourceSBS(SourceBase):
         for url in url_list:
             data = requests.get(url, timeout=30).json()
             for item in data["list"]:
-                if item.get("onair_yn", "N") != "Y":
-                    continue
-                title = item["channelname"]
+                cname = item["channelname"]
+                is_tv = item.get("type", "TV") == "TV"
                 if item["channelid"] in ["S17", "S18"]:
-                    title += " (보는 라디오)"
-                c = ChannelItem(self.source_id, item["channelid"], title, None, item.get("type", "TV") == "TV")
+                    cname += " (보는 라디오)"
+                    is_tv = True
+                c = ChannelItem(self.source_id, item["channelid"], cname, None, is_tv)
                 c.current = item["title"]
+                c.is_onair = item.get("onair_yn", "N") == "Y"
                 ret.append(c)
         return ret
 
     def __get_url(self, channel_id):
-        prefix = "" if channel_id != "SBS" and int(channel_id[1:]) < 21 else "virtual/"
+        if channel_id.startswith("EVENT"):
+            prefix = ""
+        else:
+            prefix = "" if channel_id != "SBS" and int(channel_id[1:]) < 21 else "virtual/"
         # tmp = 'http://apis.sbs.co.kr/play-api/1.0/onair/%schannel/%s?v_type=2&platform=pcweb&protocol=hls&ssl=N&jwt-token=%s&rnd=462' % (prefix, channel_id, '')
         tmp = f"https://apis.sbs.co.kr/play-api/1.0/onair/{prefix}channel/{channel_id}?v_type=2&platform=pcweb&protocol=hls&ssl=N&rscuse=&jwt-token=&sbsmain="
         # logger.debug(tmp)

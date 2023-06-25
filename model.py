@@ -30,15 +30,16 @@ source_id2name = {
 
 @dataclass
 class ChannelItem:
-    source: str
+    source: str  # source{_id}
     channel_id: str
-    title: str
+    name: str  # {channel_}name
     icon: str
     is_tv: bool
 
     current: str = ""
-    is_include_custom: bool = False
-    is_drm_channel: bool = False
+    # is_include_custom: bool = False
+    is_drm: bool = False  # DRM 채널 / tving만
+    is_onair: bool = True  # 저작권이나 기타 이유로 일시적 방송 송출이 안되는 채널 표기 / wavve, sbs
 
     @property
     def source_name(self):
@@ -67,7 +68,7 @@ class ChannelItem:
     def as_m3u(self, url=None, idx=0):
         if url is None:
             url = self.url()
-        data = (self.title, self.title, self.icon, self.source_name, idx, idx, self.title, url)
+        data = (self.name, self.name, self.icon, self.source_name, idx, idx, self.name, url)
         if self.is_tv:
             return M3U_FORMAT % data
         return M3U_RADIO_FORMAT % data

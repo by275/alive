@@ -15,29 +15,31 @@ ModelSetting = P.ModelSetting
 class SourceKBS(SourceBase):
     source_id = "kbs"
 
+    def __parse_var(self, text: str, identifiers):
+        left = text.find(identifiers[0]) + len(identifiers[0])
+        right = text.find(identifiers[1], left)
+        return json.loads(text[left:right].replace("\\", ""))
+
     def get_channel_list(self):
         ret = []
         include_vod_ch = ModelSetting.get_bool("kbs_include_vod_ch")
         url = "http://onair.kbs.co.kr"
         data = requests.get(url, timeout=30).text
-        idx1 = data.find("var channelList = JSON.parse") + 30
-        idx2 = data.find(");", idx1) - 1
-        data = data[idx1:idx2].replace("\\", "")
-        data = json.loads(data)
+        data = self.__parse_var(data, ("var channelList = JSON.parse('", "');"))
         for channel in data["channel"]:
-            for channel_master in channel["channel_master"]:
-                if "_" in channel_master["channel_code"]:
+            for cm in channel["channel_master"]:
+                if "_" in cm["channel_code"]:
+                    continue  # 지역민방 제외 목적
+                if not include_vod_ch and cm["channel_code"].startswith("nvod"):
                     continue
-                if not include_vod_ch and channel_master["channel_code"].startswith("nvod"):
-                    continue
-                if channel_master["channel_type"] == "DMB":
+                if cm["channel_type"] == "DMB":
                     continue
                 c = ChannelItem(
                     self.source_id,
-                    channel_master["channel_code"],
-                    channel_master["title"],
-                    channel_master["image_path_channel_logo"],
-                    channel_master["channel_type"] == "TV",
+                    cm["channel_code"],
+                    cm["title"],
+                    cm["image_path_channel_logo"],
+                    cm["channel_type"] == "TV",
                 )
                 ret.append(c)
         return ret
@@ -51,6 +53,5 @@ class SourceKBS(SourceBase):
     def get_url(self, channel_id, mode, quality=None):
         url = self.__get_url(channel_id)
         # logger.info(url)
-        if mode == "web_play":
-            return "return_after_read", url
+        # Expires가 1일로 길어서 괜찮을 듯
         return "redirect", url

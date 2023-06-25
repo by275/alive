@@ -44,6 +44,7 @@ class SourceWavve(SourceBase):
             img = "https://" + quote(item["tvimage"]) if item["tvimage"] != "" else ""
             c = ChannelItem(self.source_id, item["channelid"], item["channelname"], img, item["type"] == "video")
             c.current = item["title"]
+            c.is_onair = item["license"] == "y"
             ret.append(c)
         return ret
 

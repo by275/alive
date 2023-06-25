@@ -20,9 +20,9 @@ class SourceFixURL(SourceBase):
             tmp = item.split("|")
             if len(tmp) != 4:
                 continue
-            cid, title, url, is_radio = tmp
-            c = ChannelItem(self.source_id, cid, title, None, is_radio == "Y")
-            self.channel_cache[cid] = SimpleItem(cid, title, url)
+            cid, cname, url, is_radio = tmp
+            c = ChannelItem(self.source_id, cid, cname, None, is_radio == "Y")
+            self.channel_cache[cid] = SimpleItem(cid, cname, url)
             ret.append(c)
         return ret
 

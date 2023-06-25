@@ -53,7 +53,7 @@ class SourceTving(SourceBase):
         for item in data:
             c = ChannelItem(self.source_id, item["id"], item["title"], item["img"], True)
             if item["is_drm"]:
-                c.is_drm_channel = True
+                c.is_drm = True
             c.current = item["episode_title"]
             ret.append(c)
         return ret

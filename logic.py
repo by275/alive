@@ -18,7 +18,7 @@ SystemModelSetting = F.SystemModelSetting
 
 
 # local
-# from .logic_alive import make_channel_group
+# from .logic_alive import LogicAlive
 from .logic_klive import LogicKlive
 from .setup import P, default_headers
 
@@ -179,16 +179,12 @@ class Logic(PluginModuleBase):
                 arg["tmp_is_youtubedl_installed"] = "Installed" if SourceYoutubedl.is_installed() else "Not Installed"
             if sub == "proxy":
                 return redirect(f"/{package_name}/proxy/discover.json")
-            if sub == "group":
-                channel_group = make_channel_group()
-                arg["channel_group"] = channel_group
             return render_template(f"{package_name}_{sub}.html", sub=sub, arg=arg)
         except Exception:
             logger.exception("메뉴 처리 중 예외:")
             return render_template("sample.html", title=f"{package_name} - {sub}")
 
     def process_ajax(self, sub, req):
-        # logger.debug('AJAX %s %s', package_name, sub)
         try:
             if sub == "setting_save_and_reload":
                 ret = ModelSetting.setting_save(req)
@@ -198,7 +194,7 @@ class Logic(PluginModuleBase):
                 reload = req.form.get("reload", "false") == "true"
                 ret = LogicKlive.get_channel_list(reload=reload)
                 updated_at = ModelSetting.get("channel_list_updated_at")
-                updated_at = datetime.fromisoformat(updated_at).strftime("%Y-%m-%d %H:%M")
+                updated_at = datetime.fromisoformat(updated_at).strftime("%Y-%m-%d %H:%M:%S")
                 return jsonify({"list": [x.as_dict() for x in ret], "updated_at": updated_at})
             if sub == "play_url":
                 args = req.form.to_dict()
@@ -208,6 +204,18 @@ class Logic(PluginModuleBase):
                 mode = "web_play" if args.get("web_play", "false") == "true" else "url"
                 data = {"url": c.url(mode=mode), "title": c.current}
                 return jsonify({"data": data})
+            if sub == "group_list":
+                reload = req.form.get("reload", "false") == "true"
+                channel_group = LogicAlive.get_group_list(reload=reload)
+                try:
+                    for g in channel_group:
+                        for c in g["channels"]:
+                            if "src" in c:
+                                c["src"] = c["src"].as_dict()
+                            c["srcs"] = [s.as_dict() for s in c["srcs"]]
+                except Exception:
+                    pass
+                return jsonify({"list": channel_group})
             # 커스텀 생성
             # elif sub == "custom":
             #     ret = {}

@@ -23,14 +23,14 @@ class SourceNavertv(SourceBase):
                 continue
             tmp = item.split("|")
             if len(tmp) == 3:
-                cid, title, url = tmp
+                cid, cname, url = tmp
                 quality = "1080"
             elif len(tmp) == 4:
-                cid, title, url, quality = tmp
+                cid, cname, url, quality = tmp
             else:
                 continue
-            c = ChannelItem(self.source_id, cid, title, None, True)
-            self.channel_cache[cid] = SimpleItem(cid, title, url, quality)
+            c = ChannelItem(self.source_id, cid, cname, None, True)
+            self.channel_cache[cid] = SimpleItem(cid, cname, url, quality)
             ret.append(c)
         return ret
 

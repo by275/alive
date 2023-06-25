@@ -1,15 +1,34 @@
 {% extends "base.html" %}
 {% block content %}
+<style type="text/css">
+  .table {
+    table-layout: fixed;
+  }
+</style>
 
 <div>
   {{ macros.m_button_group([['list_channel_reload_btn', '새로고침']])}}
-  {{ macros.m_row_start('5') }}
-  {{ macros.m_row_end() }}
-
-  {# {{ macros.m_row_start('5') }}
-  {{ macros.m_row_end() }} #}
-  <p id="list_info" class="mt-0 mb-1 text-sm small text-muted"></p>
-<div id="list_div" class="mb-3"></div>
+  <p id="list_info" class="mt-2 mb-1 text-sm small text-muted">마지막 업데이트: 없음</p>
+  <div id="list_div" class="mb-3">
+    <table id="result_table" class="table table-sm table-striped table-hover">
+        <thead class="thead-dark"><tr>
+          <th style="width:5%; text-align:center;" class="text-truncate"></th>
+          <th style="width:7%; text-align:left;" class="text-truncate">소스</th>
+          <th style="width:20%; text-align:left;" class="text-truncate">채널</th>
+          <th style="width:53%; text-align:left;" class="text-truncate">방송 중 프로그램</th>
+          <th style="width:15%; text-align:center;" class="text-truncate">Action</th>
+        </tr></thead>
+        <tbody id="channel-list">
+        <template id="channel-template"><tr>
+          <td scope="col" style="width:5%; text-align:center;" id="channel-idx" class="text-truncate"></td>
+          <td scope="col" style="width:7%; text-align:left;" id="channel-source" class="text-truncate"></td>
+          <td scope="col" style="width:20%; text-align:left;" id="channel-name" class="text-truncate"></td>
+          <td scope="col" style="width:53%; text-align:left;" id="channel-current" class="text-truncate"></td>
+          <td scope="col" style="width:15%; text-align:center;" id="channel-action" class="text-truncate"></td>
+        </tr></template>
+      </tbody>
+    </table>
+  </div>
 
 </div> <!--전체-->
 <form name="playform">
@@ -19,14 +38,16 @@
 </form>
 
 <script type="text/javascript">
-var package_name = "{{arg['package_name']}}"
-var current_data = null;
+
+var channelTemplate = document.querySelector('#channel-template');
+var channelScroller = document.querySelector('#channel-list');
 
 $(document).ready(function(){
   load_channel_list(false);
 });
 
 function load_channel_list(reload) {
+  reset_channel_list('로딩중...');
   $.ajax({
     url: `/${PACKAGE_NAME}/ajax/channel_list`,
     type: "POST",
@@ -35,7 +56,7 @@ function load_channel_list(reload) {
     dataType: "json",
     success: function (data) {
       $('#list_info').html(`마지막 업데이트: ${data.updated_at}`);
-      make_list(data.list);
+      make_channel_list(data.list);
     }
   });
 }
@@ -43,7 +64,7 @@ function load_channel_list(reload) {
 
 $("body").on('click', '#list_channel_reload_btn', function(e) {
   e.preventDefault();
-  load_channel_list(true)
+  load_channel_list(true);
 });
 
 function get_play_url(source, channel_id, web_play, callback) {
@@ -96,43 +117,46 @@ $("body").on('click', '#play_url_btn', function(e){
   });
 });
 
-function make_list(data) {
-  current_data = data;
-  str = `
-    <table id="result_table" class="table table-sm tableRowHover">
-      <thead class="thead-dark"><tr>
-        <th style="width:5%; text-align:center;"></th>
-        <th style="width:7%; text-align:left;">소스</th>
-        <th style="width:20%; text-align:left;">채널</th>
-        <th style="width:53%; text-align:left;">방송 중 프로그램</th>
-        <th style="width:15%; text-align:center;">Action</th>
-      </tr></thead>
-      <tbody id="list">`;
+function make_channel_list(data) {
+  if (data == null) {
+    return;
+  }
+  reset_channel_list();
 
   count = 0;
-  if (data == null) {
-    str += '<tr><td colspan="6"><h4>로딩중...</h4></td></tr>';
-  } else {
-    for (i in data) {
-      str += '<tr class="chover" style="cursor: pointer;" data-toggle="collapse" data-target="#collapse_' + i + '" aria-expanded="true" >';
-      str += `<td scope="col" style="width:5%; text-align:center;">${parseInt(i)+1}</td>`;
-      str += `<td scope="col" style="width:7%; text-align:left;" title="${data[i].source}">${data[i].source_name}</td>`;
-      str += `<td scope="col" style="width:20%; text-align:left;" title="${data[i].channel_id}">${data[i].title}</td>`;
-      str += `<td scope="col" style="width:53%; text-align:left;">${data[i].current ? data[i].current : ''}</td>`;
-      buttons = '';
-      if (data[i].source == 'wavve' || data[i].source == 'tving' || data[i].source == 'mbc' ) {
-        buttons += j_button('play_btn', 'PLAY', {'source':data[i].source,'id':data[i].channel_id}, 'success', false, true);
-      }
-      buttons += j_button('play_url_btn', 'URL', {'source':data[i].source,'id':data[i].channel_id}, 'info', false, true);
-      buttons = j_button_group(buttons);
-      str += '<td scope="col" style="width:15%; text-align:center;">' + buttons + '</td>';
-      str += '</tr>';
-      count++;
+  for (i in data) {
+    let channel_clone = channelTemplate.content.cloneNode(true);
+    channel_clone.querySelector('#channel-idx').innerHTML = parseInt(i)+1;
+    channel_clone.querySelector('#channel-source').innerHTML = data[i].source_name;
+    channel_clone.querySelector('#channel-source').title = data[i].source;    
+    if (!data[i].is_tv) {
+      channel_clone.querySelector('#channel-name').innerHTML += '<i class="fa fa-music mr-1" title="라디오"></i>';
     }
-    if (count == 0) str += '<tr><td colspan="6"><h4>데이터가 없습니다.</h4></td></tr>';
+    channel_clone.querySelector('#channel-name').innerHTML += data[i].name;
+    channel_clone.querySelector('#channel-name').title = data[i].channel_id;
+    if (!data[i].is_onair) {
+      channel_clone.querySelector('#channel-current').innerHTML += '<i class="fa fa-lock mr-1" title="송출 불가 프로그램"></i>';
+    }
+    channel_clone.querySelector('#channel-current').innerHTML += data[i].current;
+
+    buttons = '';
+    buttons += j_button('play_btn', 'PLAY', {'source':data[i].source,'id':data[i].channel_id}, 'success', false, true);
+    buttons += j_button('play_url_btn', 'URL', {'source':data[i].source,'id':data[i].channel_id}, 'info', false, true);
+    buttons = j_button_group(buttons);
+    channel_clone.querySelector('#channel-action').innerHTML = buttons;
+
+    channelScroller.appendChild(channel_clone);
+    count++;
   }
-  str += '</table>';
-  $("#list_div").html(str);
+  if (count == 0) reset_channel_list('데이터가 없습니다.');
 }
-</script>    
+
+function reset_channel_list(msg='') {
+  channelScroller.querySelectorAll('tr').forEach(e => e.remove());
+  if (msg != null && msg != '') {
+    channelScroller.insertAdjacentHTML('beforeend', `<tr><td colspan="6">${msg}</td></tr>`);
+  }
+}
+
+</script>
 {% endblock %}

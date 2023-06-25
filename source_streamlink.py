@@ -29,9 +29,9 @@ class SourceStreamlink(SourceBase):
             tmp = item.split("|")
             if len(tmp) != 3:
                 continue
-            cid, title, url = tmp
-            c = ChannelItem(self.source_id, cid, title, None, True)
-            self.channel_cache[cid] = SimpleItem(cid, title, url)
+            cid, cname, url = tmp
+            c = ChannelItem(self.source_id, cid, cname, None, True)
+            self.channel_cache[cid] = SimpleItem(cid, cname, url)
             ret.append(c)
         return ret
 

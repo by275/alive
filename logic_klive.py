@@ -25,8 +25,8 @@ ModelSetting = P.ModelSetting
 
 
 class LogicKlive:
-    source_list: OrderedDict = None
-    channel_list: list = None
+    source_list: OrderedDict = OrderedDict()
+    channel_list: list = []
 
     @staticmethod
     def __get_channel_list():
@@ -68,16 +68,14 @@ class LogicKlive:
                     break
                 time.sleep(3)
             logger.debug("%-10s: %s", source_id, len(tmp))
-            for t in tmp:
-                t.current = t.current.replace("<", "&lt;").replace(">", "&gt;")
-                channel_list.append(t)
+            channel_list.extend(tmp)
         LogicKlive.source_list = OrderedDict(source_list)
         LogicKlive.channel_list = channel_list
         ModelSetting.set("channel_list_updated_at", datetime.now().isoformat())
 
     @staticmethod
     def should_reload_channel_list(reload) -> bool:
-        if LogicKlive.channel_list is None or reload:
+        if not LogicKlive.channel_list or reload:
             return True
         updated_at = datetime.fromisoformat(ModelSetting.get("channel_list_updated_at"))
         if (datetime.now() - updated_at).total_seconds() > ModelSetting.get_int("channel_list_max_age") * 60:
@@ -131,7 +129,7 @@ class LogicKlive:
             ddns = SystemModelSetting.get("ddns")
             for c in LogicKlive.get_channel_list():
                 url = c.url(apikey=apikey, ddns=ddns)
-                if c.is_drm_channel:
+                if c.is_drm:
                     url = url.replace("url.m3u8", "url.mpd")
                 m3u.append(c.as_m3u(url, idx))
                 idx += 1

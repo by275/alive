@@ -31,7 +31,7 @@
         {{ macros.setting_select('wavve_quality', '웨이브 화질', [['FHD','FHD'], ['HD','HD'], ['SD', 'SD']], col='3', value=arg['wavve_quality'])}}
         {{ macros.setting_radio_with_value('wavve_streaming_type', '웨이브 스트리밍 타입', [['direct', 'Direct'], ['proxy', 'Proxy'], ['redirect', 'Redirect']], value=arg['wavve_streaming_type'], desc=['웨이브는 방송 요청을 한 IP와 Player IP가 일치해야만 합니다.', ' - Redirect: 가장 좋지만 Player에 따라 10분 후 중지될 수 있습니다. 중지가 안된다면 이 방법으로 사용하세요. 동일 네트워크의 Tvheadend에 연결할 때 사용합니다.', ' - Direct: FF와 Player가 동일 네트워크 일 때 사용합니다. Proxy 옵션보다 성능이 좋습니다.', ' - Proxy: 타 네트워크에서 재생할 때 사용합니다. FF가 방송 데이터를 받아서 Player에 보냅니다.']) }}
       </div>
-    {{ macros.m_tab_content_end() }} 
+    {{ macros.m_tab_content_end() }}
 
     {{ macros.m_tab_content_start('tving', false) }}
       {{ macros.setting_checkbox('use_tving', '티빙', value=arg['use_tving'], desc=['support site 플러그인을 설치하고 티빙 토큰을 입력하세요']) }}
@@ -39,7 +39,7 @@
         {{ macros.setting_select('tving_quality', '티빙 화질', [['FHD','FHD'], ['HD','HD'], ['SD', 'SD']], col='3', value=arg['tving_quality'])}}
         {{ macros.setting_checkbox('tving_include_drm', 'DRM 채널 포함', value=arg['tving_include_drm'], desc=['On: OCN 등 DRM 채널 포함.']) }}
       </div>
-    {{ macros.m_tab_content_end() }} 
+    {{ macros.m_tab_content_end() }}
 
     {{ macros.m_tab_content_start('ott_etc', false) }}
       {{ macros.setting_checkbox('use_kbs', 'KBS', value=arg['use_kbs'], desc=None) }}
@@ -55,7 +55,7 @@
         {{ macros.setting_checkbox('sbs_use_proxy', 'Proxy 사용', value=arg['sbs_use_proxy'], desc=['URL을 얻을 때만 사용']) }}
         {{ macros.setting_input_text('sbs_proxy_url', 'Proxy URL', value=arg['sbs_proxy_url'], desc=None) }}
       </div>
-    {{ macros.m_tab_content_end() }} 
+    {{ macros.m_tab_content_end() }}
 
     {{ macros.m_tab_content_start('youtubedl', false) }}
       {{ macros.setting_checkbox('use_youtubedl', 'Youtube-dl', value=arg['use_youtubedl'], desc=['pip install yt-dlp로 직접 설치 후 사용']) }}
@@ -65,8 +65,8 @@
         {{ macros.setting_input_text('youtubedl_proxy_url', 'Proxy URL', value=arg['youtubedl_proxy_url'], desc=['참고 : https://www.proxynova.com/proxy-server-list/country-kr']) }}
         {{ macros.setting_input_textarea_wide('youtubedl_list', '채널 목록', desc=['형식 : 채널ID|채널이름|채널URL', '채널별 구분자 Enter'], value=arg['youtubedl_list'], row='20') }}
       </div>
-    {{ macros.m_tab_content_end() }} 
-    
+    {{ macros.m_tab_content_end() }}
+
     {{ macros.m_tab_content_start('streamlink', false) }}
       {{ macros.setting_checkbox('use_streamlink', 'Streamlink', value=arg['use_streamlink'], desc=['pip install streamlink로 직접 설치 후 사용']) }}
       <div id="use_streamlink_div" class="collapse">
@@ -74,28 +74,28 @@
         {{ macros.setting_input_text('streamlink_quality', 'streamlink 화질', col='3', value=arg['streamlink_quality']) }}
         {{ macros.setting_input_textarea_wide('streamlink_list', '채널 목록', desc=['형식 : 채널ID|채널이름|채널URL', '채널별 구분자 Enter'], value=arg['streamlink_list'], row='20') }}
       </div>
-    {{ macros.m_tab_content_end() }} 
+    {{ macros.m_tab_content_end() }}
 
     {{ macros.m_tab_content_start('navertv', false) }}
       {{ macros.setting_checkbox('use_navertv', '네이버TV', value=arg['use_navertv'], desc=None) }}
       <div id="use_navertv_div" class="collapse">
         {{ macros.setting_input_textarea_wide('navertv_list', '채널 목록', desc=['형식 : 채널ID|채널이름|채널URL|화질. |화질 생략시 1080', '채널별 구분자 Enter'], value=arg['navertv_list'], row='20') }}
       </div>
-    {{ macros.m_tab_content_end() }} 
+    {{ macros.m_tab_content_end() }}
 
     {{ macros.m_tab_content_start('kakaotv', false) }}
       {{ macros.setting_checkbox('use_kakaotv', '카카오TV', value=arg['use_kakaotv'], desc=None) }}
       <div id="use_kakaotv_div" class="collapse">
         {{ macros.setting_input_textarea_wide('kakaotv_list', '채널 목록', desc=['형식 : 채널ID|채널이름|채널URL', '채널별 구분자 Enter. 360p만 가능'], value=arg['kakaotv_list'], row='20') }}
       </div>
-    {{ macros.m_tab_content_end() }} 
+    {{ macros.m_tab_content_end() }}
 
     {{ macros.m_tab_content_start('direct', false) }}
       {{ macros.setting_checkbox('use_fix_url', '고정주소', value=arg['use_fix_url'], desc=None) }}
       <div id="use_fix_url_div" class="collapse">
         {{ macros.setting_input_textarea_wide('fix_url_list', '채널 목록', desc=['형식 : 채널ID|채널이름|채널URL|{TV면 Y, 라디오면 N}', '채널별 구분자 Enter', '참고 : https://iptvcat.com/south_korea'], value=arg['fix_url_list'], row='20') }}
       </div>
-    {{ macros.m_tab_content_end() }} 
+    {{ macros.m_tab_content_end() }}
 
 
     {{ macros.m_tab_content_start('api', false) }}
@@ -147,7 +147,7 @@ $("body").on('click', '#localSettingSaveBtn', function(e){
   var formData = getFormdata('#setting');
   $.ajax({
     url: '/' + PACKAGE_NAME + '/ajax/setting_save_and_reload',
-    type: "POST", 
+    type: "POST",
     cache: false,
     data: formData,
     dataType: "json",
@@ -168,5 +168,5 @@ $("body").on('click', '#localSettingSaveBtn', function(e){
 
 
 
-</script>    
+</script>
 {% endblock %}
