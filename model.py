@@ -36,16 +36,18 @@ class ChannelItem:
     icon: str
     is_tv: bool
 
+    url: str = None
+    quality: str = None
+
     current: str = ""
-    # is_include_custom: bool = False
-    is_drm: bool = False  # DRM 채널 / tving만
-    is_onair: bool = True  # 저작권이나 기타 이유로 일시적 방송 송출이 안되는 채널 표기 / wavve, sbs
+    is_drm: bool = False  # DRM 채널 / 현재 tving만
+    is_onair: bool = True  # 저작권이나 기타 이유로 일시적 방송 송출이 안되는 채널 표기
 
     @property
     def source_name(self):
         return source_id2name.get(self.source, None)
 
-    def url(self, apikey=None, ddns=None, mode="url"):
+    def svc_url(self, apikey=None, ddns=None, mode="url"):
         if apikey is None:
             if SystemModelSetting.get_bool("use_apikey"):
                 apikey = SystemModelSetting.get("apikey")
@@ -67,7 +69,7 @@ class ChannelItem:
 
     def as_m3u(self, url=None, idx=0):
         if url is None:
-            url = self.url()
+            url = self.svc_url()
         data = (self.name, self.name, self.icon, self.source_name, idx, idx, self.name, url)
         if self.is_tv:
             return M3U_FORMAT % data
@@ -81,11 +83,3 @@ class ChannelItem:
     #     else:
     #         ret["json"] = {}
     #     return ret
-
-
-@dataclass
-class SimpleItem:
-    id: str
-    title: str
-    url: str
-    quality: str = None

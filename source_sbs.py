@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import requests
 
 # local
@@ -29,8 +31,9 @@ class SourceSBS(SourceBase):
                 c = ChannelItem(self.source_id, item["channelid"], cname, None, is_tv)
                 c.current = item["title"]
                 c.is_onair = item.get("onair_yn", "N") == "Y"
-                ret.append(c)
-        return ret
+                ret.append([c.channel_id, c])
+        self.channel_list = OrderedDict(ret)
+        return self.channel_list
 
     def __get_url(self, channel_id):
         if channel_id.startswith("EVENT"):

@@ -1,4 +1,5 @@
 import json
+from collections import OrderedDict
 
 import requests
 
@@ -41,8 +42,9 @@ class SourceKBS(SourceBase):
                     cm["image_path_channel_logo"],
                     cm["channel_type"] == "TV",
                 )
-                ret.append(c)
-        return ret
+                ret.append([c.channel_id, c])
+        self.channel_list = OrderedDict(ret)
+        return self.channel_list
 
     def __get_url(self, channel_id):
         tmp = f"https://cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/{channel_id}"

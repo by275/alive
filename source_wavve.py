@@ -1,4 +1,5 @@
 import re
+from collections import OrderedDict
 from pathlib import Path
 from urllib.parse import quote
 
@@ -45,8 +46,9 @@ class SourceWavve(SourceBase):
             c = ChannelItem(self.source_id, item["channelid"], item["channelname"], img, item["type"] == "video")
             c.current = item["title"]
             c.is_onair = item["license"] == "y"
-            ret.append(c)
-        return ret
+            ret.append([c.channel_id, c])
+        self.channel_list = OrderedDict(ret)
+        return self.channel_list
 
     def get_url(self, channel_id, mode, quality=None):
         surl = None

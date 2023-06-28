@@ -1,4 +1,5 @@
 import re
+from collections import OrderedDict
 from urllib.parse import quote
 
 import requests
@@ -17,7 +18,7 @@ ModelSetting = P.ModelSetting
 
 class SourceBase:
     source_id: str = None
-    channel_cache: dict = None
+    channel_list: OrderedDict = OrderedDict()
 
     def __init__(self):
         pass
@@ -38,12 +39,15 @@ class SourceBase:
 
     def change_redirect_data(self, data, proxy=None):
         base_url = f"{SystemModelSetting.get('ddns')}/{package_name}/api/redirect"
+        apikey = None
+        if SystemModelSetting.get_bool("use_apikey"):
+            apikey = SystemModelSetting.get("apikey")
         for m in re.compile(r"http(.*?)$", re.MULTILINE).finditer(data):
             u = m.group(0)
             u2 = base_url + f"?url={quote(u)}"
-            if SystemModelSetting.get_bool("use_apikey"):
-                u2 += f"&apikey={SystemModelSetting.get('apikey')}"
+            if apikey is not None:
+                u2 += f"&apikey={apikey}"
             if proxy is not None:
-                u2 += f"&proxy={proxy}"
+                u2 += f"&proxy={quote(proxy)}"
             data = data.replace(u, u2)
         return data

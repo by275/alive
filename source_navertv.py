@@ -1,9 +1,10 @@
 import re
+from collections import OrderedDict
 
 import requests
 
 # local
-from .model import ChannelItem, SimpleItem
+from .model import ChannelItem
 from .setup import P, default_headers
 from .source_base import SourceBase
 
@@ -17,7 +18,6 @@ class SourceNavertv(SourceBase):
 
     def get_channel_list(self):
         ret = []
-        self.channel_cache = {}
         for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
             if not item:
                 continue
@@ -30,9 +30,11 @@ class SourceNavertv(SourceBase):
             else:
                 continue
             c = ChannelItem(self.source_id, cid, cname, None, True)
-            self.channel_cache[cid] = SimpleItem(cid, cname, url, quality)
-            ret.append(c)
-        return ret
+            c.url = url
+            c.quality = quality
+            ret.append([c.channel_id, c])
+        self.channel_list = OrderedDict(ret)
+        return self.channel_list
 
     def __get_url(self, target_url, quality):
         if target_url.startswith("SPORTS_"):
@@ -61,8 +63,8 @@ class SourceNavertv(SourceBase):
 
     def get_url(self, channel_id, mode, quality=None):
         # logger.debug('channel_id:%s, quality:%s, mode:%s', channel_id, quality, mode)
-        target_url = self.channel_cache[channel_id].url
-        url = self.__get_url(target_url, self.channel_cache[channel_id].quality)
+        target_url = self.channel_list[channel_id].url
+        url = self.__get_url(target_url, self.channel_list[channel_id].quality)
         if mode == "web_play":
             return "return_after_read", url
         return "redirect", url

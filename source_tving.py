@@ -1,4 +1,5 @@
 import re
+from collections import OrderedDict
 from pathlib import Path
 
 import requests
@@ -54,9 +55,12 @@ class SourceTving(SourceBase):
             c = ChannelItem(self.source_id, item["id"], item["title"], item["img"], True)
             if item["is_drm"]:
                 c.is_drm = True
+            if item["block"]:
+                c.is_onair = False
             c.current = item["episode_title"]
-            ret.append(c)
-        return ret
+            ret.append([c.channel_id, c])
+        self.channel_list = OrderedDict(ret)
+        return self.channel_list
 
     def get_url(self, channel_id, mode, quality=None):
         quality = self.mod.get_quality_to_tving(quality)

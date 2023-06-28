@@ -1,5 +1,7 @@
+from collections import OrderedDict
+
 # local
-from .model import ChannelItem, SimpleItem
+from .model import ChannelItem
 from .setup import P
 from .source_base import SourceBase
 
@@ -22,7 +24,6 @@ class SourceYoutubedl(SourceBase):
 
     def get_channel_list(self):
         ret = []
-        self.channel_cache = {}
         for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
             if not item:
                 continue
@@ -31,13 +32,13 @@ class SourceYoutubedl(SourceBase):
                 continue
             cid, cname, url = tmp
             c = ChannelItem(self.source_id, cid, cname, None, True)
-            self.channel_cache[cid] = SimpleItem(cid, cname, url)
-            ret.append(c)
-        return ret
+            c.url = url
+            ret.append([c.channel_id, c])
+        self.channel_list = OrderedDict(ret)
+        return self.channel_list
 
     def get_url(self, channel_id, mode, quality=None):
         # logger.debug('channel_id:%s, quality:%s, mode:%s', channel_id, quality, mode)
-        # import youtube_dl
         import yt_dlp
 
         ydl_opts = {}
@@ -45,7 +46,7 @@ class SourceYoutubedl(SourceBase):
             ydl_opts["proxy"] = ModelSetting.get("youtubedl_proxy_url")
         # ydl = youtube_dl.YoutubeDL(ydl_opts)
         ydl = yt_dlp.YoutubeDL(ydl_opts)
-        target_url = self.channel_cache[channel_id].url
+        target_url = self.channel_list[channel_id].url
         result = ydl.extract_info(target_url, download=False)
         # logger.warning('Formats len : %s', len(result['formats']))
         # logger.warning(d(result))

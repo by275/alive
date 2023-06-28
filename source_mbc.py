@@ -1,4 +1,5 @@
 import time
+from collections import OrderedDict
 
 import requests
 
@@ -44,8 +45,9 @@ class SourceMBC(SourceBase):
                     self.source_id, self.code[item["ScheduleCode"]], item["TypeTitle"], None, cate == "TVList"
                 )
                 c.current = item["Title"]
-                ret.append(c)
-        return ret
+                ret.append([c.channel_id, c])
+        self.channel_list = OrderedDict(ret)
+        return self.channel_list
 
     def get_url(self, channel_id, mode, quality=None):
         if len(channel_id) == 3:

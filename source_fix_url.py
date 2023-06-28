@@ -1,5 +1,7 @@
+from collections import OrderedDict
+
 # local
-from .model import ChannelItem, SimpleItem
+from .model import ChannelItem
 from .setup import P
 from .source_base import SourceBase
 
@@ -13,21 +15,21 @@ class SourceFixURL(SourceBase):
 
     def get_channel_list(self):
         ret = []
-        self.channel_cache = {}
         for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
             if not item:
                 continue
             tmp = item.split("|")
             if len(tmp) != 4:
                 continue
-            cid, cname, url, is_radio = tmp
-            c = ChannelItem(self.source_id, cid, cname, None, is_radio == "Y")
-            self.channel_cache[cid] = SimpleItem(cid, cname, url)
-            ret.append(c)
-        return ret
+            cid, cname, url, radio_yn = tmp
+            c = ChannelItem(self.source_id, cid, cname, None, radio_yn == "Y")
+            c.url = url
+            ret.append([c.channel_id, c])
+        self.channel_list = OrderedDict(ret)
+        return self.channel_list
 
     def get_url(self, channel_id, mode, quality=None):
-        url = self.channel_cache[channel_id].url
+        url = self.channel_list[channel_id].url
         if mode == "web_play":
             return "return_after_read", url
         return "redirect", url

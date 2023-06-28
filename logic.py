@@ -3,11 +3,12 @@ import platform
 import subprocess
 import threading
 import time
+from copy import deepcopy
 from datetime import datetime
 from urllib.parse import unquote
 
 import requests
-from flask import Response, jsonify, redirect, render_template, request, send_file, stream_with_context
+from flask import Response, jsonify, redirect, render_template, request, send_file, stream_with_context, abort
 
 from plugin import F, PluginModuleBase  # pylint: disable=import-error
 
@@ -22,10 +23,10 @@ SystemModelSetting = F.SystemModelSetting
 from .logic_klive import LogicKlive
 from .setup import P, default_headers
 
-plugin = P
-logger = plugin.logger
-package_name = plugin.package_name
-ModelSetting = plugin.ModelSetting
+logger = P.logger
+package_name = P.package_name
+ModelSetting = P.ModelSetting
+blueprint = P.blueprint
 
 
 @stream_with_context
@@ -164,11 +165,10 @@ class Logic(PluginModuleBase):
                 arg["api_m3u"] = url_base + "/api/m3u"
                 arg["api_m3utvh"] = url_base + "/api/m3utvh"
                 arg["api_m3uall"] = url_base + "/api/m3uall"
-                arg["xmltv"] = f"{ddns}/epg/api/klive"  # TODO
                 arg["plex_proxy"] = url_base + "/proxy"
 
                 if use_apikey:
-                    for tmp in ["api_m3u", "api_m3uall", "api_m3utvh", "xmltv"]:
+                    for tmp in ["api_m3u", "api_m3uall", "api_m3utvh"]:
                         arg[tmp] += f"?apikey={apikey}"
 
                 from .source_streamlink import SourceStreamlink
@@ -187,9 +187,9 @@ class Logic(PluginModuleBase):
     def process_ajax(self, sub, req):
         try:
             if sub == "setting_save_and_reload":
-                ret = ModelSetting.setting_save(req)
-                LogicKlive.get_channel_list(reload=True)
-                return jsonify(ret)
+                saved, changed = ModelSetting.setting_save(req)
+                LogicKlive.get_channel_list(reload=bool(changed))
+                return jsonify(saved)
             if sub == "channel_list":
                 reload = req.form.get("reload", "false") == "true"
                 ret = LogicKlive.get_channel_list(reload=reload)
@@ -198,199 +198,200 @@ class Logic(PluginModuleBase):
                 return jsonify({"list": [x.as_dict() for x in ret], "updated_at": updated_at})
             if sub == "play_url":
                 args = req.form.to_dict()
-                c = LogicKlive.get_channel(args["source"], args["channel_id"])
-                if c is None:
-                    return None
+                c = LogicKlive.channel_list[args["source"]][args["channel_id"]]
                 mode = "web_play" if args.get("web_play", "false") == "true" else "url"
-                data = {"url": c.url(mode=mode), "title": c.current}
+                data = {"url": c.svc_url(mode=mode), "title": c.current}
                 return jsonify({"data": data})
             if sub == "group_list":
                 reload = req.form.get("reload", "false") == "true"
-                channel_group = LogicAlive.get_group_list(reload=reload)
-                try:
-                    for g in channel_group:
-                        for c in g["channels"]:
-                            if "src" in c:
-                                c["src"] = c["src"].as_dict()
-                            c["srcs"] = [s.as_dict() for s in c["srcs"]]
-                except Exception:
-                    pass
+                channel_group = deepcopy(LogicAlive.get_group_list(reload=reload))
+                for g in channel_group:
+                    for c in g["channels"]:
+                        if "src" in c:
+                            c["src"] = c["src"].as_dict()
+                        c["srcs"] = [s.as_dict() for s in c["srcs"]]
                 return jsonify({"list": channel_group})
-            # 커스텀 생성
-            # elif sub == "custom":
-            #     ret = {}
-            #     ret["list"] = LogicKlive.custom()
-            #     ret["setting"] = ModelSetting.to_dict()
-            #     return jsonify(ret)
-            # elif sub == "custom_save":
-            #     ret = LogicKlive.custom_save(request)
-            #     return jsonify(ret)
-            # elif sub == "get_saved_custom":
-            #     ret = LogicKlive.get_saved_custom()
-            #     return jsonify(ret)
-            # elif sub == "custom_edit_save":
-            #     ret = LogicKlive.custom_edit_save(request)
-            #     return jsonify(ret)
-            # elif sub == "custom_delete":
-            #     ret = LogicKlive.custom_delete(request)
-            #     return jsonify(ret)
         except Exception:
             logger.exception("AJAX 요청 처리 중 예외:")
 
     def process_api(self, sub, req):
-        if sub == "url.m3u8":
-            mode = req.args.get("m")
-            source = req.args.get("s")
-            channel_id = req.args.get("i")
-            quality = req.args.get("q")
-            # logger.debug("m=%s, s=%s, i=%s, q=%s", mode, source, channel_id, quality)
+        try:
+            if sub == "url.m3u8":
+                mode = req.args.get("m")
+                source = req.args.get("s")
+                channel_id = req.args.get("i")
+                quality = req.args.get("q")
+                priority = req.args.get("p", "N") == "Y"
+                # logger.debug("m=%s, s=%s, i=%s, q=%s", mode, source, channel_id, quality)
 
-            if mode == "plex":
-                return Response(generate(req.url.replace("m=plex", "m=url")), mimetype="video/MP2T")
+                if mode == "plex":
+                    return Response(generate(req.url.replace("m=plex", "m=url")), mimetype="video/MP2T")
 
-            action, ret = LogicKlive.get_url(source, channel_id, mode, quality=quality)
-            # logger.debug('action:%s, url:%s', action, ret)
+                if priority:
+                    logger.error("this is priority")
+                    action, ret = LogicAlive.get_url(source, channel_id, mode, quality=quality)
+                else:
+                    action, ret = LogicKlive.get_url(source, channel_id, mode, quality=quality)
+                # logger.debug("action:%s, url:%s", action, ret)
 
-            if ret is None:
-                return ret
+                if ret is None:
+                    return ret
 
-            if action == "redirect":
-                return redirect(ret, code=302)
-            if action == "return_after_read":
-                # logger.warning('return_after_read')
-                data = LogicKlive.get_return_data(source, ret, mode=mode)
-                # logger.debug('Data len : %s', len(data))
-                # logger.debug(data)
-                return data, 200, {"Content-Type": "application/vnd.apple.mpegurl"}
-            if action == "return":
-                return ret
+                if action == "redirect":
+                    return redirect(ret, code=302)
+                if action == "return_after_read":
+                    # logger.warning('return_after_read')
+                    data = LogicKlive.get_return_data(source, ret, mode=mode)
+                    # logger.debug('Data len : %s', len(data))
+                    # logger.debug(data)
+                    return data, 200, {"Content-Type": "application/vnd.apple.mpegurl"}
+                if action == "return":
+                    return ret
 
-            if mode == "url.m3u8":
-                return redirect(ret, code=302)
-            if mode == "lc":
-                return ret
-        elif sub == "m3uall":
-            return LogicKlive.get_m3uall()
-        # elif sub == "m3u":
-        #     data = LogicKlive.get_m3u(
-        #         m3u_format=request.args.get("format"), group=request.args.get("group"), call=request.args.get("call")
-        #     )
-        #     if request.args.get("file") == "true":
-        #         import framework.common.util as CommonUtil
+                if mode == "url.m3u8":
+                    return redirect(ret, code=302)
+                if mode == "lc":
+                    return ret
+            elif sub == "m3uall":
+                return LogicKlive.get_m3uall()
+            # elif sub == "m3u":
+            #     data = LogicKlive.get_m3u(
+            #         m3u_format=request.args.get("format"), group=request.args.get("group"), call=request.args.get("call")
+            #     )
+            #     if request.args.get("file") == "true":
+            #         import framework.common.util as CommonUtil
 
-        #         basename = "klive_custom.m3u"
-        #         filename = os.path.join(path_data, "tmp", basename)
-        #         CommonUtil.write_file(data, filename)
-        #         return send_file(filename, as_attachment=True, attachment_filename=basename)
-        #     return data
-        # elif sub == "m3utvh":
-        #     return LogicKlive.get_m3u(
-        #         for_tvh=True, m3u_format=request.args.get("format"), group=request.args.get("group")
-        #     )
-        elif sub == "redirect":
-            # SJVA 사용
-            url = request.args.get("url")
-            proxy = request.args.get("proxy")
-            proxies = None
-            if proxy is not None:
-                proxy = unquote(proxy)
-                proxies = {"https": proxy, "http": proxy}
-            url = unquote(url)
-            # logger.debug('REDIRECT:%s', url)
-            # logger.warning(f"redirect : {url}")
-            # 2021-06-03
-            headers = {"Connection": "keep-alive"}
-            headers.update(default_headers)
-            r = requests.get(url, headers=headers, stream=True, proxies=proxies, verify=False, timeout=30)
-            rv = Response(
-                r.iter_content(chunk_size=1048576),
-                r.status_code,
-                content_type=r.headers["Content-Type"],
-                direct_passthrough=True,
-            )
-            return rv
-        # elif sub == "url.mpd":
-        #     try:
-        #         mode = request.args.get("m")
-        #         source = request.args.get("s")
-        #         source_id = request.args.get("i")
-        #         quality = request.args.get("q")
-        #         return_format = "json"
-        #         data = LogicKlive.get_play_info(source, source_id, quality, mode=mode, return_format=return_format)
-        #         return jsonify(data)
-        #     except Exception as e:
-        #         logger.error("Exception:%s", e)
-        #         logger.error(traceback.format_exc())
-        # elif sub == "url.strm":
-        #     try:
-        #         mode = request.args.get("m")
-        #         source = request.args.get("s")
-        #         source_id = request.args.get("i")
-        #         quality = request.args.get("q")
-        #         return_format = "strm"
-        #         data = LogicKlive.get_play_info(source, source_id, quality, mode=mode, return_format=return_format)
-        #         # return data
+            #         basename = "klive_custom.m3u"
+            #         filename = os.path.join(path_data, "tmp", basename)
+            #         CommonUtil.write_file(data, filename)
+            #         return send_file(filename, as_attachment=True, attachment_filename=basename)
+            #     return data
+            # elif sub == "m3utvh":
+            #     return LogicKlive.get_m3u(
+            #         for_tvh=True, m3u_format=request.args.get("format"), group=request.args.get("group")
+            #     )
+            elif sub == "redirect":
+                # SJVA 사용
+                url = request.args.get("url")
+                proxy = request.args.get("proxy")
+                proxies = None
+                if proxy is not None:
+                    proxy = unquote(proxy)
+                    proxies = {"https": proxy, "http": proxy}
+                url = unquote(url)
+                # logger.debug('REDIRECT:%s', url)
+                # logger.warning(f"redirect : {url}")
+                # 2021-06-03
+                headers = {"Connection": "keep-alive"}
+                headers.update(default_headers)
+                r = requests.get(url, headers=headers, stream=True, proxies=proxies, verify=False, timeout=30)
+                rv = Response(
+                    r.iter_content(chunk_size=1048576),
+                    r.status_code,
+                    content_type=r.headers["Content-Type"],
+                    direct_passthrough=True,
+                )
+                return rv
+            # elif sub == "url.mpd":
+            #     try:
+            #         mode = request.args.get("m")
+            #         source = request.args.get("s")
+            #         source_id = request.args.get("i")
+            #         quality = request.args.get("q")
+            #         return_format = "json"
+            #         data = LogicKlive.get_play_info(source, source_id, quality, mode=mode, return_format=return_format)
+            #         return jsonify(data)
+            #     except Exception as e:
+            #         logger.error("Exception:%s", e)
+            #         logger.error(traceback.format_exc())
+            # elif sub == "url.strm":
+            #     try:
+            #         mode = request.args.get("m")
+            #         source = request.args.get("s")
+            #         source_id = request.args.get("i")
+            #         quality = request.args.get("q")
+            #         return_format = "strm"
+            #         data = LogicKlive.get_play_info(source, source_id, quality, mode=mode, return_format=return_format)
+            #         # return data
 
-        #         import framework.common.util as CommonUtil
+            #         import framework.common.util as CommonUtil
 
-        #         from .model import ModelCustom
+            #         from .model import ModelCustom
 
-        #         db_item = ModelCustom.get(source, source_id)
-        #         if db_item is not None:
-        #             basename = "%s.strm" % db_item.title
-        #         else:
-        #             basename = "%s.strm" % source_id
-        #         filename = os.path.join(path_data, "tmp", basename)
-        #         CommonUtil.write_file(data, filename)
-        #         return send_file(filename, as_attachment=True, attachment_filename=basename)
+            #         db_item = ModelCustom.get(source, source_id)
+            #         if db_item is not None:
+            #             basename = "%s.strm" % db_item.title
+            #         else:
+            #             basename = "%s.strm" % source_id
+            #         filename = os.path.join(path_data, "tmp", basename)
+            #         CommonUtil.write_file(data, filename)
+            #         return send_file(filename, as_attachment=True, attachment_filename=basename)
 
-        #         # return data
-        #     except Exception as e:
-        #         logger.error("Exception:%s", e)
-        #         logger.error(traceback.format_exc())
-        # elif sub == "sinaplayer":
-        #     data = LogicKlive.get_m3u_for_sinaplayer()
-        #     return data
-
-
-# @blueprint.route('/normal/<sub>', methods=['GET', 'POST'])
-# def normal(sub):
-#     try:
-#         pass
-
-#     except Exception as exception:
-#         P.logger.error('Exception:%s', exception)
-#         P.logger.error(traceback.format_exc())
+            #         # return data
+            #     except Exception as e:
+            #         logger.error("Exception:%s", e)
+            #         logger.error(traceback.format_exc())
+            # elif sub == "sinaplayer":
+            #     data = LogicKlive.get_m3u_for_sinaplayer()
+            #     return data
+        except Exception:
+            logger.exception("API 요청 처리 중 예외:")
 
 
-# #########################################################
-# # Proxy
-# #########################################################
-# @blueprint.route('/proxy/<sub>', methods=['GET', 'POST'])
-# def proxy(sub):
-#     logger.debug('proxy %s %s', package_name, sub)
-#     try:
-#         if ModelSetting.get_bool('use_plex_proxy') == False:
-#             abort(403)
-#             return
-#         if sub == 'discover.json':
-#             ddns = SystemModelSetting.get('ddns')
-#             data = {"FriendlyName":"HDHomeRun CONNECT","ModelNumber":"HDHR4-2US","FirmwareName":"hdhomerun4_atsc","FirmwareVersion":"20190621","DeviceID":"104E8010","DeviceAuth":"UF4CFfWQh05c3jROcArmAZaf","BaseURL":"%s/klive/proxy" % ddns,"LineupURL":"%s/klive/proxy/lineup.json" % ddns,"TunerCount":20}
-#             return jsonify(data)
-#         elif sub == 'lineup_status.json':
-#             data = {"ScanInProgress":0,"ScanPossible":1,"Source":"Cable","SourceList":["Antenna","Cable"]}
-#             return jsonify(data)
-#         elif sub == 'lineup.json':
-#             lineup = []
-#             custom_list = LogicKlive.get_saved_custom_instance()
-#             ddns = SystemModelSetting.get('ddns')
-#             apikey = None
-#             if SystemModelSetting.get_bool('auth_use_apikey'):
-#                 apikey = SystemModelSetting.get('auth_apikey')
-#             for c in custom_list:
-#                 tmp = c.get_m3u8(ddns, 'plex', apikey)
-#                 lineup.append({'GuideNumber': str(c.number), 'GuideName': c.title, 'URL': tmp})
-#             return jsonify(lineup)
-#     except Exception as e:
-#         logger.error('Exception:%s', e)
-#         logger.error(traceback.format_exc())
+#########################################################
+# Proxy
+#########################################################
+@blueprint.route("/proxy/<sub>", methods=["GET", "POST"])
+def proxy(sub):
+    logger.debug("proxy %s %s", package_name, sub)
+    if not ModelSetting.get_bool("use_plex_proxy"):
+        abort(403)
+    # if request.host != "k.live":
+    #     abort(403)
+    try:
+        if sub == "discover.json":
+            ddns = SystemModelSetting.get("ddns")
+            data = {
+                "FriendlyName": "HDHomeRun CONNECT",
+                "ModelNumber": "HDHR4-2US",
+                "FirmwareName": "hdhomerun4_atsc",
+                "FirmwareVersion": "20190621",
+                "DeviceID": "104E8010",
+                "DeviceAuth": "UF4CFfWQh05c3jROcArmAZaf",
+                "BaseURL": f"{request.url_root}alive/proxy",
+                "LineupURL": f"{request.url_root}alive/proxy/lineup.json",
+                "TunerCount": 20,
+            }
+            return jsonify(data)
+        if sub == "lineup_status.json":
+            data = {"ScanInProgress": 0, "ScanPossible": 1, "Source": "Cable", "SourceList": ["Antenna", "Cable"]}
+            return jsonify(data)
+        if sub == "lineup.json":
+            lineup = []
+            custom_list = LogicKlive.get_saved_custom_instance()
+            ddns = SystemModelSetting.get("ddns")
+            apikey = None
+            if SystemModelSetting.get_bool("auth_use_apikey"):
+                apikey = SystemModelSetting.get("auth_apikey")
+            for c in custom_list:
+                tmp = c.get_m3u8(ddns, "plex", apikey)
+                lineup.append({"GuideNumber": str(c.number), "GuideName": c.title, "URL": tmp})
+            # lineup = []
+            # guide_num = 1
+            # if channel_group_json.exists():
+            #     with open(channel_group_json, "r", encoding="utf-8") as fp:
+            #         channel_group = json.load(fp)
+            #         for group in channel_group:
+            #             if group["type"] == "nogroup":
+            #                 continue
+            #             for c in group["channels"]:
+            #                 if not c.get("m3u", []):
+            #                     continue
+            #                 _, name, _, _, _, _, _, url = c["m3u"]
+            #                 tmp = url.replace("&apikey", "&q=default&apikey").replace("m=url", "m=plex")
+            #                 lineup.append({"GuideNumber": str(guide_num), "GuideName": name, "URL": tmp})
+            #                 guide_num += 1
+            return jsonify(lineup)
+    except Exception:
+        logger.exception("Exception proxing for plex:")
+    abort(403)
