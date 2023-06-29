@@ -20,6 +20,8 @@ class SourceTving(SourceBase):
     source_id = "tving"
     mod = None
 
+    PTN_BANDWIDTH = re.compile(r"BANDWIDTH=(?P<bandwidth>\d+)", re.MULTILINE)
+
     def __init__(self):
         if self.mod is not None:
             return
@@ -71,7 +73,7 @@ class SourceTving(SourceBase):
 
     def get_return_data(self, url, mode=None):
         data = requests.get(url, timeout=30).text
-        matches = re.finditer(r"BANDWIDTH=(?P<bandwidth>\d+)", data, re.MULTILINE)
+        matches = self.PTN_BANDWIDTH.finditer(data)
         max_bandwidth = 0
         for match in matches:
             bw = int(match.group("bandwidth"))
@@ -83,5 +85,5 @@ class SourceTving(SourceBase):
         data1 = requests.get(url1, timeout=30).text
         data1 = data1.replace("media", f"{temp[0]}media").replace(".ts", f".ts{temp[1]}")
         if mode == "web_play":
-            data1 = self.change_redirect_data(data1)
+            return self.change_redirect_data(data1)
         return data1

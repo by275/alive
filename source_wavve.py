@@ -1,4 +1,3 @@
-import re
 from collections import OrderedDict
 from pathlib import Path
 from urllib.parse import quote
@@ -67,20 +66,15 @@ class SourceWavve(SourceBase):
         return "return_after_read", surl
 
     def get_return_data(self, url, mode=None):
-        while True:
-            data = requests.get(url, proxies=self.mod.get_proxies(), headers=default_headers, timeout=30).text
-            prefix = url.split("?")[0].rsplit("/", 1)[0]
-            if re.findall(r"\.m3u8\?", data):
-                url = prefix + "/" + data.strip().split("\n")[-1]
-            else:
-                break
-        new_data = ""
-        for line in data.split("\n"):
+        data = requests.get(url, proxies=self.mod.get_proxies(), headers=default_headers, timeout=10).text
+        prefix = url.split("?")[0].rsplit("/", 1)[0]
+        new_lines = []
+        for line in data.splitlines():
             line = line.strip()
             if line.startswith != "#" and ".ts?" in line:
                 line = f"{prefix}/{line}"
-            new_data += f"{line}\n"
+            new_lines.append(line)
+        new_lines = "\n".join(new_lines)
         if ModelSetting.get("wavve_streaming_type") == "direct":
-            return new_data
-        ret = self.change_redirect_data(new_data, proxy=self.mod.get_proxy())
-        return ret
+            return new_lines
+        return self.change_redirect_data(new_lines, proxy=self.mod.get_proxy())

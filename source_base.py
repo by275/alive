@@ -20,6 +20,8 @@ class SourceBase:
     source_id: str = None
     channel_list: OrderedDict = OrderedDict()
 
+    PTN_URL = re.compile(r"^http(.*?)$", re.MULTILINE)
+
     def __init__(self):
         pass
 
@@ -42,9 +44,9 @@ class SourceBase:
         apikey = None
         if SystemModelSetting.get_bool("use_apikey"):
             apikey = SystemModelSetting.get("apikey")
-        for m in re.compile(r"http(.*?)$", re.MULTILINE).finditer(data):
+        for m in self.PTN_URL.finditer(data):
             u = m.group(0)
-            u2 = base_url + f"?url={quote(u)}"
+            u2 = f"{base_url}?url={quote(u)}"
             if apikey is not None:
                 u2 += f"&apikey={apikey}"
             if proxy is not None:

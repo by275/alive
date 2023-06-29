@@ -13,17 +13,17 @@
     <table id="result_table" class="table table-sm table-striped table-hover">
         <thead class="thead-dark"><tr>
           <th style="width:5%; text-align:center;" class="text-truncate"></th>
-          <th style="width:7%; text-align:left;" class="text-truncate">소스</th>
+          <th style="width:10%; text-align:left;" class="text-truncate">소스</th>
           <th style="width:20%; text-align:left;" class="text-truncate">채널</th>
-          <th style="width:53%; text-align:left;" class="text-truncate">방송 중 프로그램</th>
+          <th style="width:50%; text-align:left;" class="text-truncate">방송 중 프로그램</th>
           <th style="width:15%; text-align:center;" class="text-truncate">Action</th>
         </tr></thead>
         <tbody id="channel-list">
         <template id="channel-template"><tr>
           <td scope="col" style="width:5%; text-align:center;" id="channel-idx" class="text-truncate"></td>
-          <td scope="col" style="width:7%; text-align:left;" id="channel-source" class="text-truncate"></td>
+          <td scope="col" style="width:10%; text-align:left;" id="channel-source" class="text-truncate"></td>
           <td scope="col" style="width:20%; text-align:left;" id="channel-name" class="text-truncate"></td>
-          <td scope="col" style="width:53%; text-align:left;" id="channel-current" class="text-truncate"></td>
+          <td scope="col" style="width:50%; text-align:left;" id="channel-current" class="text-truncate"></td>
           <td scope="col" style="width:15%; text-align:center;" id="channel-action" class="text-truncate"></td>
         </tr></template>
       </tbody>
@@ -140,7 +140,9 @@ function make_channel_list(data) {
     channel_clone.querySelector('#channel-current').innerHTML += data[i].current;
 
     buttons = '';
-    buttons += j_button('play_btn', 'PLAY', {'source':data[i].source,'id':data[i].channel_id}, 'success', false, true);
+    if (data[i].source == "wavve" || data[i].source == "tving" || data[i].source == "mbc" || data[i].source == "kbs" || data[i].source == "sbs") {
+      buttons += j_button('play_btn', 'PLAY', {'source':data[i].source,'id':data[i].channel_id}, 'success', false, true);
+    }
     buttons += j_button('play_url_btn', 'URL', {'source':data[i].source,'id':data[i].channel_id}, 'info', false, true);
     buttons = j_button_group(buttons);
     channel_clone.querySelector('#channel-action').innerHTML = buttons;

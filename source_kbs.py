@@ -55,5 +55,7 @@ class SourceKBS(SourceBase):
     def get_url(self, channel_id, mode, quality=None):
         url = self.__get_url(channel_id)
         # logger.info(url)
-        # Expires가 1일로 길어서 괜찮을 듯
+        if mode == "web_play":
+            # Expires가 1일로 길어서 괜찮을 듯
+            return "redirect", url
         return "redirect", url
