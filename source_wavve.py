@@ -71,7 +71,7 @@ class SourceWavve(SourceBase):
         new_lines = []
         for line in data.splitlines():
             line = line.strip()
-            if line.startswith != "#" and ".ts?" in line:
+            if line.startswith != "#" and ".ts" in line:
                 line = f"{prefix}/{line}"
             new_lines.append(line)
         new_lines = "\n".join(new_lines)
