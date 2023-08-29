@@ -23,7 +23,7 @@
           <td scope="col" style="width:5%; text-align:center;" id="channel-idx" class="text-truncate"></td>
           <td scope="col" style="width:10%; text-align:left;" id="channel-source" class="text-truncate"></td>
           <td scope="col" style="width:20%; text-align:left;" id="channel-name" class="text-truncate"></td>
-          <td scope="col" style="width:50%; text-align:left;" id="channel-current" class="text-truncate"></td>
+          <td scope="col" style="width:50%; text-align:left;" id="channel-program" class="text-truncate"></td>
           <td scope="col" style="width:15%; text-align:center;" id="channel-action" class="text-truncate"></td>
         </tr></template>
       </tbody>
@@ -130,14 +130,18 @@ function make_channel_list(data) {
     channel_clone.querySelector('#channel-source').innerHTML = data[i].source_name;
     channel_clone.querySelector('#channel-source').title = data[i].source;    
     if (!data[i].is_tv) {
-      channel_clone.querySelector('#channel-name').innerHTML += '<i class="fa fa-music mr-1" title="라디오"></i>';
+      channel_clone.querySelector('#channel-name').innerHTML += '<span class="mr-1" title="라디오">📻</span>';
     }
     channel_clone.querySelector('#channel-name').innerHTML += data[i].name;
     channel_clone.querySelector('#channel-name').title = data[i].channel_id;
-    if (!data[i].is_onair) {
-      channel_clone.querySelector('#channel-current').innerHTML += '<i class="fa fa-lock mr-1" title="송출 불가 프로그램"></i>';
+    if (!data[i].program.onair) {
+      channel_clone.querySelector('#channel-program').innerHTML += '<span class="mr-1" title="송출 불가 프로그램">🔒</span>';
     }
-    channel_clone.querySelector('#channel-current').innerHTML += data[i].current;
+    if (data[i].program.targetage > 18) {
+      channel_clone.querySelector('#channel-program').innerHTML += '<span class="mr-1" title="19세">🔞</span>';
+    }
+    channel_clone.querySelector('#channel-program').innerHTML += data[i].program.title;
+    channel_clone.querySelector('#channel-program').title = data[i].program.program_id;
 
     buttons = '';
     if (data[i].source == "wavve" || data[i].source == "tving" || data[i].source == "mbc" || data[i].source == "kbs" || data[i].source == "sbs") {

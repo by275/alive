@@ -4,7 +4,7 @@ from collections import OrderedDict
 import requests
 
 # local
-from .model import ChannelItem
+from .model import ChannelItem, ProgramItem
 from .setup import P, default_headers
 from .source_base import SourceBase
 
@@ -35,14 +35,19 @@ class SourceKBS(SourceBase):
                     continue
                 if cm["channel_type"] == "DMB":
                     continue
-                c = ChannelItem(
-                    self.source_id,
-                    cm["channel_code"],
-                    cm["title"],
-                    cm["image_path_channel_logo"],
-                    cm["channel_type"] == "TV",
-                )
-                ret.append([c.channel_id, c])
+                try:
+                    p = ProgramItem(image=cm["image_path_video_thumbnail"])
+                    c = ChannelItem(
+                        self.source_id,
+                        cm["channel_code"],
+                        cm["title"],
+                        cm["image_path_channel_logo"],
+                        cm["channel_type"] == "TV",
+                        program=p,
+                    )
+                    ret.append([c.channel_id, c])
+                except Exception:
+                    logger.exception("라이브 채널 분석 중 예외: %s", cm)
         self.channel_list = OrderedDict(ret)
         return self.channel_list
 

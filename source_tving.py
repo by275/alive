@@ -7,7 +7,7 @@ import requests
 from support import SupportSC
 
 # local
-from .model import ChannelItem
+from .model import ChannelItem, ProgramItem
 from .setup import P
 from .source_base import SourceBase
 
@@ -54,13 +54,20 @@ class SourceTving(SourceBase):
         ret = []
         data = self.mod.get_live_list(list_type="live", include_drm=ModelSetting.get_bool("tving_include_drm"))
         for item in data:
-            c = ChannelItem(self.source_id, item["id"], item["title"], item["img"], True)
-            if item["is_drm"]:
-                c.is_drm = True
-            if item["block"]:
-                c.is_onair = False
-            c.current = item["episode_title"]
-            ret.append([c.channel_id, c])
+            try:
+                p = ProgramItem(title=item["episode_title"], onair=not item["block"])
+                c = ChannelItem(
+                    self.source_id,
+                    item["id"],
+                    item["title"],
+                    item["img"],
+                    True,
+                    is_drm=item["is_drm"],
+                    program=p,
+                )
+                ret.append([c.channel_id, c])
+            except Exception:
+                logger.exception("라이브 채널 분석 중 예외: %s", item)
         self.channel_list = OrderedDict(ret)
         return self.channel_list
 

@@ -2,18 +2,12 @@
     "editor.formatOnSave": false,
     "editor.minimap.enabled": false,
     "python.defaultInterpreterPath": "venv/bin/python",
-    "pylint.path": [
-        "venv/bin/pylint"
-    ],
-    "python.linting.enabled": true,
-    "python.linting.pylintEnabled": true,
-    "python.linting.pylintPath": "venv/bin/pylint",
-    "python.linting.pylintArgs": [
+    "python.languageServer": "Jedi",
+    "pylint.args": [
         "--disable",
         "C0103,C0114,C0115,C0116,C0301,C0413,C0415,W0703",
     ],
-    "python.formatting.provider": "none",
-    "python.formatting.blackArgs": [
+    "black-formatter.args": [
         "--line-length",
         "120"
     ],

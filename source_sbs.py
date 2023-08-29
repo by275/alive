@@ -1,9 +1,10 @@
 from collections import OrderedDict
+from datetime import datetime
 
 import requests
 
 # local
-from .model import ChannelItem
+from .model import ChannelItem, ProgramItem
 from .setup import P, default_headers
 from .source_base import SourceBase
 
@@ -23,15 +24,23 @@ class SourceSBS(SourceBase):
         for url in url_list:
             data = requests.get(url, timeout=30).json()
             for item in data["list"]:
-                cname = item["channelname"]
-                is_tv = item.get("type", "TV") == "TV"
-                if item["channelid"] in ["S17", "S18"]:
-                    cname += " (보는 라디오)"
-                    is_tv = True
-                c = ChannelItem(self.source_id, item["channelid"], cname, None, is_tv)
-                c.current = item["title"]
-                c.is_onair = item.get("onair_yn", "N") == "Y"
-                ret.append([c.channel_id, c])
+                try:
+                    cname = item["channelname"]
+                    is_tv = item.get("type", "TV") == "TV"
+                    if item["channelid"] in ["S17", "S18"]:
+                        cname += " (보는 라디오)"
+                        is_tv = True
+                    p = ProgramItem(
+                        title=item["title"],
+                        onair=item.get("onair_yn", "N") == "Y",
+                        stime=item["starttime"],
+                        etime=item["endtime"],
+                        image=item["thumbimg"],
+                    )
+                    c = ChannelItem(self.source_id, item["channelid"], cname, None, is_tv, program=p)
+                    ret.append([c.channel_id, c])
+                except Exception:
+                    logger.exception("라이브 채널 분석 중 예외: %s", item)
         self.channel_list = OrderedDict(ret)
         return self.channel_list
 

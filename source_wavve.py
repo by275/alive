@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from html import unescape
 from pathlib import Path
 from urllib.parse import quote
 
@@ -7,7 +8,7 @@ import requests
 from support import SupportSC
 
 # local
-from .model import ChannelItem
+from .model import ChannelItem, ProgramItem
 from .setup import P, default_headers
 from .source_base import SourceBase
 
@@ -41,10 +42,26 @@ class SourceWavve(SourceBase):
         ret = []
         data = self.mod.live_all_channels()
         for item in data["list"]:
-            img = "https://" + quote(item["tvimage"]) if item["tvimage"] != "" else ""
-            c = ChannelItem(self.source_id, item["channelid"], item["channelname"], img, item["type"] == "video")
-            c.current = item["title"]
-            c.is_onair = item["license"] == "y"
+            try:
+                p = ProgramItem(
+                    program_id=item["programid"],
+                    title=unescape(item["title"].strip()),
+                    image="https://" + quote(item["image"]) if item["image"] != "" else None,
+                    stime=item["starttime"],
+                    etime=item["endtime"],
+                    onair=item["license"] == "y",
+                    targetage=int(item["targetage"] or "0"),
+                )
+                c = ChannelItem(
+                    self.source_id,
+                    item["channelid"],
+                    item["channelname"],
+                    "https://" + quote(item["tvimage"]) if item["tvimage"] != "" else "",
+                    item["type"] == "video",
+                    program=p,
+                )
+            except Exception:
+                logger.exception("라이브 채널 분석 중 예외: %s", item)
             ret.append([c.channel_id, c])
         self.channel_list = OrderedDict(ret)
         return self.channel_list

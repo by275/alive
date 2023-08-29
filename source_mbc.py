@@ -4,7 +4,7 @@ from collections import OrderedDict
 import requests
 
 # local
-from .model import ChannelItem
+from .model import ChannelItem, ProgramItem
 from .setup import P, default_headers
 from .source_base import SourceBase
 
@@ -41,11 +41,26 @@ class SourceMBC(SourceBase):
             for item in data[cate]:
                 if item["ScheduleCode"] not in self.code:
                     continue
-                c = ChannelItem(
-                    self.source_id, self.code[item["ScheduleCode"]], item["TypeTitle"], None, cate == "TVList"
-                )
-                c.current = item["Title"]
-                ret.append([c.channel_id, c])
+                try:
+                    p = ProgramItem(
+                        title=item["Title"],
+                        image=item["OnAirImage"],
+                        stime=item["FullStartTime"],
+                        etime=item["FullEndTime"],
+                        targetage=int(item["TargetAge"] or "0"),
+                        onair=item["IsOnAirNow"] is None or bool(item["IsOnAirNow"]),
+                    )
+                    c = ChannelItem(
+                        self.source_id,
+                        self.code[item["ScheduleCode"]],
+                        item["TypeTitle"],
+                        None,
+                        cate == "TVList",
+                        program=p,
+                    )
+                    ret.append([c.channel_id, c])
+                except Exception:
+                    logger.exception("라이브 채널 분석 중 예외: %s", item)
         self.channel_list = OrderedDict(ret)
         return self.channel_list
 

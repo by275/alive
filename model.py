@@ -1,4 +1,5 @@
 from dataclasses import dataclass, asdict
+from datetime import datetime, timedelta
 
 from plugin import F  # pylint: disable=import-error
 
@@ -29,6 +30,35 @@ source_id2name = {
 
 
 @dataclass
+class ProgramItem:
+    program_id: str = None
+    title: str = ""
+    image: str = None
+    stime: datetime = None
+    etime: datetime = None
+    onair: bool = True  # 저작권 등의 이유로 방송 송출이 안되는 프로그램 표시
+    targetage: int = 0
+
+    def __setattr__(self, prop, val):
+        if prop in ["stime", "etime"] and val is not None:
+            if len(val) == 4:
+                dt = datetime.strptime(val, "%H%M")
+            elif len(val) == 5:
+                dt = datetime.strptime(val, "%H:%M")
+            elif len(val) == 14:
+                dt = datetime.strptime(val, "%Y%m%d%H%M%S")
+            else:
+                raise NotImplementedError(f"Unknown datetime format: {val}")
+            now = datetime.now().astimezone()
+            val = now.replace(hour=dt.hour, minute=dt.minute, second=0, microsecond=0)
+            if prop == "stime" and val > now + timedelta(minutes=5):
+                val += timedelta(days=-1)
+            if prop == "etime" and val < now - timedelta(minutes=5):
+                val += timedelta(days=1)
+        super().__setattr__(prop, val)
+
+
+@dataclass
 class ChannelItem:
     source: str  # source{_id}
     channel_id: str
@@ -38,10 +68,9 @@ class ChannelItem:
 
     url: str = None
     quality: str = None
+    program: ProgramItem = ProgramItem()
 
-    current: str = ""
     is_drm: bool = False  # DRM 채널 / 현재 tving만
-    is_onair: bool = True  # 저작권이나 기타 이유로 일시적 방송 송출이 안되는 채널 표기
 
     @property
     def source_name(self):

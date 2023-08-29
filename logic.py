@@ -200,7 +200,7 @@ class Logic(PluginModuleBase):
                 args = req.form.to_dict()
                 c = LogicKlive.channel_list[args["source"]][args["channel_id"]]
                 mode = "web_play" if args.get("web_play", "false") == "true" else "url"
-                data = {"url": c.svc_url(mode=mode), "title": c.current}
+                data = {"url": c.svc_url(mode=mode), "title": c.program.title}
                 return jsonify({"data": data})
             if sub == "group_list":
                 reload = req.form.get("reload", "false") == "true"
