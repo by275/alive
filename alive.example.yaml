@@ -1,0 +1,393 @@
+# 채널 그룹 정의
+
+# 문법
+# channel_group[].name = 필수. 그룹명
+# channel_group[].type = 필수. (search, regular) 만 가능
+# channel_group[].radio = 라디오 그룹인지 표시. true/false 없으면 TV 채널
+# channel_group[].keyword = type이 search인 경우 사용될 일괄 채널 검색어
+# channel_group[].channels[].name = 매칭 채널명. 필수
+# channel_group[].channels[].alias = 추가 매칭 채널명
+# channel_group[].channels[].force = 가능한 경우 강제로 해당 소스를 선택. 웨이브 티빙 같은 소스 이름을 입력
+# channel_group[].channels[].dname = 강제로 해당 이름을 선택 / EPG 매칭을 위해
+
+channel_group:
+# 비정규 검색 채널
+# 월드컵 올림픽 등 비상설 특별 채널 생길 때 이들을 모아 보는 용도
+# keyword가 없으면 name이 검색어
+- name: 2023 KBO 리그
+  type: search
+  keyword:
+
+- name: 지상파
+  type: regular
+  channels:
+  - {name: SBS}
+  - {name: KBS1, alias: [KBS 1TV, 1TV]}
+  - {name: KBS2, alias: [KBS 2TV, 2TV]}
+  - {name: MBC}
+  - {name: EBS1, alias: [EBS]}
+  - {name: EBS2}
+  - {name: OBS 경인TV, alias: [OBS]}
+  
+- name: 종합편성
+  type: regular
+  channels:
+  - {name: JTBC}
+  - {name: MBN}
+  - {name: TV 조선, alias: [TV CHOSUN]}
+  - {name: 채널A}
+
+- name: 연예/오락
+  type: regular
+  channels:
+  - {name: tvN}
+  - {name: iHQ}
+  - {name: KBS Joy}
+  - {name: E채널}
+  - {name: MBC every1}
+  - {name: JTBC2}
+  - {name: tvN DRAMA}
+  - {name: CH W, alias: [채널W]}
+  - {name: ENA PLAY}
+  - {name: ETN연예TV}
+  - {name: HQ+}
+  - {name: K STAR, alias: [K스타, k-star]}
+  - {name: KBS WORLD}
+  - {name: MBN Plus, alias: [MBN 플러스]}    
+  - {name: NQQ}
+  - {name: SBS F!L, alias: [SBS Fil]}
+  - {name: SBS funE}
+  - {name: STATV}
+  - {name: Smile TV Plus}
+  - {name: TV CHOSUN2}
+  - {name: TV 조선3}
+  - {name: WeeTV}
+  - {name: tvN SHOW}
+  - {name: XtvN}
+  - {name: 더라이프}
+  - {name: 샌드박스플러스}
+  - {name: 오르페오}
+  - {name: 이벤트TV}
+  - {name: 채널A플러스}
+  - {name: 채널S}
+  - {name: 채널S 플러스}
+  - {name: CH.DIA}
+
+- name: 스포츠
+  type: regular
+  channels:
+  - {name: SPOTV, alias: [스포티비]}
+  - {name: SPOTV ON2}
+  - {name: NBA TV}
+  - {name: MBC스포츠 플러스}
+  - {name: SBS스포츠, alias: [SBS Sports]}
+  - {name: KBS N 스포츠, alias: [KBSN SPORTS]}
+  - {name: JTBC GOLF, alias: [JTBC골프]}
+  - {name: JTBC GOLF & SPORTS, alias: [JTBC골프앤스포츠]}
+  - {name: OGN}
+  - {name: SBS골프, alias: [SBS Golf]}
+  - {name: SPOTV Golf & Health, alias: [스포티비 골프 앤 헬스]}
+  - {name: SPOTV ON}
+  - {name: SPOTV Prime}
+  - {name: SPOTV2}
+  - {name: Sky Sports}
+  - {name: tvN SPORTS}
+  - {name: 볼링플러스}
+  - {name: IB SPORTS, alias: [IB sports]}
+  - {name: GOLF&PBA}
+  - {name: 스크린골프존}
+  - {name: SBS Golf2}
+
+- name: 프로야구
+  type: search
+  channels: []
+
+- name: 드라마
+  type: regular
+  channels:
+  - {name: 에이플드라마}
+  - {name: MBC 드라마넷, alias: [MBC Drama], dname: MBC 드라마}
+  - {name: SBS플러스, alias: [SBS Plus]}
+  - {name: KBS 드라마, alias: [KBS Drama]}    
+  - {name: iHQ drama}
+  - {name: MBC ON}
+  - {name: AXN}
+  - {name: Asia N, alias: [아시아N]}
+  - {name: CH.U}
+  - {name: CHING}
+  - {name: CNTV}
+  - {name: DRAMAcube}
+  - {name: ENA}
+  - {name: ENA DRAMA}
+  - {name: TV asia Plus}
+  - {name: 디원TV}
+  - {name: 제이엔지코리아}
+  - {name: 중화TV}
+  - {name: 채널나우}
+  - {name: 채널에버}
+  - {name: 채널차이나}
+  - {name: 텔레노벨라}
+  - {name: 하이라이트TV}
+  - {name: EDGE TV}
+  - {name: PLAYY웹드라마}
+  - {name: PLAYY 중국 드라마}
+
+- name: 영화
+  type: regular
+  channels:
+  - {name: OCN}
+  - {name: OCN Movies}
+  - {name: OCN Thrills}
+  - {name: Asia M}
+  - {name: Mplex}
+  - {name: THE MOVIE}
+  - {name: UMAX}
+  - {name: UXN}
+  - {name: 스크린}
+  - {name: 월드 클래식 무비}
+  - {name: 인디필름}
+  - {name: 캐치온1}
+  - {name: 캐치온2}
+  - {name: PLAYY프리미엄, alias: [PLAYY 프리미엄 영화]}
+  - {name: PLAYY웰메이드, alias: [PLAYY 웰메이드 영화]}    
+  - {name: PLAYY액션, alias: [PLAYY 액션영화]}
+  - {name: PLAYY힐링, alias: [PLAYY 힐링 영화]}    
+  - {name: 시네마천국}
+
+- name: 음악
+  type: regular
+  channels:
+  - {name: Mnet}
+  - {name: MBC M}
+  - {name: SBS M, alias: [SBS MTV]}
+  - {name: CMTV}
+  - {name: GMTV}
+  - {name: iHQ show}
+  - {name: 아이넷 TV}
+  - {name: K POP, alias: [THE K-POP]}
+  - {name: All the K-POP, alias: [ALL THE K-POP]}
+
+- name: 어린이
+  type: regular
+  channels:
+  - {name: CBeebies}
+  - {name: EBS KIDS, alias: [EBS 키즈]}    
+  - {name: JEI 재능TV}
+  - {name: KBS KIDS}
+  - {name: Kizmom}
+  - {name: 대교어린이TV, alias: [어린이TV]}
+  - {name: 더키즈}
+  - {name: 브라보키즈}
+  - {name: 뽀요TV}
+  - {name: 애니맥스, alias: [Animax]}
+  - {name: 드림웍스 채널}
+
+- name: 만화
+  type: regular
+  channels:
+  - {name: 투니버스, alias: [Tooniverse]}
+  - {name: 챔프}
+  - {name: AniBox, alias: [애니박스, 대원방송]}
+  - {name: 카툰네트워크}
+  - {name: AniOne, alias: [애니원티비]}
+  - {name: 부메랑}
+  - {name: 애니플러스}
+
+- name: 여성/패션
+  type: regular
+  channels:
+  - {name: JTBC4}
+  - {name: tvN STORY}
+  - {name: FashionN}
+  - {name: GTV}
+  - {name: KBS Story}
+  - {name: 라이프타임, alias: [LIFETIME]}
+  - {name: 동아TV}
+
+- name: 공공/교양/종교
+  type: regular
+  channels:
+  - {name: 한국선거방송}
+  - {name: KTV 국민방송}
+  - {name: 국방TV}
+  - {name: 국회방송, alias: [국회방송(NATV)]}
+  - {name: 법률방송}
+  - {name: 복지TV}
+  - {name: 독도}
+  - {name: 국악방송}
+  - {name: 아리랑 TV}
+  - {name: ArteTV}
+  - {name: DOGTV}
+  - {name: JJC지방자치TV}
+  - {name: MBCNET}
+  - {name: MGTV, alias: [MG소비자TV]}
+  - {name: OLIFE}
+  - {name: RTV}
+  - {name: SAFE TV}
+  - {name: TBS}
+  - {name: 메디컬TV}
+  - {name: 시니어TV}
+  - {name: 실버아이TV}
+  - {name: 채널i}
+  - {name: 채널숨}
+  - {name: 채널이엠}
+  - {name: 해피독 티비}
+  - {name: 헬스메디tv}
+  - {name: OBS W}
+  - {name: BBS불교방송}
+  - {name: 원음방송}
+  - {name: BTN 불교TV, alias: [BTN]}
+  - {name: C channel}
+  - {name: CBS TV}
+  - {name: CGNTV}
+  - {name: CTS 기독교TV}
+  - {name: GOODTV}
+  - {name: STB상생방송}
+  - {name: 가톨릭 평화방송}
+
+- name: 뉴스/경제
+  type: regular
+  channels:
+  - {name: KBS24}
+  - {name: KBS NEWS D}
+  - {name: YTN}
+  - {name: 연합뉴스 TV}
+  - {name: SBS Biz}
+  - {name: 머니투데이방송, alias: [MTN]}
+  - {name: Channel News Asia}
+  - {name: 매일경제TV}
+  - {name: 서울경제TV}
+  - {name: 소상공인방송}
+  - {name: 쿠키건강TV}
+  - {name: 토마토증권통}
+  - {name: 토마토집통}
+  - {name: 한국경제TV}
+
+- name: 홈쇼핑
+  type: regular
+  channels:
+  - {name: 롯데홈쇼핑}
+  - {name: 현대홈쇼핑}
+  - {name: CJ온스타일, alias: [CJ ONSTYLE]}
+  - {name: GS SHOP, alias: [GS샵]}
+  - {name: CJ온스타일플러스, alias: [CJ온스타일＋, CJ ONSTYLE＋]}
+  - {name: NS홈쇼핑}
+  - {name: SK stoa, alias: [SK스토아]}
+  - {name: kt알파 쇼핑}
+  - {name: 공영쇼핑, alias: [공영홈쇼핑]}
+  - {name: 쇼핑엔티}
+  - {name: 홈&쇼핑, alias: [홈앤쇼핑]}
+  - {name: W 쇼핑, alias: [W쇼핑]}
+  - {name: 현대홈쇼핑+샵, alias: [현대홈쇼핑＋샵]}
+  - {name: GS마이샵, alias: [GS MY SHOP]}    
+  - {name: NS SHOP+, alias: [NS SHOP＋]}
+  - {name: 신세계TV쇼핑, alias: [신세계쇼핑]}
+  - {name: 롯데홈쇼핑 ONETV, alias: [롯데OneTV]}
+
+- name: 레저
+  type: regular
+  channels:
+  - {name: Billiards TV, alias: [빌리어즈TV, 빌리어즈티비]}
+  - {name: FISHING TV, alias: [피싱TV]}
+  - {name: FTV}
+  - {name: K바둑}
+  - {name: ONCE}
+  - {name: ONT}
+  - {name: 마운틴TV}
+  - {name: 바둑TV}
+  - {name: 브레인TV}
+  - {name: 생활체육 TV}
+  - {name: 폴라리스TV}
+
+- name: 교육
+  type: regular
+  channels:
+  - {name: EBS English, alias: [EBS English(중학3)]}
+  - {name: EBS플러스1, alias: [EBS+1, EBS플러스1(고등)]}
+  - {name: EBS플러스2, alias: [EBS+2, EBS플러스2(초등1,2)]}
+  - {name: JEI English TV}
+  - {name: OUN}
+  - {name: 플레이런TV}
+  - {name: 한국직업방송}
+
+- channels: []
+  name: EBS러닝
+  type: search
+
+- name: 다큐
+  type: regular
+  channels:
+  - {name: FUNTV}
+  - {name: KBS LIFE}
+  - {name: NBS한국농업방송}
+  - {name: YTN2}
+  - {name: YTN사이언스, alias: [사이언스TV]}
+  - {name: channel J, alias: [채널J]}
+  - {name: 내셔널지오그래픽}
+  - {name: 다문화TV}
+  - {name: 다큐원}
+  - {name: 디스커버리, alias: [Discovery, 디스커버리채널]}
+  - {name: 리얼TV}
+  - {name: 채널 뷰}
+  - {name: 히스토리채널, alias: [HISTORY, 히스토리]}
+  - {name: NAT GEO WILD, alias: [Nat Geo Wild]}
+
+- name: 해외위성
+  type: regular
+  channels:
+  - {name: Animal Planet}
+  - {name: BBC Earth}
+  - {name: BBC World 2, alias: [BBC WN, BBC World News]}
+  - {name: Bloomberg TV}
+  - {name: CCTV4}
+  - {name: CGTN}
+  - {name: CNBC}
+  - {name: CNN Int’l, alias: [CNN International, CNN Int'l]}
+  - {name: DWTV}
+  - {name: EUROSPORT}
+  - {name: NHK WORLD Premium}
+  - {name: NHK WORLD-JAPAN}
+
+- name: 라디오
+  radio: true
+  type: regular
+  channels:
+  - {name: KBS 클래식 FM, alias: [1FM]}
+  - {name: KBS CoolFM, alias: [2FM]}
+  - {name: MBCFM4U, alias: [FM4U]}
+  - {name: MBC표준FM, alias: [표준FM]}
+  - {name: SBS파워FM, alias: [POWER FM]}
+  - {name: SBS러브FM, alias: [LOVE FM]}
+  - {name: TBSFM, alias: [TBS FM LIVE]}
+  - {name: (R)원음방송}
+  - {name: Arirang}
+  - {name: BBS불교방송}
+  - {name: CBS음악FM}
+  - {name: CBS표준FM}
+  - {name: EBS교육방송, alias: [EBS FM]}
+  - {name: KBS1R, alias: [KBS1RADIO, 1라디오, KBS 1R]}    
+  - {name: KBS2R, alias: [2라디오, KBS 2R]}
+  - {name: KBS3R, alias: [3라디오, KBS 3R]}
+  - {name: KBSWorldRadio, alias: [KBS World Radio, KBS WORLD Radio CH1, KBS WORLD Radio CH2]}
+  - {name: KBS한민족, alias: [한민족방송, KBS 한민족]}
+  - {name: KFM경기방송}
+  - {name: SBS 고릴라라디오 M, alias: [GorealraM]}
+  - {name: YTNNewsFM, alias: [YTN 라디오]}
+  - {name: 경인방송}
+  - {name: 국방FM}
+  - {name: 국악방송}
+  - {name: 극동방송}
+  - {name: cpbc 가톨릭평화방송}
+  - {name: 올댓뮤직}
+
+
+priority:
+  source: [웨이브, MBC, SBS, KBS, 고정주소, 티빙]
+  name: [웨이브, 티빙, KBS, SBS, 고정주소]
+  icon: [티빙, KBS, 웨이브, SBS, 고정주소]
+
+epg:
+  # 사용하는 epg를 입력하면 매칭되는 채널 이름을 선택합니다.
+  urls: []
+  # 해당 유효시간 이후에는 epg를 다시 가져옵니다. 단위: 분
+  max_age: 60

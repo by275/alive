@@ -41,10 +41,11 @@ class ProgramItem:
 
     def __setattr__(self, prop, val):
         if prop in ["stime", "etime"] and val is not None:
-            if len(val) == 4:
+            if len(val) in [4, 5]:
+                val = val.replace(":", "")
+                if val[:2] == "24":
+                    val = "00" + val[2:]
                 dt = datetime.strptime(val, "%H%M")
-            elif len(val) == 5:
-                dt = datetime.strptime(val, "%H:%M")
             elif len(val) == 14:
                 dt = datetime.strptime(val, "%Y%m%d%H%M%S")
             else:
@@ -76,7 +77,7 @@ class ChannelItem:
     def source_name(self):
         return source_id2name.get(self.source, None)
 
-    def svc_url(self, apikey=None, ddns=None, mode="url"):
+    def svc_url(self, apikey=None, ddns=None, mode="url", for_tvh=False):
         if apikey is None:
             if SystemModelSetting.get_bool("use_apikey"):
                 apikey = SystemModelSetting.get("apikey")
@@ -85,30 +86,26 @@ class ChannelItem:
         url = url_base + f"/api/url.m3u8?m={mode}&s={self.source}&i={self.channel_id}"
         if apikey is not None:
             url += f"&apikey={apikey}"
+        if self.is_drm:
+            url = url.replace("url.m3u8", "url.mpd")
+        if for_tvh:
+            return f'pipe://ffmpeg -loglevel quiet -i "{url}" -c copy -metadata service_provider=sjva_klive -metadata service_name="{self.name}" -c:v copy -c:a aac -b:a 128k -f mpegts -tune zerolatency pipe:1'
         return url
-
-    # json = db.Column(db.JSON)
-    # created_time = db.Column(db.DateTime)
-
-    # def __repr__(self):
-    #     return repr(self.as_dict())
 
     def as_dict(self):
         return {**asdict(self), "source_name": self.source_name}
 
-    def as_m3u(self, url=None, idx=0):
-        if url is None:
-            url = self.svc_url()
-        data = (self.name, self.name, self.icon, self.source_name, idx, idx, self.name, url)
+    def as_m3u(self, **kwargs):
+        tvg_id = kwargs.setdefault("tvg_id", self.name)
+        tvg_name = kwargs.setdefault("tvg_name", self.name)
+        tvg_logo = kwargs.setdefault("tvg_logo", self.icon)
+        group_title = kwargs.setdefault("group_title", self.source_name)
+        tvg_chno = kwargs.setdefault("tvg_chno", 0)
+        tvh_chnum = kwargs.setdefault("tvh_chnum", 0)
+        display_name = kwargs.setdefault("display_name", self.name)
+        url = kwargs.setdefault("url", self.svc_url())
+
+        data = (tvg_id, tvg_name, tvg_logo, group_title, tvg_chno, tvh_chnum, display_name, url)
         if self.is_tv:
             return M3U_FORMAT % data
         return M3U_RADIO_FORMAT % data
-
-    # def as_dict(self):
-    #     ret = {x.name: getattr(self, x.name) for x in self.__table__.columns}
-    #     ret["created_time"] = self.created_time.strftime("%m-%d %H:%M:%S") if ret["created_time"] is not None else None
-    #     if self.json is not None:
-    #         ret["json"] = json.loads(ret["json"])
-    #     else:
-    #         ret["json"] = {}
-    #     return ret

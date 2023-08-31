@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block content %}
+<style type="text/css">
+  a.span {text-decoration:none !important;}
+</style>
+
+<div>
+  {{ macros.m_button_group([['list_group_reload_btn', '새로고침'], ['globalEditBtn', '설정편집', [['file', arg['alive_prefs']]]]])}}
+</div>
+
+<div class="mt-3" id="group-list">
+  <template id="group-template">
+  <h5 class="mb-1 text-truncate" style="flex: 1;" id="group-name"></h5>
+  <table class="table table-sm table-hover table-dark table-striped" abc="tableRowHover"> 
+    <thead class="thead-dark"><tr>
+      <th style="width:5%; text-align:center;"></th>
+      <th style="width:15%; text-align:left;">채널</th>
+      <th style="width:20%; text-align:left;">선택된 소스</th>
+      <th style="width:20%; text-align:left;">소스1</th>
+      <th style="width:20%; text-align:left;">소스2</th>
+      <th style="width:20%; text-align:left;">소스3</th>
+    </tr></thead>
+    <tbody id="channel-list">
+    <template id="channel-template"><tr id="src-list">
+      <td scope="col" style="width:5%; text-align:center;" id="channel-idx"></td>
+      <td scope="col" style="width:15%; text-align:left;" id="channel-name"></td>
+      
+      <template id="src-template">
+      <td scope="col" style="width:20%; text-align:left;">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=" width="15" height="15" title="" id="src-ico">
+        <a href="#" id="src-link" rel="noopener noreferrer" target="_blank">
+          <span class="text ml-1" title="" id="src-name"></span>
+        </a>
+        {# <p class="mt-1 mb-0 small text-center">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=" alt="" title="" id="src-logo" style="max-height:20px;">
+        </p> #}
+      </td></template>
+      </tr>
+    </template>
+    </tbody>
+  </table>
+  </template>
+</div>
+
+
+<script type="text/javascript">
+
+var groupTemplate = document.querySelector('#group-template');
+var groupScroller = document.querySelector('#group-list');
+
+$(document).ready(function() {
+  load_group_list(false);
+});
+
+function load_group_list(reload) {
+  reset_group_list('로딩중...');
+  $.ajax({
+    url: `/${PACKAGE_NAME}/ajax/group_list`,
+    type: "POST",
+    cache: false,
+    data: {reload: reload},
+    dataType: "json",
+    success: function (data) {
+      {# $('#list_info').html(`마지막 업데이트: ${data.updated_at}`); #}
+      make_group_list(data.list);
+    }
+  });
+}
+
+$("body").on('click', '#list_group_reload_btn', function(e) {
+  e.preventDefault();
+  load_group_list(true)
+});
+
+function make_group_list(groups) {
+  reset_group_list();
+
+  for (var i = 0; i < groups.length; i++) {
+    if (groups[i].channels.length < 1) {
+      continue;
+    }
+    let group_clone = groupTemplate.content.cloneNode(true);
+    group_clone.querySelector('#group-name').innerHTML = groups[i].name;
+
+    let channels = groups[i].channels;
+    var channelTemplate = group_clone.querySelector('#channel-template');
+    var channelScroller = group_clone.querySelector('#channel-list');
+    count = 0;
+    for (var j = 0; j < channels.length; j++) {
+      if (channels[j].srcs.length < 1) {
+        continue;
+      }
+      let channel_clone = channelTemplate.content.cloneNode(true);
+      channel_clone.querySelector('#channel-idx').innerHTML = parseInt(count)+1;
+      channel_clone.querySelector('#channel-name').innerHTML = channels[j].name;
+
+      var srcTemplate = channel_clone.querySelector('#src-template');
+      var srcScroller = channel_clone.querySelector('#src-list');
+      
+      // for selected src
+      let src_selected = srcTemplate.content.cloneNode(true);
+      
+      if (channels[j].src === undefined) {
+        console.log(channels[j]);
+        srcScroller.appendChild(src_selected);
+      } else {
+        render_channel_source(src_selected, channels[j].src, srcScroller);
+      }
+
+      let srcs = channels[j].srcs;
+      for (var k = 0; k <srcs.length; k++) {
+        let src_clone = srcTemplate.content.cloneNode(true);
+        
+        let src = srcs[k];
+        render_channel_source(src_clone, src, srcScroller);
+        if (k>2) { break; };
+      }
+      channelScroller.appendChild(channel_clone);
+      count++;
+    }
+
+    if (count>0) groupScroller.appendChild(group_clone);
+  }
+}
+
+function render_channel_source(clone, channel_source, scroller) {
+  clone.querySelector('#src-link').dataset.source = channel_source.source;
+  clone.querySelector('#src-link').dataset.id = channel_source.channel_id;
+  clone.querySelector('#src-name').innerHTML = channel_source.name;
+  clone.querySelector('#src-name').title = channel_source.name;
+  if (channel_source.source === "wavve") {    
+    clone.querySelector('#src-ico').src = "https://www.wavve.com/favicon.ico";
+  } else if (channel_source.source === "mbc") {
+    clone.querySelector('#src-ico').src = "https://img.imbc.com/2010_main/images/favi2018.ico";
+  } else if (channel_source.source === "tving") {
+    clone.querySelector('#src-ico').src = "https://www.tving.com/favicon.ico";
+  } else if (channel_source.source === "kbs") {
+    clone.querySelector('#src-ico').src = "https://static.kbs.co.kr/www/20230830113022/resources/images/favicon/favicon.ico";
+  } else if (channel_source.source === "sbs") {
+    clone.querySelector('#src-ico').src = "https://www.sbs.co.kr/favicon.ico";
+  } else if (channel_source.source === "youtubedl") {
+    clone.querySelector('#src-ico').src = 'https://www.youtube.com/s/desktop/0e9d1cf9/img/favicon.ico';
+  } else if (channel_source.source === "streamlink") {
+    clone.querySelector('#src-ico').src = 'https://avatars.githubusercontent.com/u/22243823?s=48&v=4';
+  }
+  clone.querySelector('#src-ico').title = channel_source.source_name;
+  {# if (channel_source.icon !== "" && channel_source.icon != null) {
+    clone.querySelector('#src-logo').src = channel_source.icon;
+  } #}
+  scroller.appendChild(clone);
+}
+
+function reset_group_list(msg='') {
+  groupScroller.querySelectorAll('h5').forEach(e => e.remove());
+  groupScroller.querySelectorAll('table').forEach(e => e.remove());
+  if (msg != null && msg != '') {
+    groupScroller.insertAdjacentHTML('beforeend', `<h5>${msg}</h5>`);
+  }
+}
+
+function get_play_url(source, channel_id, web_play, callback) {
+  console.log({source: source, channel_id: channel_id, web_play: web_play});
+  $.ajax({
+    url: `/${PACKAGE_NAME}/ajax/play_url`,
+    type: "POST",
+    cache: false,
+    data: {source: source, channel_id: channel_id, web_play: web_play},
+    dataType: "json",
+    success: function (ret) {
+      callback(ret);
+    }
+  });
+}
+
+$("body").on('click', '#src-link', function(e){
+  e.preventDefault();
+  get_play_url($(this).data('source'), $(this).data('id'), false, function(ret) {
+    if (ret.data == null) {
+      notify('에러', 'danger');
+      return;
+    }
+    var w = window.open();
+    w.location = ret.data.url;
+    w.onload = function() { this.document.title = ret.data.title; }
+  });
+});
+
+</script>
+{% endblock %}

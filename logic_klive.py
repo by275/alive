@@ -125,9 +125,7 @@ class LogicKlive:
             ddns = SystemModelSetting.get("ddns")
             for c in cls.get_channel_list():
                 url = c.svc_url(apikey=apikey, ddns=ddns)
-                if c.is_drm:
-                    url = url.replace("url.m3u8", "url.mpd")
-                m3u.append(c.as_m3u(url, idx))
+                m3u.append(c.as_m3u(url=url, tvg_chno=idx, tvh_chnum=idx))
                 idx += 1
         except Exception:
             logger.exception("Exception:")

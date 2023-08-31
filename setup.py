@@ -4,7 +4,7 @@ __menu = {
     "list": [
         {"uri": "setting", "name": "설정"},
         {"uri": "list", "name": "전체채널"},
-        {"uri": "group", "name": "채널그룹 (작업중)"},
+        {"uri": "group", "name": "채널그룹"},
         {"uri": "log", "name": "로그"},
     ],
 }

@@ -3,8 +3,10 @@ import platform
 import subprocess
 import threading
 import time
+import shutil
 from copy import deepcopy
 from datetime import datetime
+from pathlib import Path
 from urllib.parse import unquote
 
 import requests
@@ -19,7 +21,7 @@ SystemModelSetting = F.SystemModelSetting
 
 
 # local
-# from .logic_alive import LogicAlive
+from .logic_alive import LogicAlive
 from .logic_klive import LogicKlive
 from .setup import P, default_headers
 
@@ -87,6 +89,8 @@ class Logic(PluginModuleBase):
     db_default = {
         "channel_list_updated_at": "1970-01-01T00:00:00",
         "channel_list_max_age": "60",  # minutes
+        "channel_list_on_plugin_load": "False",
+        "epg_updated_at": "1970-01-01T00:00:00",
         # wavve
         "use_wavve": "False",
         "wavve_quality": "HD",
@@ -131,11 +135,12 @@ class Logic(PluginModuleBase):
         self.process_list = []  # TODO
 
     def plugin_load(self):
-        try:
+        alive_prefs = Path(F.path_data).joinpath("db", "alive.yaml")
+        if not alive_prefs.exists():
+            shutil.copyfile(Path(__file__).with_name("alive.example.yaml"), alive_prefs)
+        if ModelSetting.get_bool("channel_list_on_plugin_load"):
             t = threading.Thread(target=LogicKlive.get_channel_list, args=(), daemon=True)
             t.start()
-        except Exception:
-            logger.exception("플러그인 로딩 중 예외:")
 
     def plugin_unload(self):
         try:
@@ -147,6 +152,8 @@ class Logic(PluginModuleBase):
                     for proc in process.children(recursive=True):
                         proc.kill()
                     process.kill()
+        except ImportError:
+            pass
         except Exception:
             logger.exception("플러그인 종료 중 예외:")
 
@@ -157,9 +164,6 @@ class Logic(PluginModuleBase):
         apikey = SystemModelSetting.get("apikey")
         try:
             arg["package_name"] = package_name
-            arg["ddns"] = ddns
-            arg["use_apikey"] = str(use_apikey)
-            arg["apikey"] = apikey
             if sub == "setting":
                 url_base = f"{ddns}/{package_name}"
                 arg["api_m3u"] = url_base + "/api/m3u"
@@ -179,6 +183,8 @@ class Logic(PluginModuleBase):
                 arg["tmp_is_youtubedl_installed"] = "Installed" if SourceYoutubedl.is_installed() else "Not Installed"
             if sub == "proxy":
                 return redirect(f"/{package_name}/proxy/discover.json")
+            if sub == "group":
+                arg["alive_prefs"] = str(Path(F.path_data).joinpath("db", "alive.yaml"))
             return render_template(f"{package_name}_{sub}.html", sub=sub, arg=arg)
         except Exception:
             logger.exception("메뉴 처리 중 예외:")
@@ -221,17 +227,12 @@ class Logic(PluginModuleBase):
                 source = req.args.get("s")
                 channel_id = req.args.get("i")
                 quality = req.args.get("q")
-                priority = req.args.get("p", "N") == "Y"
                 # logger.debug("m=%s, s=%s, i=%s, q=%s", mode, source, channel_id, quality)
 
                 if mode == "plex":
                     return Response(generate(req.url.replace("m=plex", "m=url")), mimetype="video/MP2T")
 
-                if priority:
-                    logger.error("this is priority")
-                    action, ret = LogicAlive.get_url(source, channel_id, mode, quality=quality)
-                else:
-                    action, ret = LogicKlive.get_url(source, channel_id, mode, quality=quality)
+                action, ret = LogicKlive.get_url(source, channel_id, mode, quality=quality)
                 # logger.debug("action:%s, url:%s", action, ret)
 
                 if ret is None:
@@ -253,23 +254,17 @@ class Logic(PluginModuleBase):
                 if mode == "lc":
                     return ret
             elif sub == "m3uall":
-                return LogicKlive.get_m3uall()
-            # elif sub == "m3u":
-            #     data = LogicKlive.get_m3u(
-            #         m3u_format=request.args.get("format"), group=request.args.get("group"), call=request.args.get("call")
-            #     )
-            #     if request.args.get("file") == "true":
-            #         import framework.common.util as CommonUtil
-
-            #         basename = "klive_custom.m3u"
-            #         filename = os.path.join(path_data, "tmp", basename)
-            #         CommonUtil.write_file(data, filename)
-            #         return send_file(filename, as_attachment=True, attachment_filename=basename)
-            #     return data
-            # elif sub == "m3utvh":
-            #     return LogicKlive.get_m3u(
-            #         for_tvh=True, m3u_format=request.args.get("format"), group=request.args.get("group")
-            #     )
+                m3u = LogicKlive.get_m3uall()
+                r = Response(m3u, content_type="audio/mpegurl")
+                return r, 200
+            elif sub == "m3u":
+                m3u = LogicAlive.get_m3u()
+                r = Response(m3u, content_type="audio/mpegurl")
+                return r, 200
+            elif sub == "m3utvh":
+                m3u = LogicAlive.get_m3u(for_tvh=True)
+                r = Response(m3u, content_type="audio/mpegurl")
+                return r, 200
             elif sub == "redirect":
                 # SJVA 사용
                 url = request.args.get("url")
