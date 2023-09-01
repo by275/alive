@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.parse import unquote
 
 import requests
-from flask import Response, jsonify, redirect, render_template, request, send_file, stream_with_context, abort
+from flask import Response, jsonify, redirect, render_template, request, stream_with_context, abort
 
 from plugin import F, PluginModuleBase  # pylint: disable=import-error
 
@@ -67,8 +67,6 @@ def generate(url):
 
     # logger.debug('command : %s', ffmpeg_command)
     with subprocess.Popen(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=-1) as proc:
-        # global process_list
-        # process_list.append(proc)
         while True:
             line = proc.stdout.read(1024)
             buffer.append(line)
@@ -127,12 +125,11 @@ class Logic(PluginModuleBase):
         "fix_url_list": "1|CBS 음악FM|http://aac.cbs.co.kr/cbs939/_definst_/cbs939.stream/playlist.m3u8|N\n2|CBS 표준FM|http://aac.cbs.co.kr/cbs981/_definst_/cbs981.stream/playlist.m3u8|N\n3|국방TV|http://mediaworks.dema.mil.kr:1935/live_edge/cudo.sdp/playlist.m3u8|Y",
         # etc
         "use_plex_proxy": "False",
+        "plex_proxy_host": "",
     }
-    process_list: list = None  # TODO
 
     def __init__(self, PM):
         super().__init__(PM, None)
-        self.process_list = []  # TODO
 
     def plugin_load(self):
         alive_prefs = Path(F.path_data).joinpath("db", "alive.yaml")
@@ -141,21 +138,6 @@ class Logic(PluginModuleBase):
         if ModelSetting.get_bool("channel_list_on_plugin_load"):
             t = threading.Thread(target=LogicKlive.get_channel_list, args=(), daemon=True)
             t.start()
-
-    def plugin_unload(self):
-        try:
-            import psutil
-
-            for p in self.process_list:
-                if p is not None and p.poll() is None:
-                    process = psutil.Process(p.pid)
-                    for proc in process.children(recursive=True):
-                        proc.kill()
-                    process.kill()
-        except ImportError:
-            pass
-        except Exception:
-            logger.exception("플러그인 종료 중 예외:")
 
     def process_menu(self, sub, req):
         arg = ModelSetting.to_dict()
@@ -177,10 +159,10 @@ class Logic(PluginModuleBase):
 
                 from .source_streamlink import SourceStreamlink
 
-                arg["tmp_is_streamlink_installed"] = "Installed" if SourceStreamlink.is_installed() else "Not Installed"
+                arg["is_streamlink_installed"] = "Installed" if SourceStreamlink.is_installed() else "Not Installed"
                 from .source_youtubedl import SourceYoutubedl
 
-                arg["tmp_is_youtubedl_installed"] = "Installed" if SourceYoutubedl.is_installed() else "Not Installed"
+                arg["is_youtubedl_installed"] = "Installed" if SourceYoutubedl.is_installed() else "Not Installed"
             if sub == "proxy":
                 return redirect(f"/{package_name}/proxy/discover.json")
             if sub == "group":
@@ -337,15 +319,16 @@ class Logic(PluginModuleBase):
 # Proxy
 #########################################################
 @blueprint.route("/proxy/<sub>", methods=["GET", "POST"])
-def proxy(sub):
-    logger.debug("proxy %s %s", package_name, sub)
+def plex_proxy(sub):
+    logger.debug("proxy %s", sub)
     if not ModelSetting.get_bool("use_plex_proxy"):
         abort(403)
-    # if request.host != "k.live":
-    #     abort(403)
+    allowed_host = ModelSetting.get("plex_proxy_host").strip()
+    if allowed_host and allowed_host != request.host:
+        logger.debug("request host %s does not match with allowed host: %s", request.host, allowed_host)
+        abort(403)
     try:
         if sub == "discover.json":
-            ddns = SystemModelSetting.get("ddns")
             data = {
                 "FriendlyName": "HDHomeRun CONNECT",
                 "ModelNumber": "HDHR4-2US",
@@ -363,29 +346,22 @@ def proxy(sub):
             return jsonify(data)
         if sub == "lineup.json":
             lineup = []
-            custom_list = LogicKlive.get_saved_custom_instance()
-            ddns = SystemModelSetting.get("ddns")
+            guide_num = 1
             apikey = None
-            if SystemModelSetting.get_bool("auth_use_apikey"):
-                apikey = SystemModelSetting.get("auth_apikey")
-            for c in custom_list:
-                tmp = c.get_m3u8(ddns, "plex", apikey)
-                lineup.append({"GuideNumber": str(c.number), "GuideName": c.title, "URL": tmp})
-            # lineup = []
-            # guide_num = 1
-            # if channel_group_json.exists():
-            #     with open(channel_group_json, "r", encoding="utf-8") as fp:
-            #         channel_group = json.load(fp)
-            #         for group in channel_group:
-            #             if group["type"] == "nogroup":
-            #                 continue
-            #             for c in group["channels"]:
-            #                 if not c.get("m3u", []):
-            #                     continue
-            #                 _, name, _, _, _, _, _, url = c["m3u"]
-            #                 tmp = url.replace("&apikey", "&q=default&apikey").replace("m=url", "m=plex")
-            #                 lineup.append({"GuideNumber": str(guide_num), "GuideName": name, "URL": tmp})
-            #                 guide_num += 1
+            if SystemModelSetting.get_bool("use_apikey"):
+                apikey = SystemModelSetting.get("apikey")
+            ddns = SystemModelSetting.get("ddns")
+            for group in LogicAlive.get_group_list(reload=True):
+                if group["type"] == "nogroup":
+                    continue
+                for c in group["channels"]:
+                    if not c.get("src"):
+                        continue
+                    s = c["src"]
+                    url = s.svc_url(apikey=apikey, ddns=ddns, mode="plex")
+                    url = url.replace("&apikey", "&q=default&apikey")
+                    lineup.append({"GuideNumber": str(guide_num), "GuideName": s.name, "URL": url})
+                    guide_num += 1
             return jsonify(lineup)
     except Exception:
         logger.exception("Exception proxing for plex:")

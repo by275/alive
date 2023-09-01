@@ -11,7 +11,7 @@ try:
 except ImportError:
     from yaml import Loader
 
-from plugin import F
+from plugin import F  # pylint: disable=import-error
 
 SystemModelSetting = F.SystemModelSetting
 
@@ -78,24 +78,6 @@ def load_yaml(file):
     except TypeError:
         with open(file, "r", encoding="utf-8") as fp:
             return yaml.load(fp, Loader=Loader)
-
-
-def get_circled_name(source):
-    source_map = {
-        "KBS": "k",
-        "SBS": "s",
-        "MBC": "m",
-        "웨이브": "w",
-        "티빙": "t",
-        "고정주소": "f",
-        "YoutubeDL": "y",
-        "StreamLink": "l",
-        "네이버TV": "n",
-        "카카오TV": "o",
-    }
-    alphabet = source_map.get(source, "x").lower()
-    circled_alphabet = "ⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"
-    return circled_alphabet[ord(alphabet) - ord("a")]
 
 
 class LogicAlive:
@@ -251,9 +233,7 @@ class LogicAlive:
                 s = c["src"]
                 kwargs = {
                     "url": s.svc_url(apikey=apikey, ddns=ddns, for_tvh=for_tvh),
-                    "display_name": s.name
-                    if group["type"] == "nogroup"
-                    else f"{get_circled_name(s.source_name)} {s.name}",
+                    "display_name": s.name if group["type"] == "nogroup" else f"{s.source_char} {s.name}",
                     "tvg_chno": idx,
                     "tvh_chnum": idx,
                     "group_title": group["name"],

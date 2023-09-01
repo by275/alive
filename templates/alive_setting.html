@@ -61,7 +61,7 @@
     {{ macros.m_tab_content_start('youtubedl', false) }}
       {{ macros.setting_checkbox('use_youtubedl', 'Youtube-dl', value=arg['use_youtubedl'], desc=['pip install yt-dlp로 직접 설치 후 사용']) }}
       <div id="use_youtubedl_div" class="collapse">
-        {{ macros.info_text('tmp_is_youtubedl_installed', '설치상태', value=arg['tmp_is_youtubedl_installed']) }}
+        {{ macros.info_text('is_youtubedl_installed', '설치상태', value=arg['is_youtubedl_installed']) }}
         {{ macros.setting_checkbox('youtubedl_use_proxy', 'Proxy 사용', value=arg['youtubedl_use_proxy'], desc=['URL을 얻을 때만 사용']) }}
         {{ macros.setting_input_text('youtubedl_proxy_url', 'Proxy URL', value=arg['youtubedl_proxy_url'], desc=['참고 : https://www.proxynova.com/proxy-server-list/country-kr']) }}
         {{ macros.setting_input_textarea_wide('youtubedl_list', '채널 목록', desc=['형식 : 채널ID|채널이름|채널URL', '채널별 구분자 Enter'], value=arg['youtubedl_list'], row='20') }}
@@ -71,7 +71,7 @@
     {{ macros.m_tab_content_start('streamlink', false) }}
       {{ macros.setting_checkbox('use_streamlink', 'Streamlink', value=arg['use_streamlink'], desc=['pip install streamlink로 직접 설치 후 사용']) }}
       <div id="use_streamlink_div" class="collapse">
-        {{ macros.info_text('tmp_is_streamlink_installed', '설치상태', value=arg['tmp_is_streamlink_installed']) }}
+        {{ macros.info_text('is_streamlink_installed', '설치상태', value=arg['is_streamlink_installed']) }}
         {{ macros.setting_input_text('streamlink_quality', 'streamlink 화질', col='3', value=arg['streamlink_quality']) }}
         {{ macros.setting_input_textarea_wide('streamlink_list', '채널 목록', desc=['형식 : 채널ID|채널이름|채널URL', '채널별 구분자 Enter'], value=arg['streamlink_list'], row='20') }}
       </div>
@@ -101,11 +101,12 @@
 
     {{ macros.m_tab_content_start('api', false) }}
       {{ macros.info_text_go_buttons('api_m3u', 'M3U', [['globalCliboardBtn','클립보드에 복사', [['text', arg['api_m3u']]]]], value=arg['api_m3u'], desc=['채널 그룹에 대한 M3U']) }}
-      {{ macros.info_text_go_buttons('api_m3utvh', 'M3U for Tvheadend', [['globalCliboardBtn','클립보드에 복사', [['text', arg['api_m3utvh']]]]], value=arg['api_m3utvh'], desc=['Tvheadend 채널 등록시 사용하는 M3U']) }}
-      {{ macros.info_text_go_buttons('api_m3uall', 'M3U all', [['globalCliboardBtn','클립보드에 복사', [['text', arg['api_m3uall']]]]], value=arg['api_m3uall'], desc=['전체 채널에 대한 M3U']) }}
-      {{ macros.setting_checkbox('use_plex_proxy', 'Plex Proxy API 사용', value=arg['use_plex_proxy'], desc=['On: Plex Proxy API 사용.', '/klive/proxy/lineup.json 주소를 통한 apikey 노출 됨.']) }}
+      {{ macros.info_text_go_buttons('api_m3utvh', 'M3U for Tvh', [['globalCliboardBtn','클립보드에 복사', [['text', arg['api_m3utvh']]]]], value=arg['api_m3utvh'], desc=['Tvheadend 채널 등록시 사용하는 M3U']) }}
+      {{ macros.info_text_go_buttons('api_m3uall', 'M3U for All', [['globalCliboardBtn','클립보드에 복사', [['text', arg['api_m3uall']]]]], value=arg['api_m3uall'], desc=['전체 채널에 대한 M3U']) }}
+      {{ macros.setting_checkbox('use_plex_proxy', 'Plex Proxy 사용', value=arg['use_plex_proxy'], desc=['On: Plex Proxy 사용.', '/alive/proxy/lineup.json 주소를 통한 apikey 노출 됨.']) }}
       <div id="use_plex_proxy_div" class="collapse">
-        {{ macros.info_text_go('plex_proxy', 'Plex Proxy', value=arg['plex_proxy']) }}
+        {{ macros.setting_input_text('plex_proxy_host', 'Plex Proxy Host', value=arg['plex_proxy_host'], desc=['요청 헤더의 값과 일치할 때만 연결합니다. 비워두면 제한 없음.']) }}
+        {{ macros.info_text_go_buttons('plex_proxy', 'Plex Proxy', [['globalCliboardBtn','클립보드에 복사', [['text', arg['plex_proxy']]]]], value=arg['plex_proxy']) }}
       </div>
     {{ macros.m_tab_content_end() }}
     </form>
@@ -114,8 +115,8 @@
 <script type="text/javascript">
 var package_name = "{{ arg['package_name'] }}";
 var current_data = null;
-var youtubedl_installed = "{{ arg['tmp_is_youtubedl_installed'] }}"  == 'Installed' ? true : false;
-var streamlink_installed = "{{ arg['tmp_is_streamlink_installed'] }}"  == 'Installed' ? true : false;
+var youtubedl_installed = "{{ arg['is_youtubedl_installed'] }}"  == 'Installed' ? true : false;
+var streamlink_installed = "{{ arg['is_streamlink_installed'] }}"  == 'Installed' ? true : false;
 
 
 $(document).ready(function(){

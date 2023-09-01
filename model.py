@@ -18,15 +18,28 @@ M3U_RADIO_FORMAT = '#EXTINF:-1 tvg-id="%s" tvg-name="%s" tvg-logo="%s" group-tit
 source_id2name = {
     "wavve": "웨이브",
     "tving": "티빙",
+    "kbs": "KBS",
+    "mbc": "MBC",
+    "sbs": "SBS",
     "youtubedl": "YoutubeDL",
     "streamlink": "StreamLink",
     "navertv": "네이버TV",
     "kakaotv": "카카오TV",
     "fix_url": "고정주소",
-    "kbs": "KBS",
-    "sbs": "SBS",
-    "mbc": "MBC",
 }
+source_id2char = {
+    "wavve": "w",
+    "tving": "t",
+    "kbs": "k",
+    "mbc": "m",
+    "sbs": "s",
+    "youtubedl": "y",
+    "streamlink": "l",
+    "navertv": "n",
+    "kakaotv": "o",
+    "fix_url": "f",
+}
+circled_alphabet = "ⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"
 
 
 @dataclass
@@ -76,6 +89,11 @@ class ChannelItem:
     @property
     def source_name(self):
         return source_id2name.get(self.source, None)
+
+    @property
+    def source_char(self):
+        char = source_id2char.get(self.source, "x").lower()
+        return circled_alphabet[ord(char) - ord("a")]
 
     def svc_url(self, apikey=None, ddns=None, mode="url", for_tvh=False):
         if apikey is None:
