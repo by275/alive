@@ -5,11 +5,11 @@ from urllib.parse import quote
 
 import requests
 
-from support import SupportSC
+from support import SupportSC  # pylint: disable=import-error
 
 # local
 from .model import ChannelItem, ProgramItem
-from .setup import P, default_headers
+from .setup import P
 from .source_base import SourceBase
 
 logger = P.logger
@@ -32,11 +32,18 @@ class SourceWavve(SourceBase):
             logger.exception("Support Module 로딩 중 예외:")
 
     def load_support_module(self):
-        if Path(__file__).parent.joinpath("wavve.py").is_file():
-            from . import wavve as Wavve
+        if Path(__file__).with_name("wavve.py").is_file():
+            from .wavve import SupportWavve as mod
+        else:
+            mod = SupportSC.load_module_f(__file__, "wavve").SupportWavve
+        from support_site.setup import P as SS  # pylint: disable=import-error
 
-            return Wavve
-        return SupportSC.load_module_f(__file__, "wavve")
+        mod.initialize(
+            SS.ModelSetting.get("site_wavve_credential"),
+            SS.ModelSetting.get_bool("site_wavve_use_proxy"),
+            SS.ModelSetting.get("site_wavve_proxy_url"),
+        )
+        return mod
 
     def get_channel_list(self):
         ret = []
@@ -83,7 +90,7 @@ class SourceWavve(SourceBase):
         return "return_after_read", surl
 
     def get_return_data(self, url, mode=None):
-        data = requests.get(url, proxies=self.mod.get_proxies(), headers=default_headers, timeout=10).text
+        data = requests.get(url, proxies=self.mod.proxies, headers=self.mod.headers, timeout=10).text
         prefix = url.split("?")[0].rsplit("/", 1)[0]
         new_lines = []
         for line in data.splitlines():
@@ -94,4 +101,4 @@ class SourceWavve(SourceBase):
         new_lines = "\n".join(new_lines)
         if ModelSetting.get("wavve_streaming_type") == "direct":
             return new_lines
-        return self.change_redirect_data(new_lines, proxy=self.mod.get_proxy())
+        return self.change_redirect_data(new_lines, proxy=self.mod.proxy)

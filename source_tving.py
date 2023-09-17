@@ -44,7 +44,7 @@ class SourceTving(SourceBase):
             proxy = SS.ModelSetting.get("site_tving_proxy_url")
         deviceid = SS.ModelSetting.get("site_tving_deviceid")
 
-        if Path(__file__).parent.joinpath("tving.py").is_file():
+        if Path(__file__).with_name("tving.py").is_file():
             from .tving import SupportTving
 
             return SupportTving(token=token, proxy=proxy, deviceid=deviceid)
