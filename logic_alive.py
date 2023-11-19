@@ -219,7 +219,7 @@ class LogicAlive:
         return cls.group_list
 
     @classmethod
-    def get_m3u(cls, for_tvh=False):
+    def get_m3u(cls, src_char: bool = False, for_tvh: bool = False):
         idx = 1
         m3u = ["#EXTM3U\n"]
         apikey = None
@@ -231,9 +231,10 @@ class LogicAlive:
                 if not c.get("src"):
                     continue
                 s = c["src"]
+                dname = s.name if group["type"] == "nogroup" or not src_char else f"{s.source_char} {s.name}"
                 kwargs = {
                     "url": s.svc_url(apikey=apikey, ddns=ddns, for_tvh=for_tvh),
-                    "display_name": s.name if group["type"] == "nogroup" else f"{s.source_char} {s.name}",
+                    "display_name": dname,
                     "tvg_chno": idx,
                     "tvh_chnum": idx,
                     "group_title": group["name"],

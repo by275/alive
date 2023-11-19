@@ -1,17 +1,16 @@
 import os
 import platform
+import shutil
 import subprocess
 import threading
 import time
-import shutil
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import unquote
 
 import requests
-from flask import Response, jsonify, redirect, render_template, request, stream_with_context, abort
-
+from flask import Response, abort, jsonify, redirect, render_template, request, stream_with_context
 from plugin import F, PluginModuleBase  # pylint: disable=import-error
 
 db = F.db
@@ -240,11 +239,13 @@ class Logic(PluginModuleBase):
                 r = Response(m3u, content_type="audio/mpegurl")
                 return r, 200
             elif sub == "m3u":
-                m3u = LogicAlive.get_m3u()
+                src_char = req.args.get("srcChar", "").lower() == "y"
+                m3u = LogicAlive.get_m3u(src_char=src_char)
                 r = Response(m3u, content_type="audio/mpegurl")
                 return r, 200
             elif sub == "m3utvh":
-                m3u = LogicAlive.get_m3u(for_tvh=True)
+                src_char = req.args.get("srcChar", "").lower() == "y"
+                m3u = LogicAlive.get_m3u(src_char=src_char, for_tvh=True)
                 r = Response(m3u, content_type="audio/mpegurl")
                 return r, 200
             elif sub == "redirect":
