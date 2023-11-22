@@ -77,8 +77,11 @@ class LogicKlive:
     def should_reload_channel_list(cls, reload) -> bool:
         if not cls.channel_list or reload:
             return True
+        channel_list_max_age = ModelSetting.get_int("channel_list_max_age")
+        if channel_list_max_age <= 0:
+            return False
         updated_at = datetime.fromisoformat(ModelSetting.get("channel_list_updated_at"))
-        if (datetime.now() - updated_at).total_seconds() > ModelSetting.get_int("channel_list_max_age") * 60:
+        if (datetime.now() - updated_at).total_seconds() > channel_list_max_age * 60:
             return True
         return False
 
