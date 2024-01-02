@@ -5,6 +5,7 @@
 # channel_group[].type = 필수. (search, regular) 만 가능
 # channel_group[].radio = 라디오 그룹인지 표시. true/false 없으면 TV 채널
 # channel_group[].keyword = type이 search인 경우 사용될 일괄 채널 검색어
+# channel_group[].no_m3u = 해당 그룹을 m3u에 노출시키고 싶지 않을 때 true나 false로 입력
 # channel_group[].channels[].name = 매칭 채널명. 필수
 # channel_group[].channels[].alias = 추가 매칭 채널명
 # channel_group[].channels[].force = 가능한 경우 강제로 해당 소스를 선택. 웨이브 티빙 같은 소스 이름을 입력
@@ -380,6 +381,12 @@ channel_group:
   - {name: cpbc 가톨릭평화방송}
   - {name: 올댓뮤직}
 
+
+no_m3u:
+  # 라디오 그룹을 일괄 m3u에 노출하고 싶지 않을 때
+  if_radio_group: false
+  # 분류되지 않고 남은 그룹을 노출하고 싶지 않을 때
+  if_no_group: false
 
 priority:
   source: [웨이브, MBC, SBS, KBS, 고정주소, 티빙]

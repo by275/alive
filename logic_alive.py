@@ -227,6 +227,13 @@ class LogicAlive:
             apikey = SystemModelSetting.get("apikey")
         ddns = SystemModelSetting.get("ddns")
         for group in cls.get_group_list(reload=True):
+            # 제외 설정
+            if group.get("no_m3u", False):
+                continue
+            if cls.prefs.get("no_m3u", {}).get("if_radio_group", False) and group.get("radio", False):
+                continue
+            if cls.prefs.get("no_m3u", {}).get("if_no_group", False) and group["type"] == "nogroup":
+                continue
             for c in group["channels"]:
                 if not c.get("src"):
                     continue
