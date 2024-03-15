@@ -1,6 +1,4 @@
-import time
 from collections import OrderedDict
-from functools import lru_cache
 from html import unescape
 from pathlib import Path
 from typing import Tuple
@@ -12,22 +10,11 @@ from support import SupportSC  # pylint: disable=import-error
 # local
 from .model import ChannelItem, ProgramItem
 from .setup import P
-from .source_base import SourceBase
+from .source_base import SourceBase, ttl_cache
 
 logger = P.logger
 package_name = P.package_name
 ModelSetting = P.ModelSetting
-
-
-def ttl_cache(seconds: int, maxsize: int = 128):
-    def wrapper(func):
-        @lru_cache(maxsize)
-        def inner(__ttl, *args, **kwargs):
-            return func(*args, **kwargs)
-
-        return lambda *args, **kwargs: inner(time.time() // seconds, *args, **kwargs)
-
-    return wrapper
 
 
 class SourceWavve(SourceBase):

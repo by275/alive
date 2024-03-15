@@ -1,5 +1,7 @@
 import re
+import time
 from collections import OrderedDict
+from functools import lru_cache
 from urllib.parse import quote
 
 import requests
@@ -13,6 +15,17 @@ from .setup import P, default_headers
 logger = P.logger
 package_name = P.package_name
 ModelSetting = P.ModelSetting
+
+
+def ttl_cache(seconds: int, maxsize: int = 128):
+    def wrapper(func):
+        @lru_cache(maxsize)
+        def inner(__ttl, *args, **kwargs):
+            return func(*args, **kwargs)
+
+        return lambda *args, **kwargs: inner(time.time() // seconds, *args, **kwargs)
+
+    return wrapper
 
 
 class SourceBase:

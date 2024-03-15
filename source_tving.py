@@ -3,13 +3,12 @@ from collections import OrderedDict
 from pathlib import Path
 
 import requests
-
-from support import SupportSC
+from support import SupportSC  # pylint: disable=import-error
 
 # local
 from .model import ChannelItem, ProgramItem
 from .setup import P
-from .source_base import SourceBase
+from .source_base import SourceBase, ttl_cache
 
 logger = P.logger
 package_name = P.package_name
@@ -31,6 +30,13 @@ class SourceTving(SourceBase):
             logger.error("support site 플러그인이 필요합니다.")
         except Exception:
             logger.exception("Support Module 로딩 중 예외:")
+        # session for requesting playlists
+        sess = requests.Session()
+        sess.headers.update(self.mod.headers)
+        sess.proxies.update(self.mod.proxies or {})
+        self.session = sess
+        # cached streaming data
+        self.streaming = ttl_cache(60 * 60 * 10, maxsize=10)(self.__streaming)
 
     def load_support_module(self):
         from support_site.setup import P as SS
@@ -71,15 +77,18 @@ class SourceTving(SourceBase):
         self.channel_list = OrderedDict(ret)
         return self.channel_list
 
-    def get_url(self, channel_id, mode, quality=None):
+    def __streaming(self, channel_id: str, quality: str) -> dict:
         quality = self.mod.get_quality_to_tving(quality)
-        data = self.mod.get_info(channel_id, quality)
+        return self.mod.get_info(channel_id, quality)
+
+    def get_url(self, channel_id, mode, quality=None):
+        data = self.streaming(channel_id, quality)
         if self.mod.is_drm_channel(channel_id):
             return data
         return "return_after_read", data["url"]
 
     def get_return_data(self, url, mode=None):
-        data = requests.get(url, timeout=30).text
+        data = self.session.get(url).text
         matches = self.PTN_BANDWIDTH.finditer(data)
         max_bandwidth = 0
         for match in matches:
@@ -89,7 +98,7 @@ class SourceTving(SourceBase):
 
         temp = url.split("playlist.m3u8")
         url1 = f"{temp[0]}chunklist_b{max_bandwidth}.m3u8{temp[1]}"
-        data1 = requests.get(url1, timeout=30).text
+        data1 = self.session.get(url1).text
         data1 = data1.replace("media", f"{temp[0]}media").replace(".ts", f".ts{temp[1]}")
         if mode == "web_play":
             return self.change_redirect_data(data1)
