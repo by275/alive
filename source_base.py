@@ -3,7 +3,6 @@ from collections import OrderedDict
 from urllib.parse import quote
 
 import requests
-
 from plugin import F  # pylint: disable=import-error
 
 SystemModelSetting = F.SystemModelSetting
