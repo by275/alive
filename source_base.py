@@ -33,8 +33,9 @@ class SourceBase:
     channel_list: OrderedDict[str, ChannelItem] = OrderedDict()
     ttl: int = None
 
-    PTN_M3U8_TS: re.Pattern = re.compile(r"^[^#].*\.ts.*$", re.MULTILINE)
-    PTN_URL = re.compile(r"^http(.*?)$", re.MULTILINE)
+    PTN_M3U8_ALL_TS: re.Pattern = re.compile(r"^[^#].*\.ts.*$", re.MULTILINE)
+    PTN_M3U8_END_TS: re.Pattern = re.compile(r"^[^#].*\.ts$", re.MULTILINE)
+    PTN_URL: re.Pattern = re.compile(r"^http(.*?)$", re.MULTILINE)
 
     def __init__(self):
         pass
@@ -66,8 +67,8 @@ class SourceBase:
     #
     # utility
     #
+    @staticmethod
     def new_session(
-        self,
         headers: dict = None,
         proxy_url: str = None,
         add_headers: dict = None,
@@ -81,8 +82,9 @@ class SourceBase:
         sess.proxies.update(proxies)
         return sess
 
-    def sub_ts(self, m3u8: str, prefix: str, suffix: str = None):
-        repl = rf"{prefix}\g<0>"
-        if suffix is not None:
-            repl += suffix
-        return self.PTN_M3U8_TS.sub(repl, m3u8)
+    @staticmethod
+    def sub_ts(m3u8: str, prefix: str, suffix: str = None):
+        m3u8 = SourceBase.PTN_M3U8_ALL_TS.sub(rf"{prefix}\g<0>", m3u8)
+        if suffix is None:
+            return m3u8
+        return SourceBase.PTN_M3U8_END_TS.sub(rf"\g<0>{suffix}", m3u8)
