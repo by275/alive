@@ -92,6 +92,6 @@ class SourceTving(SourceBase):
     def repack_playlist(self, url: str, mode: str = None) -> str:
         data = self.plsess.get(url).text
         data = self.sub_ts(data, url.split("chunklist_")[0], url.split(".m3u8")[1])
-        # if mode == "web_play":
-        #     return self.relay_segments(data)
+        if mode == "web_play":  # CORS issue
+            return self.relay_segments(data)
         return data
