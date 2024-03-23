@@ -1,13 +1,13 @@
 import time
 from collections import OrderedDict
 from datetime import datetime
+from typing import List, Tuple, Type
 
 from plugin import F  # pylint: disable=import-error
 
-SystemModelSetting = F.SystemModelSetting
-
-# local
+from .model import ChannelItem
 from .setup import P
+from .source_base import SourceBase
 from .source_fix_url import SourceFixURL
 from .source_kakaotv import SourceKakaotv
 from .source_kbs import SourceKBS
@@ -22,14 +22,15 @@ from .source_youtubedl import SourceYoutubedl
 logger = P.logger
 package_name = P.package_name
 ModelSetting = P.ModelSetting
+SystemModelSetting = F.SystemModelSetting
 
 
 class LogicKlive:
-    source_list: OrderedDict = OrderedDict()
-    channel_list: OrderedDict = OrderedDict()
+    source_list: OrderedDict[str, Type[SourceBase]] = OrderedDict()
+    channel_list: OrderedDict[str, OrderedDict[str, ChannelItem]] = OrderedDict()
 
     @classmethod
-    def __get_channel_list(cls):
+    def __get_channel_list(cls) -> None:
         source_list, channel_list = [], []
 
         if ModelSetting.get_bool("use_wavve"):
@@ -74,7 +75,7 @@ class LogicKlive:
         ModelSetting.set("channel_list_updated_at", datetime.now().isoformat())
 
     @classmethod
-    def should_reload_channel_list(cls, reload) -> bool:
+    def should_reload_channel_list(cls, reload: bool) -> bool:
         if not cls.channel_list or reload:
             return True
         channel_list_max_age = ModelSetting.get_int("channel_list_max_age")
@@ -86,7 +87,7 @@ class LogicKlive:
         return False
 
     @classmethod
-    def get_channel_list(cls, reload=False):
+    def get_channel_list(cls, reload: bool = False) -> List[ChannelItem]:
         ret = []
         try:
             if cls.should_reload_channel_list(reload=reload):
@@ -98,7 +99,7 @@ class LogicKlive:
         return ret
 
     @classmethod
-    def get_url(cls, source, channel_id, mode, quality=None):
+    def get_url(cls, source: str, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
         try:
             if not cls.source_list:
                 cls.get_channel_list()
@@ -107,15 +108,16 @@ class LogicKlive:
                     quality = ModelSetting.get(f"{source}_quality")
             return cls.source_list[source].get_url(channel_id, mode, quality=quality)
         except Exception:
-            logger.exception("Streaming URL을 얻는 중 예외:")
+            logger.exception("Playlist URL을 얻는 중 예외:")
             return None, None
 
     @classmethod
-    def get_return_data(cls, source, url, mode):
+    def repack_playlist(cls, source: str, url: str, mode: str) -> str:
         try:
-            return cls.source_list[source].get_return_data(url, mode=mode)
+            return cls.source_list[source].repack_playlist(url, mode=mode)
         except Exception:
-            logger.exception("Streaming URL을 분석 중 예외:")
+            logger.exception("Playlist 수정 중 예외:")
+            return None
 
     @classmethod
     def get_m3uall(cls):

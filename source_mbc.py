@@ -1,12 +1,10 @@
 import time
 from collections import OrderedDict
+from typing import Tuple
 
-import requests
-
-# local
 from .model import ChannelItem, ProgramItem
-from .setup import P, default_headers
-from .source_base import SourceBase
+from .setup import P
+from .source_base import SourceBase, ttl_cache
 
 logger = P.logger
 package_name = P.package_name
@@ -26,17 +24,20 @@ class SourceMBC(SourceBase):
         "FM4U": "mfm",
         "ALLTHAT": "chm",
     }
-    headers = {
-        "Host": "mediaapi.imbc.com",
-        "Origin": "https://onair.imbc.com",
-        "Referer": "https://onair.imbc.com/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36",
-    }
+    ttl = 180 - 6  # 3분
 
-    def get_channel_list(self):
+    def __init__(self):
+        # session for api
+        self.apisess = self.new_session(add_headers={"Referer": "https://onair.imbc.com/"})
+        # session for playlists
+        self.plsess = self.new_session()
+        # cached playlist url
+        self.get_playlist = ttl_cache(self.ttl)(self.__get_playlist)
+
+    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
         ret = []
         url = "https://control.imbc.com/Schedule/PCONAIR"
-        data = requests.get(url, headers=default_headers, timeout=30).json()
+        data = self.apisess.get(url).json()
         for cate in ["TVList", "RadioList"]:
             for item in data[cate]:
                 if item["ScheduleCode"] not in self.code:
@@ -64,25 +65,23 @@ class SourceMBC(SourceBase):
         self.channel_list = OrderedDict(ret)
         return self.channel_list
 
-    def get_url(self, channel_id, mode, quality=None):
-        if len(channel_id) == 3:
-            url = f"https://sminiplay.imbc.com/aacplay.ashx?channel={channel_id}&protocol=M3U8&agent=webapp"
-            # logger.debug(url)
-            data = requests.get(url, timeout=30).text
-            data = data.replace("playlist", "chunklist")
-            # logger.debug(data)
-            return "redirect", data
-        if channel_id != "0":
-            url = f"https://mediaapi.imbc.com/Player/OnAirPlusURLUtil?ch={channel_id}&type=PC&t={int(time.time())}"
-        else:
-            url = f"https://mediaapi.imbc.com/Player/OnAirURLUtil?type=PC&t={int(time.time())}"
-        data = requests.get(url, headers=self.headers, timeout=30, verify=False).json()
-        url = data["MediaInfo"]["MediaURL"].replace("playlist", "chunklist")
-        return "return_after_read", url
-
-    def get_return_data(self, url, mode=None):
-        data = requests.get(url, headers=default_headers, timeout=30).text
-        # data = self.change_redirect_data(data)
-        tmp = url.split("chunklist")
-        data = data.replace("media", tmp[0] + "media")
+    def get_data(self, channel_id: str) -> dict:
+        path = "OnAirURLUtil" if channel_id == "0" else "OnAirPlusURLUtil"
+        url = f"https://mediaapi.imbc.com/Player/{path}?ch={channel_id}&type=PC&t={int(time.time())}"
+        data = self.apisess.get(url).json()
         return data
+
+    def __get_playlist(self, channel_id: str) -> str:
+        url = self.get_data(channel_id)["MediaInfo"]["MediaURL"]
+        return url.replace("playlist.m3u8", "chunklist.m3u8")
+
+    def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
+        if len(channel_id) == 3:  # radio
+            url = f"https://sminiplay.imbc.com/aacplay.ashx?channel={channel_id}&protocol=M3U8&agent=webapp"
+            data = self.apisess.get(url).text
+            return "redirect", data
+        return "return_after_read", self.get_playlist(channel_id)
+
+    def repack_playlist(self, url: str, mode: str = None) -> str:
+        data = self.plsess.get(url).text
+        return self.sub_ts(data, url.split("chunklist.m3u8")[0])

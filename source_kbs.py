@@ -1,12 +1,10 @@
 import json
 from collections import OrderedDict
+from typing import Tuple
 
-import requests
-
-# local
 from .model import ChannelItem, ProgramItem
-from .setup import P, default_headers
-from .source_base import SourceBase
+from .setup import P
+from .source_base import SourceBase, ttl_cache
 
 logger = P.logger
 package_name = P.package_name
@@ -15,17 +13,24 @@ ModelSetting = P.ModelSetting
 
 class SourceKBS(SourceBase):
     source_id = "kbs"
+    ttl = 60 * 60 * (48 - 1)  # 48시간
 
-    def __parse_var(self, text: str, identifiers):
+    def __init__(self):
+        # session for api
+        self.apisess = self.new_session()
+        # cached playlist url
+        self.get_playlist = ttl_cache(self.ttl)(self.__get_playlist)
+
+    def __parse_var(self, text: str, identifiers: Tuple[str, str]) -> dict:
         left = text.find(identifiers[0]) + len(identifiers[0])
         right = text.find(identifiers[1], left)
         return json.loads(text[left:right].replace("\\", ""))
 
-    def get_channel_list(self):
+    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
         ret = []
         include_vod_ch = ModelSetting.get_bool("kbs_include_vod_ch")
         url = "http://onair.kbs.co.kr"
-        data = requests.get(url, timeout=30).text
+        data = self.apisess.get(url).text
         data = self.__parse_var(data, ("var channelList = JSON.parse('", "');"))
         for channel in data["channel"]:
             for cm in channel["channel_master"]:
@@ -51,16 +56,12 @@ class SourceKBS(SourceBase):
         self.channel_list = OrderedDict(ret)
         return self.channel_list
 
-    def __get_url(self, channel_id):
+    def get_data(self, channel_id: str) -> dict:
         tmp = f"https://cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/{channel_id}"
-        # logger.error(tmp)
-        data = requests.get(tmp, headers=default_headers, timeout=30).json()
-        return data["channel_item"][0]["service_url"]
+        return self.apisess.get(tmp).json()
 
-    def get_url(self, channel_id, mode, quality=None):
-        url = self.__get_url(channel_id)
-        # logger.info(url)
-        if mode == "web_play":
-            # Expires가 1일로 길어서 괜찮을 듯
-            return "redirect", url
-        return "redirect", url
+    def __get_playlist(self, channel_id: str) -> str:
+        return self.get_data(channel_id)["channel_item"][0]["service_url"]
+
+    def get_url(self, channel_id: str, mode: str, quality: str = None) -> str:
+        return "redirect", self.get_playlist(channel_id)

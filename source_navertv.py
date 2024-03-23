@@ -1,9 +1,9 @@
 import re
 from collections import OrderedDict
+from typing import Tuple
 
 import requests
 
-# local
 from .model import ChannelItem
 from .setup import P, default_headers
 from .source_base import SourceBase
@@ -16,7 +16,7 @@ ModelSetting = P.ModelSetting
 class SourceNavertv(SourceBase):
     source_id = "navertv"
 
-    def get_channel_list(self):
+    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
         ret = []
         for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
             if not item:
@@ -36,7 +36,7 @@ class SourceNavertv(SourceBase):
         self.channel_list = OrderedDict(ret)
         return self.channel_list
 
-    def __get_url(self, target_url, quality):
+    def __get_url(self, target_url: str, quality: str) -> str:
         if target_url.startswith("SPORTS_"):
             target_ch = target_url.split("_")[1]
             if not target_ch.startswith("ad") and not target_ch.startswith("ch"):
@@ -61,7 +61,7 @@ class SourceNavertv(SourceBase):
                 url = data["media"][0]["path"]
         return url
 
-    def get_url(self, channel_id, mode, quality=None):
+    def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
         # logger.debug('channel_id:%s, quality:%s, mode:%s', channel_id, quality, mode)
         target_url = self.channel_list[channel_id].url
         url = self.__get_url(target_url, self.channel_list[channel_id].quality)

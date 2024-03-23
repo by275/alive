@@ -1,12 +1,11 @@
+import json
+from base64 import b64decode
 from collections import OrderedDict
-from datetime import datetime
+from typing import Tuple
 
-import requests
-
-# local
 from .model import ChannelItem, ProgramItem
-from .setup import P, default_headers
-from .source_base import SourceBase
+from .setup import P
+from .source_base import SourceBase, ttl_cache
 
 logger = P.logger
 package_name = P.package_name
@@ -15,14 +14,25 @@ ModelSetting = P.ModelSetting
 
 class SourceSBS(SourceBase):
     source_id = "sbs"
+    ttl = 180 - 6  # 3분
+    debug = False
 
-    def get_channel_list(self):
+    def __init__(self):
+        # session for api
+        proxy_url = ModelSetting.get("sbs_proxy_url") if ModelSetting.get_bool("sbs_use_proxy") else None
+        self.apisess = self.new_session(proxy_url=proxy_url, add_headers={"Referer": "https://www.sbs.co.kr/"})
+        # session for playlists
+        self.plsess = self.new_session()
+        # cached playlist url
+        self.get_playlist = ttl_cache(self.ttl)(self.__get_playlist)
+
+    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
         ret = []
         url_list = ["http://static.apis.sbs.co.kr/play-api/1.0/onair/channels"]
         if ModelSetting.get_bool("sbs_include_vod_ch"):
             url_list += ["http://static.apis.sbs.co.kr/play-api/1.0/onair/virtual/channels"]
         for url in url_list:
-            data = requests.get(url, timeout=30).json()
+            data = self.apisess.get(url).json()
             for item in data["list"]:
                 try:
                     cname = item["channelname"]
@@ -44,37 +54,39 @@ class SourceSBS(SourceBase):
         self.channel_list = OrderedDict(ret)
         return self.channel_list
 
-    def __get_url(self, channel_id):
+    def get_data(self, channel_id: str) -> dict:
+        """channel_id -> api data -> root playlist -> media playlist url"""
         if channel_id.startswith("EVENT"):
             prefix = ""
         else:
             prefix = "" if channel_id != "SBS" and int(channel_id[1:]) < 21 else "virtual/"
-        # tmp = 'http://apis.sbs.co.kr/play-api/1.0/onair/%schannel/%s?v_type=2&platform=pcweb&protocol=hls&ssl=N&jwt-token=%s&rnd=462' % (prefix, channel_id, '')
-        tmp = f"https://apis.sbs.co.kr/play-api/1.0/onair/{prefix}channel/{channel_id}?v_type=2&platform=pcweb&protocol=hls&ssl=N&rscuse=&jwt-token=&sbsmain="
-        # logger.debug(tmp)
-
-        proxies = None
-        if ModelSetting.get_bool("sbs_use_proxy"):
-            proxies = {
-                "http": ModelSetting.get("sbs_proxy_url"),
-                "https": ModelSetting.get("sbs_proxy_url"),
-            }
-        data = requests.get(tmp, headers=default_headers, proxies=proxies, timeout=30).json()
-        url = data["onair"]["source"]["mediasource"]["mediaurl"]
-        return url
-
-    def get_url(self, channel_id, mode, quality=None):
-        url = self.__get_url(channel_id)
-        url = url.replace("playlist.m3u8", "chunklist.m3u8")
-        # 2022-03-30
-        return "return_after_read", url
-        # logger.debug(url)
-        # if mode == "web_play":
-        #     return "return_after_read", url
-        # return "redirect", url
-
-    def get_return_data(self, url, mode=None):
-        data = requests.get(url, headers=default_headers, timeout=30).text
-        tmp = url.split("chunklist")
-        data = data.replace("media", tmp[0] + "media")
+        url = f"https://apis.sbs.co.kr/play-api/1.0/onair/{prefix}channel/{channel_id}?jwt-token=&platform=pcweb&service=&absolute_show=&ssl=Y&rscuse=&v_type=2&protocol=hls&extra="
+        data = self.apisess.get(url).json()
         return data
+
+    def __get_playlist(self, channel_id: str) -> str:
+        data = self.get_data(channel_id)
+        url = data["onair"]["source"]["mediasource"]["mediaurl"]  # root playlist url
+
+        # debug
+        if self.debug:
+            token_parts = []
+            for part in url.split("token=")[1].split("."):
+                try:
+                    token_parts.append(json.loads(b64decode(part + "=" * (-len(part) % 4))))
+                except Exception:
+                    break
+            logger.debug("token: %s", token_parts)
+
+        data = self.plsess.get(url).text  # root playlist
+        for line in data.splitlines():
+            if line.startswith("chunklist.m3u8"):
+                return url.split("playlist.m3u8")[0] + line
+        return None
+
+    def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
+        return "return_after_read", self.get_playlist(channel_id)
+
+    def repack_playlist(self, url: str, mode: str = None) -> str:
+        data = self.plsess.get(url).text
+        return self.sub_ts(data, url.split("chunklist.m3u8")[0])

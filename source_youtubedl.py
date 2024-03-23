@@ -1,6 +1,6 @@
 from collections import OrderedDict
+from typing import Tuple
 
-# local
 from .model import ChannelItem
 from .setup import P
 from .source_base import SourceBase
@@ -22,7 +22,7 @@ class SourceYoutubedl(SourceBase):
         except ImportError:
             return False
 
-    def get_channel_list(self):
+    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
         ret = []
         for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
             if not item:
@@ -37,7 +37,7 @@ class SourceYoutubedl(SourceBase):
         self.channel_list = OrderedDict(ret)
         return self.channel_list
 
-    def get_url(self, channel_id, mode, quality=None):
+    def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
         # logger.debug('channel_id:%s, quality:%s, mode:%s', channel_id, quality, mode)
         import yt_dlp
 

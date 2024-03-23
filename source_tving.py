@@ -1,11 +1,10 @@
 import re
 from collections import OrderedDict
 from pathlib import Path
+from typing import Tuple
 
-import requests
 from support import SupportSC  # pylint: disable=import-error
 
-# local
 from .model import ChannelItem, ProgramItem
 from .setup import P
 from .source_base import SourceBase, ttl_cache
@@ -18,8 +17,9 @@ ModelSetting = P.ModelSetting
 class SourceTving(SourceBase):
     source_id = "tving"
     mod = None
+    ttl = 60 * 60 * (24 - 1)  # 1일
 
-    PTN_BANDWIDTH = re.compile(r"BANDWIDTH=(?P<bandwidth>\d+)", re.MULTILINE)
+    PTN_BANDWIDTH = re.compile(r"BANDWIDTH=(\d+)", re.MULTILINE)
 
     def __init__(self):
         if self.mod is not None:
@@ -30,13 +30,10 @@ class SourceTving(SourceBase):
             logger.error("support site 플러그인이 필요합니다.")
         except Exception:
             logger.exception("Support Module 로딩 중 예외:")
-        # session for requesting playlists
-        sess = requests.Session()
-        sess.headers.update(self.mod.headers)
-        sess.proxies.update(self.mod.proxies or {})
-        self.session = sess
-        # cached streaming data
-        self.streaming = ttl_cache(60 * 60 * 10, maxsize=10)(self.__streaming)
+        # session for playlists
+        self.plsess = self.new_session(headers=self.mod.headers, proxies=self.mod.proxies)
+        # cached playlist url
+        self.get_playlist = ttl_cache(self.ttl)(self.__get_playlist)
 
     def load_support_module(self):
         from support_site.setup import P as SS
@@ -56,7 +53,7 @@ class SourceTving(SourceBase):
             return SupportTving(token=token, proxy=proxy, deviceid=deviceid)
         return SupportSC.load_module_f(__file__, "tving").SupportTving(token=token, proxy=proxy, deviceid=deviceid)
 
-    def get_channel_list(self):
+    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
         ret = []
         data = self.mod.get_live_list(list_type="live", include_drm=ModelSetting.get_bool("tving_include_drm"))
         for item in data:
@@ -77,29 +74,25 @@ class SourceTving(SourceBase):
         self.channel_list = OrderedDict(ret)
         return self.channel_list
 
-    def __streaming(self, channel_id: str, quality: str) -> dict:
+    def get_data(self, channel_id: str, quality: str) -> dict:
         quality = self.mod.get_quality_to_tving(quality)
         return self.mod.get_info(channel_id, quality)
 
-    def get_url(self, channel_id, mode, quality=None):
-        data = self.streaming(channel_id, quality)
+    def __get_playlist(self, channel_id: str, quality: str) -> str:
+        data = self.get_data(channel_id, quality)
+        data = self.plsess.get(url := data["url"]).text  # root playlist
+        max_bandwidth = max(map(int, self.PTN_BANDWIDTH.findall(data)))
+        return url.replace("playlist.m3u8", f"chunklist_b{max_bandwidth}.m3u8")
+
+    def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
         if self.mod.is_drm_channel(channel_id):
-            return data
-        return "return_after_read", data["url"]
+            # FIXME
+            raise ValueError("DRM 채널은 현재 지원되지 않습니다.")
+        return "return_after_read", self.get_playlist(channel_id, quality)
 
-    def get_return_data(self, url, mode=None):
-        data = self.session.get(url).text
-        matches = self.PTN_BANDWIDTH.finditer(data)
-        max_bandwidth = 0
-        for match in matches:
-            bw = int(match.group("bandwidth"))
-            if bw > max_bandwidth:
-                max_bandwidth = bw
-
-        temp = url.split("playlist.m3u8")
-        url1 = f"{temp[0]}chunklist_b{max_bandwidth}.m3u8{temp[1]}"
-        data1 = self.session.get(url1).text
-        data1 = data1.replace("media", f"{temp[0]}media").replace(".ts", f".ts{temp[1]}")
-        if mode == "web_play":
-            return self.change_redirect_data(data1)
-        return data1
+    def repack_playlist(self, url: str, mode: str = None) -> str:
+        data = self.plsess.get(url).text
+        data = self.sub_ts(data, url.split("chunklist_")[0], url.split(".m3u8")[1])
+        # if mode == "web_play":
+        #     return self.relay_segments(data)
+        return data

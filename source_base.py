@@ -2,22 +2,22 @@ import re
 import time
 from collections import OrderedDict
 from functools import lru_cache
+from typing import Tuple
 from urllib.parse import quote
 
 import requests
 from plugin import F  # pylint: disable=import-error
 
-SystemModelSetting = F.SystemModelSetting
-
-# local
+from .model import ChannelItem
 from .setup import P, default_headers
 
 logger = P.logger
 package_name = P.package_name
 ModelSetting = P.ModelSetting
+SystemModelSetting = F.SystemModelSetting
 
 
-def ttl_cache(seconds: int, maxsize: int = 128):
+def ttl_cache(seconds: int, maxsize: int = 10):
     def wrapper(func):
         @lru_cache(maxsize)
         def inner(__ttl, *args, **kwargs):
@@ -31,28 +31,22 @@ def ttl_cache(seconds: int, maxsize: int = 128):
 class SourceBase:
     source_id: str = None
     channel_list: OrderedDict = OrderedDict()
+    ttl: int = None
 
+    PTN_M3U8_TS: re.Pattern = re.compile(r"^[^#].*\.ts.*$", re.MULTILINE)
     PTN_URL = re.compile(r"^http(.*?)$", re.MULTILINE)
 
     def __init__(self):
         pass
 
-    def get_channel_list(self):
-        pass
+    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
+        raise NotImplementedError("method 'get_channel_list' must be implemented")
 
-    def get_url(self, channel_id, mode, quality=None):
-        pass
+    def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
+        raise NotImplementedError("method 'get_url' must be implemented")
 
-    def get_return_data(self, url, mode=None):
-        try:
-            data = requests.get(url, headers=default_headers, timeout=30).text
-            return self.change_redirect_data(data)
-        except Exception:
-            logger.exception("Streaming URL을 분석 중 예외:")
-            return url
-
-    def change_redirect_data(self, data, proxy=None):
-        base_url = f"{SystemModelSetting.get('ddns')}/{package_name}/api/redirect"
+    def relay_segments(self, data: str, proxy: str = None) -> str:
+        base_url = f"{SystemModelSetting.get('ddns')}/{package_name}/api/relay"
         apikey = None
         if SystemModelSetting.get_bool("use_apikey"):
             apikey = SystemModelSetting.get("apikey")
@@ -65,3 +59,27 @@ class SourceBase:
                 u2 += f"&proxy={quote(proxy)}"
             data = data.replace(u, u2)
         return data
+
+    #
+    # utility
+    #
+    def new_session(
+        self,
+        headers: dict = None,
+        proxy_url: str = None,
+        add_headers: dict = None,
+        proxies: dict = None,
+    ) -> requests.Session:
+        sess = requests.Session()
+        sess.headers.update(headers or default_headers)
+        sess.headers.update(add_headers or {})
+        if not proxies:
+            proxies = {"http": proxy_url, "https": proxy_url} if proxy_url else {}
+        sess.proxies.update(proxies)
+        return sess
+
+    def sub_ts(self, m3u8: str, prefix: str, suffix: str = None):
+        repl = rf"{prefix}\g<0>"
+        if suffix is not None:
+            repl += suffix
+        return self.PTN_M3U8_TS.sub(repl, m3u8)

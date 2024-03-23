@@ -6,6 +6,7 @@ import threading
 import time
 from copy import deepcopy
 from datetime import datetime
+from itertools import chain
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -37,35 +38,29 @@ def generate(url):
     sentBurst = False
 
     if platform.system() == "Windows":
-        path_ffmpeg = os.path.join(path_app_root, "bin", platform.system(), "ffmpeg.exe")
+        ffmpeg_bin = os.path.join(path_app_root, "bin", platform.system(), "ffmpeg.exe")
     else:
-        path_ffmpeg = "ffmpeg"
+        ffmpeg_bin = "ffmpeg"
 
-    # ffmpeg_command = [path_ffmpeg, "-i", new_url, "-c", "copy", "-f", "mpegts", "-tune", "zerolatency", "pipe:stdout"]
-    # ffmpeg_command = [path_ffmpeg, "-i", new_url, "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-f", "mpegts", "-tune", "zerolatency", "pipe:stdout"]
+    # ffmpeg_cmd = [ffmpeg_bin, "-i", new_url, "-c", "copy", "-f", "mpegts", "-tune", "zerolatency", "pipe:stdout"]
+    # ffmpeg_cmd = [ffmpeg_bin, "-i", new_url, "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-f", "mpegts", "-tune", "zerolatency", "pipe:stdout"]
 
     # 2020-12-17 by 잠자
-    ffmpeg_command = [
-        path_ffmpeg,
-        "-loglevel",
-        "quiet",
-        "-i",
-        url,
-        "-c:v",
-        "copy",
-        "-c:a",
-        "aac",
-        "-b:a",
-        "128k",
-        "-f",
-        "mpegts",
-        "-tune",
-        "zerolatency",
-        "pipe:stdout",
+    ffmpeg_cmd = [
+        [ffmpeg_bin],
+        ["-loglevel", "quiet"],
+        ["-i", url],
+        ["-c:v", "copy"],
+        ["-c:a", "aac"],
+        ["-b:a", "128k"],
+        ["-f", "mpegts"],
+        ["-tune", "zerolatency"],
+        ["pipe:stdout"],
     ]
+    ffmpeg_cmd = chain.from_iterable(ffmpeg_cmd)
 
-    # logger.debug('command : %s', ffmpeg_command)
-    with subprocess.Popen(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=-1) as proc:
+    # logger.debug('command : %s', ffmpeg_cmd)
+    with subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=-1) as proc:
         while True:
             line = proc.stdout.read(1024)
             buffer.append(line)
@@ -202,38 +197,39 @@ class Logic(PluginModuleBase):
             logger.exception("AJAX 요청 처리 중 예외:")
 
     def process_api(self, sub, req):
+        args = req.args.to_dict()
+        # logger.debug("args: %s", args)
         try:
             if sub == "url.m3u8":
-                mode = req.args.get("m")
-                source = req.args.get("s")
-                channel_id = req.args.get("i")
-                quality = req.args.get("q")
-                # logger.debug("m=%s, s=%s, i=%s, q=%s", mode, source, channel_id, quality)
+                mode = args["m"]
+                source = args["s"]
+                channel_id = args["i"]
+                quality = args.get("q")
 
                 if mode == "plex":
                     return Response(generate(req.url.replace("m=plex", "m=url")), mimetype="video/MP2T")
 
-                action, ret = LogicKlive.get_url(source, channel_id, mode, quality=quality)
-                # logger.debug("action:%s, url:%s", action, ret)
+                action, url = LogicKlive.get_url(source, channel_id, mode, quality=quality)
+                # logger.debug("action:%s, url:%s", action, url)
 
-                if ret is None:
-                    return ret
+                if url is None:
+                    return url
 
                 if action == "redirect":
-                    return redirect(ret, code=302)
+                    return redirect(url, code=302)
                 if action == "return_after_read":
                     # logger.warning('return_after_read')
-                    data = LogicKlive.get_return_data(source, ret, mode=mode)
+                    data = LogicKlive.repack_playlist(source, url, mode=mode)
                     # logger.debug('Data len : %s', len(data))
                     # logger.debug(data)
                     return data, 200, {"Content-Type": "application/vnd.apple.mpegurl"}
                 if action == "return":
-                    return ret
+                    return url
 
                 if mode == "url.m3u8":
-                    return redirect(ret, code=302)
+                    return redirect(url, code=302)
                 if mode == "lc":
-                    return ret
+                    return url
             elif sub == "m3uall":
                 m3u = LogicKlive.get_m3uall()
                 r = Response(m3u, content_type="audio/mpegurl")
@@ -248,10 +244,9 @@ class Logic(PluginModuleBase):
                 m3u = LogicAlive.get_m3u(src_char=src_char, for_tvh=True)
                 r = Response(m3u, content_type="audio/mpegurl")
                 return r, 200
-            elif sub == "redirect":
-                # SJVA 사용
-                url = request.args.get("url")
-                proxy = request.args.get("proxy")
+            elif sub == "relay":
+                url = args.get("url")
+                proxy = args.get("proxy")
                 proxies = None
                 if proxy is not None:
                     proxy = unquote(proxy)
