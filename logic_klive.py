@@ -1,5 +1,5 @@
-import time
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import List, Tuple, Type
 
@@ -31,47 +31,44 @@ class LogicKlive:
 
     @classmethod
     def __get_channel_list(cls) -> None:
-        source_list, channel_list = [], []
+        source_list = []
 
         if ModelSetting.get_bool("use_wavve"):
             source = SourceWavve()
             if source.mod is not None:
-                source_list.append(["wavve", source])
+                source_list.append(source)
         if ModelSetting.get_bool("use_tving"):
             source = SourceTving()
             if source.mod is not None:
-                source_list.append(["tving", source])
+                source_list.append(source)
         if ModelSetting.get_bool("use_kbs"):
-            source_list.append(["kbs", SourceKBS()])
+            source_list.append(SourceKBS())
         if ModelSetting.get_bool("use_mbc"):
-            source_list.append(["mbc", SourceMBC()])
+            source_list.append(SourceMBC())
         if ModelSetting.get_bool("use_sbs"):
-            source_list.append(["sbs", SourceSBS()])
+            source_list.append(SourceSBS())
         if ModelSetting.get_bool("use_youtubedl"):
             source = SourceYoutubedl()
             if source.is_installed():
-                source_list.append(["youtubedl", source])
+                source_list.append(source)
         if ModelSetting.get_bool("use_streamlink"):
             source = SourceStreamlink()
             if source.is_installed():
-                source_list.append(["streamlink", source])
+                source_list.append(source)
         if ModelSetting.get_bool("use_navertv"):
-            source_list.append(["navertv", SourceNavertv()])
+            source_list.append(SourceNavertv())
         if ModelSetting.get_bool("use_kakaotv"):
-            source_list.append(["kakaotv", SourceKakaotv()])
+            source_list.append(SourceKakaotv())
         if ModelSetting.get_bool("use_fix_url"):
-            source_list.append(["fix_url", SourceFixURL()])
+            source_list.append(SourceFixURL())
 
-        for source_id, source in source_list:
-            for _ in range(3):  # 재시도?
-                source_channels = source.get_channel_list()
-                if len(source_channels) != 0:
-                    break
-                time.sleep(3)
-            logger.debug("%-10s: %s", source_id, len(source_channels))
-            channel_list.append([source_id, source_channels])
-        cls.source_list = OrderedDict(source_list)
-        cls.channel_list = OrderedDict(channel_list)
+        with ThreadPoolExecutor(max_workers=5) as exe:
+            f2s = {exe.submit(s.get_channel_list): s for s in source_list}
+            for f in as_completed(f2s):
+                logger.debug("%-10s: %s", f2s[f].source_id, len(f2s[f].channel_list))
+
+        cls.source_list = OrderedDict([s.source_id, s] for s in source_list)
+        cls.channel_list = OrderedDict([s.source_id, s.channel_list] for s in source_list)
         ModelSetting.set("channel_list_updated_at", datetime.now().isoformat())
 
     @classmethod

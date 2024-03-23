@@ -53,7 +53,7 @@ class SourceTving(SourceBase):
             return SupportTving(token=token, proxy=proxy, deviceid=deviceid)
         return SupportSC.load_module_f(__file__, "tving").SupportTving(token=token, proxy=proxy, deviceid=deviceid)
 
-    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
+    def get_channel_list(self) -> None:
         ret = []
         data = self.mod.get_live_list(list_type="live", include_drm=ModelSetting.get_bool("tving_include_drm"))
         for item in data:
@@ -72,7 +72,6 @@ class SourceTving(SourceBase):
             except Exception:
                 logger.exception("라이브 채널 분석 중 예외: %s", item)
         self.channel_list = OrderedDict(ret)
-        return self.channel_list
 
     def get_data(self, channel_id: str, quality: str) -> dict:
         quality = self.mod.get_quality_to_tving(quality)

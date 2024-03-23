@@ -26,7 +26,7 @@ class SourceKBS(SourceBase):
         right = text.find(identifiers[1], left)
         return json.loads(text[left:right].replace("\\", ""))
 
-    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
+    def get_channel_list(self) -> None:
         ret = []
         include_vod_ch = ModelSetting.get_bool("kbs_include_vod_ch")
         url = "http://onair.kbs.co.kr"
@@ -54,7 +54,6 @@ class SourceKBS(SourceBase):
                 except Exception:
                     logger.exception("라이브 채널 분석 중 예외: %s", cm)
         self.channel_list = OrderedDict(ret)
-        return self.channel_list
 
     def get_data(self, channel_id: str) -> dict:
         tmp = f"https://cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/{channel_id}"

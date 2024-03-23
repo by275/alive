@@ -48,7 +48,7 @@ class SourceWavve(SourceBase):
         )
         return mod
 
-    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
+    def get_channel_list(self) -> None:
         ret = []
         data = self.mod.live_all_channels()
         for item in data["list"]:
@@ -74,7 +74,6 @@ class SourceWavve(SourceBase):
             except Exception:
                 logger.exception("라이브 채널 분석 중 예외: %s", item)
         self.channel_list = OrderedDict(ret)
-        return self.channel_list
 
     def __get_playlist(self, channel_id: str, quality: str) -> str:
         """returns playlist url from streaming data
@@ -99,7 +98,6 @@ class SourceWavve(SourceBase):
 
     def repack_playlist(self, url: str, mode: str = None) -> str:
         data = self.plsess.get(url).text
-        logger.error("%s\n%s", url, data)
         data = self.sub_ts(data, url.split(".m3u8")[0].rsplit("/", 1)[0] + "/")
         if ModelSetting.get("wavve_streaming_type") == "direct":
             if mode != "web_play":  # CORS issue

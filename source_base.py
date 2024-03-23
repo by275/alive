@@ -30,7 +30,7 @@ def ttl_cache(seconds: int, maxsize: int = 10):
 
 class SourceBase:
     source_id: str = None
-    channel_list: OrderedDict = OrderedDict()
+    channel_list: OrderedDict[str, ChannelItem] = OrderedDict()
     ttl: int = None
 
     PTN_M3U8_TS: re.Pattern = re.compile(r"^[^#].*\.ts.*$", re.MULTILINE)
@@ -39,11 +39,14 @@ class SourceBase:
     def __init__(self):
         pass
 
-    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
+    def get_channel_list(self) -> None:
         raise NotImplementedError("method 'get_channel_list' must be implemented")
 
     def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
         raise NotImplementedError("method 'get_url' must be implemented")
+
+    def repack_playlist(self, url: str, mode: str = None) -> str:
+        pass
 
     def relay_segments(self, data: str, proxy: str = None) -> str:
         base_url = f"{SystemModelSetting.get('ddns')}/{package_name}/api/relay"

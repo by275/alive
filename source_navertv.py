@@ -16,7 +16,7 @@ ModelSetting = P.ModelSetting
 class SourceNavertv(SourceBase):
     source_id = "navertv"
 
-    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
+    def get_channel_list(self) -> None:
         ret = []
         for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
             if not item:
@@ -34,7 +34,6 @@ class SourceNavertv(SourceBase):
             c.quality = quality
             ret.append([c.channel_id, c])
         self.channel_list = OrderedDict(ret)
-        return self.channel_list
 
     def __get_url(self, target_url: str, quality: str) -> str:
         if target_url.startswith("SPORTS_"):

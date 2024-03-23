@@ -13,7 +13,7 @@ ModelSetting = P.ModelSetting
 class SourceFixURL(SourceBase):
     source_id = "fix_url"
 
-    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
+    def get_channel_list(self) -> None:
         ret = []
         for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
             if not item:
@@ -26,7 +26,6 @@ class SourceFixURL(SourceBase):
             c.url = url
             ret.append([c.channel_id, c])
         self.channel_list = OrderedDict(ret)
-        return self.channel_list
 
     def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
         url = self.channel_list[channel_id].url

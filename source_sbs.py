@@ -26,7 +26,7 @@ class SourceSBS(SourceBase):
         # cached playlist url
         self.get_playlist = ttl_cache(self.ttl)(self.__get_playlist)
 
-    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
+    def get_channel_list(self) -> None:
         ret = []
         url_list = ["http://static.apis.sbs.co.kr/play-api/1.0/onair/channels"]
         if ModelSetting.get_bool("sbs_include_vod_ch"):
@@ -52,7 +52,6 @@ class SourceSBS(SourceBase):
                 except Exception:
                     logger.exception("라이브 채널 분석 중 예외: %s", item)
         self.channel_list = OrderedDict(ret)
-        return self.channel_list
 
     def get_data(self, channel_id: str) -> dict:
         """channel_id -> api data -> root playlist -> media playlist url"""

@@ -22,7 +22,7 @@ class SourceStreamlink(SourceBase):
         except ImportError:
             return False
 
-    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
+    def get_channel_list(self) -> None:
         ret = []
         for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
             if not item:
@@ -35,7 +35,6 @@ class SourceStreamlink(SourceBase):
             c.url = url
             ret.append([c.channel_id, c])
         self.channel_list = OrderedDict(ret)
-        return self.channel_list
 
     def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
         # logger.debug('channel_id:%s, quality:%s, mode:%s', channel_id, quality, mode)

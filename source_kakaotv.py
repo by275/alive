@@ -15,7 +15,7 @@ ModelSetting = P.ModelSetting
 class SourceKakaotv(SourceBase):
     source_id = "kakaotv"
 
-    def get_channel_list(self) -> OrderedDict[str, ChannelItem]:
+    def get_channel_list(self) -> None:
         ret = []
         for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
             if item.strip() == "":
@@ -28,7 +28,6 @@ class SourceKakaotv(SourceBase):
             c.url = url
             ret.append([c.channel_id, c])
         self.channel_list = OrderedDict(ret)
-        return self.channel_list
 
     def __get_url(self, target: str) -> str:
         target = f"https://tv.kakao.com/api/v5/ft/livelinks/impress?player=monet_html5&service=kakao_tv&section=kakao_tv&dteType=PC&profile=BASE&liveLinkId={target}&withRaw=true&contentType=HLS"
