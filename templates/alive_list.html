@@ -1,10 +1,20 @@
 {% extends "base.html" %}
+
+{% block head %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+{% endblock %}
+
 {% block content %}
 <style type="text/css">
   .table {
     table-layout: fixed;
   }
 </style>
+
+<div class="container col-sm-8 d-flex justify-content-center align-items-center mt-3 mb-3">
+<video id="hjs1" controls="" autoplay="false" playsinline="" style="width: 100%; background-color: black;"></video>
+</div>
 
 <div>
   {{ macros.m_button_group([['list_channel_reload_btn', '새로고침']])}}
@@ -41,6 +51,9 @@
 
 var channelTemplate = document.querySelector('#channel-template');
 var channelScroller = document.querySelector('#channel-list');
+
+var video = document.getElementById('hjs1');
+var hls;
 
 $(document).ready(function(){
   load_channel_list(false);
@@ -80,6 +93,41 @@ function get_play_url(source, channel_id, web_play, callback) {
   });
 }
 
+function loadSource(url) {
+  if (hls) {
+    hls.destroy();
+    hls = null;
+  }
+  hls = new Hls();
+  hls.loadSource(url);
+  hls.attachMedia(video);
+
+  hls.on(Hls.Events.ERROR, function (event, data) {
+    if (data.fatal) {
+      switch (data.type) {
+        case Hls.ErrorTypes.MEDIA_ERROR:
+          console.log('fatal media error encountered, try to recover');
+          hls.recoverMediaError();
+          break;
+        case Hls.ErrorTypes.NETWORK_ERROR:
+          console.error('fatal network error encountered', data);
+          // All retries and media options have been exhausted.
+          // Immediately trying to restart loading could cause loop loading.
+          // Consider modifying loading policies to best fit your asset and network
+          // conditions (manifestLoadPolicy, playlistLoadPolicy, fragLoadPolicy).
+          break;
+        default:
+          // cannot recover
+          hls.destroy();
+          break;
+      }
+    }
+  });
+  hls.on(Hls.Events.MANIFEST_PARSED,function() {
+    video.play();
+  });
+}
+
 $("body").on('click', '#play_btn', function(e){
   e.preventDefault();
   get_play_url($(this).data('source'), $(this).data('id'), true, function(ret) {
@@ -87,18 +135,7 @@ $("body").on('click', '#play_btn', function(e){
       notify('에러', 'danger');
       return;
     }
-    var form = document.playform;
-    var url = '/videojs';
-    var popupWidth = 980;
-    var leftPos = screen.width - popupWidth;
-    window.open('', ret.data.url, "location=no, directories=no,resizable=no,status=no,toolbar=no,menubar=no,width=" + popupWidth + ", height=560, top=100, left=" + leftPos);
-    form.action = url;
-    form.method = "post";
-    form.target = ret.data.url;
-    $('#play_title').val(ret.data.title);
-    $('#play_source_src').val(ret.data.url);
-    $('#play_source_type').val('application/x-mpegURL');
-    form.submit();
+    loadSource(ret.data.url);
   });
 });
 
