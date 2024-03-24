@@ -30,6 +30,8 @@ class SourceTving(SourceBase):
             logger.error("support site 플러그인이 필요합니다.")
         except Exception:
             logger.exception("Support Module 로딩 중 예외:")
+        if self.mod is None:
+            return
         # session for playlists
         self.plsess = self.new_session(headers=self.mod.headers, proxies=self.mod.proxies)
         # cached playlist url
