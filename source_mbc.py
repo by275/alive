@@ -24,7 +24,7 @@ class SourceMBC(SourceBase):
         "FM4U": "mfm",
         "ALLTHAT": "chm",
     }
-    ttl = 180 - 6  # 3분
+    ttl = 180  # 3분
 
     def __init__(self):
         # session for api

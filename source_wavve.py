@@ -34,9 +34,9 @@ class SourceWavve(SourceBase):
         self.plsess = self.new_session(headers=self.mod.headers, proxies=self.mod.proxies)
         # cached playlist url
         if self.mod.session.headers.get("wavve-credential"):
-            ttl = 60 * 60 * (24 - 1)  # 1일
+            ttl = 60 * 60 * 24  # 1일
         else:
-            ttl = 60 * (10 - 1)  # 10분
+            ttl = 60 * 10  # 10분
         self.get_playlist = ttl_cache(ttl)(self.__get_playlist)
 
     def load_support_module(self):

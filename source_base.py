@@ -20,13 +20,13 @@ ModelSetting = P.ModelSetting
 SystemModelSetting = F.SystemModelSetting
 
 
-def ttl_cache(seconds: int, maxsize: int = 10):
+def ttl_cache(seconds: int, maxsize: int = 10, margin: int = 10):
     def wrapper(func):
         @lru_cache(maxsize)
         def inner(__ttl, *args, **kwargs):
             return func(*args, **kwargs)
 
-        return lambda *args, **kwargs: inner(time.time() // seconds, *args, **kwargs)
+        return lambda *args, **kwargs: inner(time.time() // (seconds - margin), *args, **kwargs)
 
     return wrapper
 

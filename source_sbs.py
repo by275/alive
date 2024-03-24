@@ -1,5 +1,3 @@
-import json
-from base64 import b64decode
 from collections import OrderedDict
 from typing import Tuple
 
@@ -14,7 +12,7 @@ ModelSetting = P.ModelSetting
 
 class SourceSBS(SourceBase):
     source_id = "sbs"
-    ttl = 180 - 6  # 3분
+    ttl = 180  # 3분
 
     def __init__(self):
         # session for api
@@ -53,7 +51,6 @@ class SourceSBS(SourceBase):
         self.channel_list = OrderedDict(ret)
 
     def get_data(self, channel_id: str) -> dict:
-        """channel_id -> api data -> root playlist -> media playlist url"""
         if channel_id.startswith("EVENT"):
             prefix = ""
         else:

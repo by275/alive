@@ -17,7 +17,7 @@ ModelSetting = P.ModelSetting
 class SourceTving(SourceBase):
     source_id = "tving"
     mod = None
-    ttl = 60 * 60 * (24 - 1)  # 1일
+    ttl = 60 * 60 * 24  # 1일
 
     PTN_BANDWIDTH = re.compile(r"BANDWIDTH=(\d+)", re.MULTILINE)
 

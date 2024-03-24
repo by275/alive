@@ -13,7 +13,7 @@ ModelSetting = P.ModelSetting
 
 class SourceKBS(SourceBase):
     source_id = "kbs"
-    ttl = 60 * 60 * (48 - 1)  # 48시간
+    ttl = 60 * 60 * 48  # 48시간
 
     def __init__(self):
         # session for api
