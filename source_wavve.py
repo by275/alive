@@ -18,7 +18,6 @@ ModelSetting = P.ModelSetting
 class SourceWavve(SourceBase):
     source_id = "wavve"
     mod = None
-    ttl = 60 * 60 * (24 - 1)  # 1일
 
     def __init__(self):
         if self.mod is not None:
@@ -29,10 +28,16 @@ class SourceWavve(SourceBase):
             logger.error("support site 플러그인이 필요합니다.")
         except Exception:
             logger.exception("Support Module 로딩 중 예외:")
+        if self.mod is None:
+            return
         # session for playlists
         self.plsess = self.new_session(headers=self.mod.headers, proxies=self.mod.proxies)
         # cached playlist url
-        self.get_playlist = ttl_cache(self.ttl)(self.__get_playlist)
+        if self.mod.session.headers.get("wavve-credential"):
+            ttl = 60 * 60 * (24 - 1)  # 1일
+        else:
+            ttl = 60 * (10 - 1)  # 10분
+        self.get_playlist = ttl_cache(ttl)(self.__get_playlist)
 
     def load_support_module(self):
         if Path(__file__).with_name("wavve.py").is_file():
@@ -86,6 +91,7 @@ class SourceWavve(SourceBase):
         # if data['quality'] == '100p' or data['qualities']['list'][0]['name'] == '오디오모드':
         #     url = data['playurl'].replace('/100/100', '/100') + f"/live.m3u8{data['debug']['orgurl'].split('.m3u8')[1]}"
         assert (url := data.get("playurl")) is not None, "Playlist URL is None!"
+        self.expires_in(url)  # debug
         return url
 
     def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:

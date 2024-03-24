@@ -1,9 +1,12 @@
+import json
 import re
 import time
+from base64 import b64decode
 from collections import OrderedDict
+from datetime import timedelta
 from functools import lru_cache
 from typing import Tuple
-from urllib.parse import quote
+from urllib.parse import parse_qs, quote, urlparse
 
 import requests
 from plugin import F  # pylint: disable=import-error
@@ -83,8 +86,40 @@ class SourceBase:
         return sess
 
     @staticmethod
-    def sub_ts(m3u8: str, prefix: str, suffix: str = None):
+    def sub_ts(m3u8: str, prefix: str, suffix: str = None) -> str:
         m3u8 = SourceBase.PTN_M3U8_ALL_TS.sub(rf"{prefix}\g<0>", m3u8)
         if suffix is None:
             return m3u8
         return SourceBase.PTN_M3U8_END_TS.sub(rf"\g<0>{suffix}", m3u8)
+
+    @staticmethod
+    def b64decode(txt: str, to_json: bool = True) -> str:
+        txt = b64decode(txt.rstrip("_") + "===")  # fix incorrect padding
+        if to_json:
+            return json.loads(txt)
+        return txt
+
+    @staticmethod
+    def parse_expiry(url: str) -> int:
+        u = urlparse(url)
+        q = parse_qs(u.query)
+        if policy := q.get("Policy", [None])[0]:
+            p = SourceBase.b64decode(policy)
+            return p["Statement"][0]["Condition"]["DateLessThan"]["AWS:EpochTime"]
+        if token := q.get("token", [None])[0]:
+            for t in token.split("."):
+                try:
+                    return SourceBase.b64decode(t)["exp"]
+                except Exception:
+                    pass
+        return None
+
+    @staticmethod
+    def expires_in(url: str) -> None:
+        try:
+            exp = SourceBase.parse_expiry(url)
+        except Exception:
+            logger.exception("Exception while parsing expiry in url: %s", url)
+            exp = None
+        if exp is not None:
+            logger.debug("%s", timedelta(seconds=exp - time.time()))

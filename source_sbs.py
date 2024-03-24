@@ -15,7 +15,6 @@ ModelSetting = P.ModelSetting
 class SourceSBS(SourceBase):
     source_id = "sbs"
     ttl = 180 - 6  # 3분
-    debug = False
 
     def __init__(self):
         # session for api
@@ -66,17 +65,7 @@ class SourceSBS(SourceBase):
     def __get_playlist(self, channel_id: str) -> str:
         data = self.get_data(channel_id)
         url = data["onair"]["source"]["mediasource"]["mediaurl"]  # root playlist url
-
-        # debug
-        if self.debug:
-            token_parts = []
-            for part in url.split("token=")[1].split("."):
-                try:
-                    token_parts.append(json.loads(b64decode(part + "=" * (-len(part) % 4))))
-                except Exception:
-                    break
-            logger.debug("token: %s", token_parts)
-
+        self.expires_in(url)  # debug
         data = self.plsess.get(url).text  # root playlist
         for line in data.splitlines():
             if line.startswith("chunklist.m3u8"):

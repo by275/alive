@@ -83,6 +83,7 @@ class SourceTving(SourceBase):
         data = self.get_data(channel_id, quality)
         data = self.plsess.get(url := data["url"]).text  # root playlist
         max_bandwidth = max(map(int, self.PTN_BANDWIDTH.findall(data)))
+        self.expires_in(url)  # debug
         return url.replace("playlist.m3u8", f"chunklist_b{max_bandwidth}.m3u8")
 
     def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:

@@ -60,7 +60,9 @@ class SourceKBS(SourceBase):
         return self.apisess.get(tmp).json()
 
     def __get_playlist(self, channel_id: str) -> str:
-        return self.get_data(channel_id)["channel_item"][0]["service_url"]
+        url = self.get_data(channel_id)["channel_item"][0]["service_url"]
+        self.expires_in(url)  # debug
+        return url
 
     def get_url(self, channel_id: str, mode: str, quality: str = None) -> str:
         return "redirect", self.get_playlist(channel_id)
