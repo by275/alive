@@ -33,7 +33,7 @@ class SourceWavve(SourceBase):
         # session for playlists
         self.plsess = self.new_session(headers=self.mod.headers, proxies=self.mod.proxies)
         # cached playlist url
-        if self.mod.session.headers.get("wavve-credential"):
+        if self.mod.session.headers.get("wavve-credential") != "none":
             ttl = 60 * 60 * 24  # 1일
         else:
             ttl = 60 * 10  # 10분
