@@ -17,7 +17,6 @@ from .source_sbs import SourceSBS
 from .source_streamlink import SourceStreamlink
 from .source_tving import SourceTving
 from .source_wavve import SourceWavve
-from .source_youtubedl import SourceYoutubedl
 
 logger = P.logger
 package_name = P.package_name
@@ -47,10 +46,6 @@ class LogicKlive:
             source_list.append(SourceMBC())
         if ModelSetting.get_bool("use_sbs"):
             source_list.append(SourceSBS())
-        if ModelSetting.get_bool("use_youtubedl"):
-            source = SourceYoutubedl()
-            if source.is_installed():
-                source_list.append(source)
         if ModelSetting.get_bool("use_streamlink"):
             source = SourceStreamlink()
             if source.is_installed():

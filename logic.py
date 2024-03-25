@@ -99,11 +99,6 @@ class Logic(PluginModuleBase):
         "sbs_include_vod_ch": "False",
         "sbs_use_proxy": "False",
         "sbs_proxy_url": "",
-        # youtube-dl
-        "use_youtubedl": "False",
-        "youtubedl_list": "1|YTN|https://www.youtube.com/watch?v=GoXPbGQl-uQ\n2|KBS NEWS D|https://www.youtube.com/watch?v=CISTtnHPntQ\n3|연합뉴스|https://www.youtube.com/watch?v=qfMAsVoh9mg",
-        "youtubedl_use_proxy": "False",
-        "youtubedl_proxy_url": "",
         # streamlink
         "use_streamlink": "False",
         "streamlink_list": "1|LeekBeats Radio: 24/7 chill lofi beats - DMCA safe music|https://www.twitch.tv/leekbeats\n2|2010년 히트곡|https://dailymotion.com/video/x77q22e",
@@ -154,9 +149,6 @@ class Logic(PluginModuleBase):
                 from .source_streamlink import SourceStreamlink
 
                 arg["is_streamlink_installed"] = "Installed" if SourceStreamlink.is_installed() else "Not Installed"
-                from .source_youtubedl import SourceYoutubedl
-
-                arg["is_youtubedl_installed"] = "Installed" if SourceYoutubedl.is_installed() else "Not Installed"
             if sub == "proxy":
                 return redirect(f"/{package_name}/proxy/discover.json")
             if sub == "group":
