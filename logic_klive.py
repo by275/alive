@@ -29,7 +29,7 @@ class LogicKlive:
     channel_list: OrderedDict[str, OrderedDict[str, ChannelItem]] = OrderedDict()
 
     @classmethod
-    def __get_channel_list(cls) -> None:
+    def __load_source(cls) -> None:
         source_list = []
 
         if ModelSetting.get_bool("use_wavve"):
@@ -57,13 +57,16 @@ class LogicKlive:
         if ModelSetting.get_bool("use_fix_url"):
             source_list.append(SourceFixURL())
 
+        cls.source_list = OrderedDict([s.source_id, s] for s in source_list)
+
+    @classmethod
+    def __get_channel_list(cls) -> None:
         with ThreadPoolExecutor(max_workers=5) as exe:
-            f2s = {exe.submit(s.get_channel_list): s for s in source_list}
+            f2s = {exe.submit(s.get_channel_list): s for s in cls.source_list.values()}
             for f in as_completed(f2s):
                 logger.debug("%-10s: %s", f2s[f].source_id, len(f2s[f].channel_list))
 
-        cls.source_list = OrderedDict([s.source_id, s] for s in source_list)
-        cls.channel_list = OrderedDict([s.source_id, s.channel_list] for s in source_list)
+        cls.channel_list = OrderedDict([s.source_id, s.channel_list] for s in cls.source_list.values())
         ModelSetting.set("channel_list_updated_at", datetime.now().isoformat())
 
     @classmethod
@@ -82,6 +85,8 @@ class LogicKlive:
     def get_channel_list(cls, reload: bool = False) -> List[ChannelItem]:
         ret = []
         try:
+            if not cls.source_list:
+                cls.__load_source()
             if cls.should_reload_channel_list(reload=reload):
                 cls.__get_channel_list()
             for ch in cls.channel_list.values():

@@ -162,8 +162,15 @@ class Logic(PluginModuleBase):
         try:
             if sub == "setting_save_and_reload":
                 saved, changed = ModelSetting.setting_save(req)
-                LogicKlive.get_channel_list(reload=bool(changed))
+                # NOTE 설정 텍스트 마지막에 whitespace가 있으면 변경사항이 제대로 감지가 안되는 버그가 있다.
+                if reload := bool(changed):
+                    LogicKlive.source_list = None
+                LogicKlive.get_channel_list(reload=reload)
                 return jsonify(saved)
+            if sub == "source_reload":
+                LogicKlive.source_list = None
+                LogicKlive.get_channel_list(reload=True)
+                return jsonify(True)
             if sub == "channel_list":
                 reload = req.form.get("reload", "false") == "true"
                 ret = LogicKlive.get_channel_list(reload=reload)
