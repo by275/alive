@@ -2,7 +2,7 @@
 
 {% block head %}
 {{ super() }}
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -20,13 +20,17 @@
   }
 </style>
 
-<div class="container col-sm-8 d-flex justify-content-center align-items-center mt-3 mb-3">
+<div class="container col-sm-8 d-flex justify-content-center align-items-center mt-0 mb-0 flex-column">
 <video id="hjs1" controls="" autoplay="false" playsinline="" style="width: 100%; background-color: black;"></video>
+<p class="text-sm ml-1 mb-0">
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=" width="15" height="15" title="" id="play_src">
+<span id="play_info" class="align-text-top"></span>
+</p>
 </div>
 
 <div>
   {{ macros.m_button_group([['list_channel_reload_btn', '새로고침']])}}
-  <p id="list_info" class="mt-2 mb-1 text-sm small text-muted">마지막 업데이트:</p>
+  <p class="mt-2 mb-1 text-sm small text-muted">마지막 업데이트:<span id="list_info" class="ml-1">없음</span></p>
   <div id="list_div" class="mb-3">
     <table id="result_table" class="table table-sm table-striped table-hover">
         <thead class="thead-dark"><tr>
@@ -49,11 +53,6 @@
   </div>
 
 </div> <!--전체-->
-<form name="playform">
-  <input type="hidden" id="play_title" name="play_title">
-  <input type="hidden" id="play_source_src"  name="play_source_src">
-  <input type="hidden" id="play_source_type"  name="play_source_type">
-</form>
 
 <script type="text/javascript">
 
@@ -61,11 +60,89 @@ var channelTemplate = document.querySelector('#channel-template');
 var channelScroller = document.querySelector('#channel-list');
 
 var video = document.getElementById('hjs1');
+var nowPlaying;
+video.addEventListener("pause", (event) => {
+  if (!nowPlaying) { return; }
+  nowPlaying.find('i.fa').removeClass('fa-pause').addClass('fa-play');  // to play
+});
+video.addEventListener("play", (event) => {
+  if (!nowPlaying) { return; }
+  nowPlaying.find('i.fa').removeClass('fa-play').addClass('fa-pause');  // to pause
+});
 var hls;
 
 $(document).ready(function(){
   load_channel_list(false);
 });
+
+function timeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+
+    const interval = Math.floor(seconds / 31536000);
+
+    if (interval > 1) {
+        return interval + "년 전";
+    }
+    if (interval === 1) {
+        return interval + "년 전";
+    }
+
+    const months = Math.floor(seconds / 2628000);
+    if (months > 1) {
+        return months + "개월 전";
+    }
+    if (months === 1) {
+        return months + "개월 전";
+    }
+
+    const days = Math.floor(seconds / 86400);
+    if (days > 1) {
+        return days + "일 전";
+    }
+    if (days === 1) {
+        return days + "일 전";
+    }
+
+    const hours = Math.floor(seconds / 3600);
+    if (hours > 1) {
+        return hours + "시간 전";
+    }
+    if (hours === 1) {
+        return hours + "시간 전";
+    }
+
+    const minutes = Math.floor(seconds / 60);
+    if (minutes > 1) {
+        return minutes + "분 전";
+    }
+    if (minutes === 1) {
+        return minutes + "분 전";
+    }
+
+    return "방금 전";
+}
+
+function src2ico(source) {
+  if (source === "wavve") {    
+    return "https://www.wavve.com/favicon.ico";
+  }
+  if (source === "mbc") {
+    return "https://img.imbc.com/2010_main/images/favi2018.ico";
+  }
+  if (source === "tving") {
+    return "https://www.tving.com/favicon.ico";
+  }
+  if (source === "kbs") {
+    return "https://s2.googleusercontent.com/s2/favicons?domain=https://onair.kbs.co.kr";
+  }
+  if (source === "sbs") {
+    return "https://www.sbs.co.kr/favicon.ico";
+  }
+  if (source === "streamlink") {
+    return 'https://avatars.githubusercontent.com/u/22243823?s=48&v=4';
+  }
+  return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgYAAAAAMAASsJTYQAAAAASUVORK5CYII="
+}
 
 function load_channel_list(reload) {
   reset_channel_list('로딩중...');
@@ -76,7 +153,9 @@ function load_channel_list(reload) {
     data: {reload: reload},
     dataType: "json",
     success: function (data) {
-      $('#list_info').html(`마지막 업데이트: ${data.updated_at}`);
+      var updated_at = new Date(data.updated_at);
+      $('#list_info').html(timeAgo(updated_at));
+      $('#list_info').title = data.updated_at;
       make_channel_list(data.list);
     }
   });
@@ -96,7 +175,11 @@ function get_play_url(source, channel_id, web_play, callback) {
     data: {source: source, channel_id: channel_id, web_play: web_play},
     dataType: "json",
     success: function (ret) {
-      callback(ret);
+      if (ret.data == null) {
+        notify('에러', 'danger');
+        return;
+      }
+      callback(ret.data);
     }
   });
 }
@@ -138,27 +221,40 @@ function loadSource(url) {
 
 $("body").on('click', '#play_btn', function(e){
   e.preventDefault();
-  get_play_url($(this).data('source'), $(this).data('id'), true, function(ret) {
-    if (ret.data == null) {
-      notify('에러', 'danger');
-      return;
+  let wantPlay = $(this);
+  if (wantPlay.is(nowPlaying)) {
+    if (video.paused) { video.play(); } else { video.pause(); }
+    return
+  }
+  let source_name = wantPlay.closest('tr').find('#channel-source').html();
+  let source = wantPlay.closest('tr').find('#channel-source').prop('title');
+  let channel_name = wantPlay.closest('tr').find('#channel-name').html();
+  let channel_id = wantPlay.closest('tr').find('#channel-name').prop('title');
+  let program_title = wantPlay.closest('tr').find('#channel-program').html();
+  get_play_url(source, channel_id, true, function(ret) {
+    if (nowPlaying) {
+      nowPlaying.find('i.fa').removeClass('fa-pause').addClass('fa-play');  // to play
     }
-    loadSource(ret.data.url);
+    wantPlay.find('i.fa').removeClass('fa-play').addClass('fa-pause');  // to pause
+    $('#play_src').prop('title', source_name);
+    $('#play_src').prop('src', src2ico(source))
+    $('#play_info').html(`${channel_name} - ${program_title}`);
+    nowPlaying = wantPlay;
+    loadSource(ret.url);
   });
 });
 
 $("body").on('click', '#play_url_btn', function(e){
   e.preventDefault();
-  get_play_url($(this).data('source'), $(this).data('id'), false, function(ret) {
-    if (ret.data == null) {
-      notify('에러', 'danger');
-      return;
-    }
-    str = ret.data.url + '<br><br>';
-    tmp = j_button('globalCliboardBtn', '클립보드 복사', {'text':ret.data.url}, 'success');
-    tmp += j_button('globalOpenBtn', '새창에서 열기', {'url':ret.data.url}, 'success');
+  let wantPlay = $(this);
+  let source = wantPlay.closest('tr').find('#channel-source').prop('title');
+  let channel_id = wantPlay.closest('tr').find('#channel-name').prop('title');
+  get_play_url(source, channel_id, false, function(ret) {
+    str = ret.url + '<br><br>';
+    tmp = j_button('globalCliboardBtn', '클립보드 복사', {'text':ret.url}, 'success');
+    tmp += j_button('globalOpenBtn', '새창에서 열기', {'url':ret.url}, 'success');
     str += j_button_group(tmp);
-    showModal(str, ret.data.title, false);
+    showModal(str, ret.title, false);
   });
 });
 
@@ -173,7 +269,7 @@ function make_channel_list(data) {
     let channel_clone = channelTemplate.content.cloneNode(true);
     channel_clone.querySelector('#channel-idx').innerHTML = parseInt(i)+1;
     channel_clone.querySelector('#channel-source').innerHTML = data[i].source_name;
-    channel_clone.querySelector('#channel-source').title = data[i].source;    
+    channel_clone.querySelector('#channel-source').title = data[i].source;
     if (!data[i].is_tv) {
       channel_clone.querySelector('#channel-name').innerHTML += '<span class="mr-1" title="라디오">📻</span>';
     }
@@ -190,9 +286,9 @@ function make_channel_list(data) {
 
     buttons = '';
     if (data[i].source == "wavve" || data[i].source == "tving" || data[i].source == "mbc" || data[i].source == "kbs" || data[i].source == "sbs") {
-      buttons += j_button('play_btn', 'PLAY', {'source':data[i].source,'id':data[i].channel_id}, 'success', false, true);
+      buttons += j_button('play_btn', '<i class="fa fa-play px-1" aria-hidden="true"></i>', {}, 'secondary', false, true);
     }
-    buttons += j_button('play_url_btn', 'URL', {'source':data[i].source,'id':data[i].channel_id}, 'info', false, true);
+    buttons += j_button('play_url_btn', '<i class="fa fa-external-link px-1" aria-hidden="true"></i>', {}, 'secondary', false, true);
     buttons = j_button_group(buttons);
     channel_clone.querySelector('#channel-action').innerHTML = buttons;
 

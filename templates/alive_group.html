@@ -165,7 +165,11 @@ function get_play_url(source, channel_id, web_play, callback) {
     data: {source: source, channel_id: channel_id, web_play: web_play},
     dataType: "json",
     success: function (ret) {
-      callback(ret);
+      if (ret.data == null) {
+        notify('에러', 'danger');
+        return;
+      }
+      callback(ret.data);
     }
   });
 }
@@ -173,13 +177,10 @@ function get_play_url(source, channel_id, web_play, callback) {
 $("body").on('click', '#src-link', function(e){
   e.preventDefault();
   get_play_url($(this).data('source'), $(this).data('id'), false, function(ret) {
-    if (ret.data == null) {
-      notify('에러', 'danger');
-      return;
-    }
+    // FIXME iOS 사파리에서 새 창으로 열기 동작 안함
     var w = window.open();
-    w.location = ret.data.url;
-    w.onload = function() { this.document.title = ret.data.title; }
+    w.location = ret.url;
+    w.onload = function() { this.document.title = ret.title; }
   });
 });
 
