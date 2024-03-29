@@ -192,6 +192,14 @@ function loadSource(url) {
   hls = new Hls();
   hls.loadSource(url);
   hls.attachMedia(video);
+  // https://github.com/video-dev/hls.js/issues/5989
+  while (video.firstChild) {
+    video.removeChild(video.lastChild);
+  }
+  const source = document.createElement('source');
+  source.src = url;
+  video.appendChild(source);
+  video.disableRemotePlayback = false;
 
   hls.on(Hls.Events.ERROR, function (event, data) {
     if (data.fatal) {
