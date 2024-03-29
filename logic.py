@@ -218,7 +218,7 @@ class Logic(PluginModuleBase):
                     return redirect(url, code=302)
                 if action == "return_after_read":
                     # logger.warning('return_after_read')
-                    data = LogicKlive.repack_playlist(source, url, mode=mode)
+                    data = LogicKlive.repack_m3u8(source, url, mode=mode)
                     # logger.debug('Data len : %s', len(data))
                     # logger.debug(data)
                     return data, 200, {"Content-Type": "application/vnd.apple.mpegurl"}

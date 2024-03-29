@@ -19,7 +19,7 @@ class SourceKBS(SourceBase):
         # session for api
         self.apisess = self.new_session()
         # cached playlist url
-        self.get_playlist = ttl_cache(self.ttl)(self.__get_playlist)
+        self.get_m3u8 = ttl_cache(self.ttl)(self.__get_m3u8)
 
     def __parse_var(self, text: str, identifiers: Tuple[str, str]) -> dict:
         left = text.find(identifiers[0]) + len(identifiers[0])
@@ -59,10 +59,10 @@ class SourceKBS(SourceBase):
         tmp = f"https://cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/{channel_id}"
         return self.apisess.get(tmp).json()
 
-    def __get_playlist(self, channel_id: str) -> str:
+    def __get_m3u8(self, channel_id: str) -> str:
         url = self.get_data(channel_id)["channel_item"][0]["service_url"]
         self.expires_in(url)  # debug
         return url
 
     def get_url(self, channel_id: str, mode: str, quality: str = None) -> str:
-        return "redirect", self.get_playlist(channel_id)
+        return "redirect", self.get_m3u8(channel_id)

@@ -32,7 +32,7 @@ class SourceMBC(SourceBase):
         # session for playlists
         self.plsess = self.new_session()
         # cached playlist url
-        self.get_playlist = ttl_cache(self.ttl)(self.__get_playlist)
+        self.get_m3u8 = ttl_cache(self.ttl)(self.__get_m3u8)
 
     def get_channel_list(self) -> None:
         ret = []
@@ -70,7 +70,7 @@ class SourceMBC(SourceBase):
         data = self.apisess.get(url).json()
         return data
 
-    def __get_playlist(self, channel_id: str) -> str:
+    def __get_m3u8(self, channel_id: str) -> str:
         url = self.get_data(channel_id)["MediaInfo"]["MediaURL"]
         return url.replace("playlist.m3u8", "chunklist.m3u8")
 
@@ -79,8 +79,8 @@ class SourceMBC(SourceBase):
             url = f"https://sminiplay.imbc.com/aacplay.ashx?channel={channel_id}&protocol=M3U8&agent=webapp"
             data = self.apisess.get(url).text
             return "redirect", data
-        return "return_after_read", self.get_playlist(channel_id)
+        return "return_after_read", self.get_m3u8(channel_id)
 
-    def repack_playlist(self, url: str, mode: str = None) -> str:
+    def repack_m3u8(self, url: str, mode: str = None) -> str:
         data = self.plsess.get(url).text
         return self.sub_ts(data, url.split("chunklist.m3u8")[0])

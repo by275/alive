@@ -49,10 +49,10 @@ class SourceBase:
     def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
         raise NotImplementedError("method 'get_url' must be implemented")
 
-    def repack_playlist(self, url: str, mode: str = None) -> str:
+    def repack_m3u8(self, url: str, mode: str = None) -> str:
         pass
 
-    def relay_segments(self, data: str, proxy: str = None) -> str:
+    def relay_ts(self, data: str, proxy: str = None) -> str:
         base_url = f"{SystemModelSetting.get('ddns')}/{package_name}/api/relay"
         apikey = None
         if SystemModelSetting.get_bool("use_apikey"):

@@ -35,7 +35,7 @@ class SourceTving(SourceBase):
         # session for playlists
         self.plsess = self.new_session(headers=self.mod.headers, proxies=self.mod.proxies)
         # cached playlist url
-        self.get_playlist = ttl_cache(self.ttl)(self.__get_playlist)
+        self.get_m3u8 = ttl_cache(self.ttl)(self.__get_m3u8)
 
     def load_support_module(self):
         from support_site.setup import P as SS
@@ -79,7 +79,7 @@ class SourceTving(SourceBase):
         quality = self.mod.get_quality_to_tving(quality)
         return self.mod.get_info(channel_id, quality)
 
-    def __get_playlist(self, channel_id: str, quality: str) -> str:
+    def __get_m3u8(self, channel_id: str, quality: str) -> str:
         data = self.get_data(channel_id, quality)
         data = self.plsess.get(url := data["url"]).text  # root playlist
         max_bandwidth = max(map(int, self.PTN_BANDWIDTH.findall(data)))
@@ -90,11 +90,11 @@ class SourceTving(SourceBase):
         if self.mod.is_drm_channel(channel_id):
             # FIXME
             raise ValueError("DRM 채널은 현재 지원되지 않습니다.")
-        return "return_after_read", self.get_playlist(channel_id, quality)
+        return "return_after_read", self.get_m3u8(channel_id, quality)
 
-    def repack_playlist(self, url: str, mode: str = None) -> str:
+    def repack_m3u8(self, url: str, mode: str = None) -> str:
         data = self.plsess.get(url).text
         data = self.sub_ts(data, url.split("chunklist_")[0], url.split(".m3u8")[1])
         if mode == "web_play":  # CORS issue
-            return self.relay_segments(data)
+            return self.relay_ts(data)
         return data

@@ -37,7 +37,7 @@ class SourceWavve(SourceBase):
             ttl = 60 * 60 * 24  # 1일
         else:
             ttl = 60 * 10  # 10분
-        self.get_playlist = ttl_cache(ttl)(self.__get_playlist)
+        self.get_m3u8 = ttl_cache(ttl)(self.__get_m3u8)
 
     def load_support_module(self):
         if Path(__file__).with_name("wavve.py").is_file():
@@ -80,7 +80,7 @@ class SourceWavve(SourceBase):
                 logger.exception("라이브 채널 분석 중 예외: %s", item)
         self.channel_list = OrderedDict(ret)
 
-    def __get_playlist(self, channel_id: str, quality: str) -> str:
+    def __get_m3u8(self, channel_id: str, quality: str) -> str:
         """returns playlist url from streaming data
 
         새로운 playlist는 최신의/연속된 MEDIA SEQUENCE를 보장할 수 없다. (Error: Received stale playlist)
@@ -95,17 +95,17 @@ class SourceWavve(SourceBase):
         return url
 
     def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
-        url = self.get_playlist(channel_id, quality)
+        url = self.get_m3u8(channel_id, quality)
 
         if ModelSetting.get("wavve_streaming_type") == "redirect":
             if mode != "web_play":  # CORS issue
                 return "redirect", url
         return "return_after_read", url
 
-    def repack_playlist(self, url: str, mode: str = None) -> str:
+    def repack_m3u8(self, url: str, mode: str = None) -> str:
         data = self.plsess.get(url).text
         data = self.sub_ts(data, url.split(".m3u8")[0].rsplit("/", 1)[0] + "/")
         if ModelSetting.get("wavve_streaming_type") == "direct":
             if mode != "web_play":  # CORS issue
                 return data
-        return self.relay_segments(data, proxy=self.mod.proxy)
+        return self.relay_ts(data, proxy=self.mod.proxy)

@@ -21,7 +21,7 @@ class SourceSBS(SourceBase):
         # session for playlists
         self.plsess = self.new_session()
         # cached playlist url
-        self.get_playlist = ttl_cache(self.ttl)(self.__get_playlist)
+        self.get_m3u8 = ttl_cache(self.ttl)(self.__get_m3u8)
 
     def get_channel_list(self) -> None:
         ret = []
@@ -59,7 +59,7 @@ class SourceSBS(SourceBase):
         data = self.apisess.get(url).json()
         return data
 
-    def __get_playlist(self, channel_id: str) -> str:
+    def __get_m3u8(self, channel_id: str) -> str:
         data = self.get_data(channel_id)
         url = data["onair"]["source"]["mediasource"]["mediaurl"]  # root playlist url
         self.expires_in(url)  # debug
@@ -70,8 +70,8 @@ class SourceSBS(SourceBase):
         return None
 
     def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
-        return "return_after_read", self.get_playlist(channel_id)
+        return "return_after_read", self.get_m3u8(channel_id)
 
-    def repack_playlist(self, url: str, mode: str = None) -> str:
+    def repack_m3u8(self, url: str, mode: str = None) -> str:
         data = self.plsess.get(url).text
         return self.sub_ts(data, url.split("chunklist.m3u8")[0])

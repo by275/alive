@@ -29,38 +29,38 @@ class LogicKlive:
     channel_list: OrderedDict[str, OrderedDict[str, ChannelItem]] = OrderedDict()
 
     @classmethod
-    def __load_source(cls) -> None:
-        source_list = []
+    def __load_sources(cls) -> None:
+        srcs = []
 
         if ModelSetting.get_bool("use_wavve"):
-            source = SourceWavve()
-            if source.mod is not None:
-                source_list.append(source)
+            src = SourceWavve()
+            if src.mod is not None:
+                srcs.append(src)
         if ModelSetting.get_bool("use_tving"):
-            source = SourceTving()
-            if source.mod is not None:
-                source_list.append(source)
+            src = SourceTving()
+            if src.mod is not None:
+                srcs.append(src)
         if ModelSetting.get_bool("use_kbs"):
-            source_list.append(SourceKBS())
+            srcs.append(SourceKBS())
         if ModelSetting.get_bool("use_mbc"):
-            source_list.append(SourceMBC())
+            srcs.append(SourceMBC())
         if ModelSetting.get_bool("use_sbs"):
-            source_list.append(SourceSBS())
+            srcs.append(SourceSBS())
         if ModelSetting.get_bool("use_streamlink"):
-            source = SourceStreamlink()
-            if source.is_installed():
-                source_list.append(source)
+            src = SourceStreamlink()
+            if src.is_installed():
+                srcs.append(src)
         if ModelSetting.get_bool("use_navertv"):
-            source_list.append(SourceNavertv())
+            srcs.append(SourceNavertv())
         if ModelSetting.get_bool("use_kakaotv"):
-            source_list.append(SourceKakaotv())
+            srcs.append(SourceKakaotv())
         if ModelSetting.get_bool("use_fix_url"):
-            source_list.append(SourceFixURL())
+            srcs.append(SourceFixURL())
 
-        cls.source_list = OrderedDict([s.source_id, s] for s in source_list)
+        cls.source_list = OrderedDict([s.source_id, s] for s in srcs)
 
     @classmethod
-    def __get_channel_list(cls) -> None:
+    def __load_channels(cls) -> None:
         with ThreadPoolExecutor(max_workers=5) as exe:
             f2s = {exe.submit(s.get_channel_list): s for s in cls.source_list.values()}
             for f in as_completed(f2s):
@@ -86,9 +86,9 @@ class LogicKlive:
         ret = []
         try:
             if not cls.source_list:
-                cls.__load_source()
+                cls.__load_sources()
             if cls.should_reload_channel_list(reload=reload):
-                cls.__get_channel_list()
+                cls.__load_channels()
             for ch in cls.channel_list.values():
                 ret.extend(ch.values())
         except Exception:
@@ -98,8 +98,7 @@ class LogicKlive:
     @classmethod
     def get_url(cls, source: str, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
         try:
-            if not cls.source_list:
-                cls.get_channel_list()
+            cls.get_channel_list()  # api에서 가장 먼저 call하는 entrypoint기 때문에...
             if quality is None or quality == "default":
                 if source in ["wavve", "tving"]:
                     quality = ModelSetting.get(f"{source}_quality")
@@ -109,9 +108,9 @@ class LogicKlive:
             return None, None
 
     @classmethod
-    def repack_playlist(cls, source: str, url: str, mode: str) -> str:
+    def repack_m3u8(cls, source: str, url: str, mode: str) -> str:
         try:
-            return cls.source_list[source].repack_playlist(url, mode=mode)
+            return cls.source_list[source].repack_m3u8(url, mode=mode)
         except Exception:
             logger.exception("Playlist 수정 중 예외:")
             return None
