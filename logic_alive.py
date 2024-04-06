@@ -143,7 +143,8 @@ class LogicAlive:
         for group in channel_group:
             gtype = group["type"]
             gname = group["name"]
-            radio = group.get("radio", False)
+            radio = group.setdefault("radio", False)
+            group.setdefault("no_m3u", False)
             if gtype == "search":
                 keyword = group.get("keyword") or gname
                 src_found = [c for c in src_tv if is_name_in(keyword, c.name)]
@@ -163,6 +164,7 @@ class LogicAlive:
                 raise NotImplementedError(f"잘못된 그룹 타입: {gtype}")
 
         # handling nogroup sources
+        no_m3u_if_no_group = cls.prefs.get("no_m3u", {}).get("if_no_group", False)
         nogroup_names = set()
         for x in src_tv + src_radio:
             nogroup_names.add(x.source_name)
@@ -171,17 +173,28 @@ class LogicAlive:
                 {
                     "type": "nogroup",
                     "name": group_name,
+                    "radio": False,
+                    "no_m3u": no_m3u_if_no_group,
                     "channels": [{"name": x.name, "srcs": [x]} for x in src_tv if x.source_name == group_name],
                 }
             )
             channel_group.append(
                 {
                     "type": "nogroup",
-                    "name": f"{group_name} radio",
+                    "name": f"{group_name} 라디오",
                     "radio": True,
+                    "no_m3u": no_m3u_if_no_group,
                     "channels": [{"name": x.name, "srcs": [x]} for x in src_radio if x.source_name == group_name],
                 }
             )
+
+        #
+        # override no_m3u by global prefs
+        #
+        no_m3u_if_radio_group = cls.prefs.get("no_m3u", {}).get("if_radio_group", False)
+        for group in channel_group:
+            if no_m3u_if_radio_group and group["radio"]:
+                group["no_m3u"] = True
 
         #
         # make decision based on user priority
@@ -228,16 +241,11 @@ class LogicAlive:
         ddns = SystemModelSetting.get("ddns")
         for group in cls.get_group_list(reload=True):
             # 제외 설정
-            if group.get("no_m3u", False):
-                continue
-            if cls.prefs.get("no_m3u", {}).get("if_radio_group", False) and group.get("radio", False):
-                continue
-            if cls.prefs.get("no_m3u", {}).get("if_no_group", False) and group["type"] == "nogroup":
+            if group["no_m3u"]:
                 continue
             for c in group["channels"]:
-                if not c.get("src"):
+                if not (s := c.get("src")):
                     continue
-                s = c["src"]
                 dname = s.name if group["type"] == "nogroup" or not src_char else f"{s.source_char} {s.name}"
                 kwargs = {
                     "url": s.svc_url(apikey=apikey, ddns=ddns, for_tvh=for_tvh),
