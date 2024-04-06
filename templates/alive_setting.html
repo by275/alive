@@ -59,7 +59,7 @@
     {{ macros.m_tab_content_end() }}
 
     {{ macros.m_tab_content_start('streamlink', false) }}
-      {{ macros.setting_checkbox('use_streamlink', 'Streamlink', value=arg['use_streamlink'], desc=['pip install streamlink로 직접 설치 후 사용']) }}
+      {{ macros.setting_checkbox('use_streamlink', 'Streamlink', value=arg['use_streamlink'], desc=['pip install \'streamlink<6.6\'로 직접 설치 후 사용', '최신 버전은 에러가 납니다. 6.6 미만 설치']) }}
       <div id="use_streamlink_div" class="collapse">
         {{ macros.info_text('is_streamlink_installed', '설치상태', value=arg['is_streamlink_installed']) }}
         {{ macros.setting_input_text('streamlink_quality', 'streamlink 화질', col='3', value=arg['streamlink_quality']) }}
