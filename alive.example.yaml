@@ -15,7 +15,7 @@ channel_group:
 # 비정규 검색 채널
 # 월드컵 올림픽 등 비상설 특별 채널 생길 때 이들을 모아 보는 용도
 # keyword가 없으면 name이 검색어
-- name: 2023 KBO 리그
+- name: 2024 KBO 리그
   type: search
   keyword:
 
@@ -80,7 +80,7 @@ channel_group:
   - {name: SPOTV, alias: [스포티비]}
   - {name: SPOTV ON2}
   - {name: NBA TV}
-  - {name: MBC스포츠 플러스}
+  - {name: MBC스포츠 플러스, alias: [MBC Sports+]}
   - {name: SBS스포츠, alias: [SBS Sports]}
   - {name: KBS N 스포츠, alias: [KBSN SPORTS]}
   - {name: JTBC GOLF, alias: [JTBC골프]}
