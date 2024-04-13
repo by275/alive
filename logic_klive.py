@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from typing import List, Tuple, Type
+from typing import List, Literal, Tuple, Type
 
 from plugin import F  # pylint: disable=import-error
 
@@ -82,12 +82,12 @@ class LogicKlive:
         return False
 
     @classmethod
-    def get_channel_list(cls, reload: bool = False) -> List[ChannelItem]:
+    def get_channel_list(cls, reload: Literal["soft", "hard"] = None) -> List[ChannelItem]:
         ret = []
         try:
-            if not cls.source_list:
+            if not cls.source_list or reload == "hard":
                 cls.__load_sources()
-            if cls.should_reload_channel_list(reload=reload):
+            if cls.should_reload_channel_list(reload in ["soft", "hard"]):
                 cls.__load_channels()
             for ch in cls.channel_list.values():
                 ret.extend(ch.values())

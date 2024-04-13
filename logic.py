@@ -129,6 +129,7 @@ class Logic(PluginModuleBase):
             t.start()
 
     def process_menu(self, sub, req):
+        _ = req
         arg = ModelSetting.to_dict()
         ddns = SystemModelSetting.get("ddns")
         use_apikey = SystemModelSetting.get_bool("use_apikey")
@@ -163,28 +164,27 @@ class Logic(PluginModuleBase):
             if sub == "setting_save_and_reload":
                 saved, changed = ModelSetting.setting_save(req)
                 # NOTE 설정 텍스트 마지막에 whitespace가 있으면 변경사항이 제대로 감지가 안되는 버그가 있다.
-                if reload := bool(changed):
-                    LogicKlive.source_list = None
-                LogicKlive.get_channel_list(reload=reload)
+                if changed:
+                    LogicKlive.get_channel_list(reload="hard")
                 return jsonify(saved)
             if sub == "source_reload":
-                LogicKlive.source_list = None
-                LogicKlive.get_channel_list(reload=True)
+                LogicKlive.get_channel_list(reload="hard")
                 return jsonify(True)
+
+            form = req.form.to_dict()
             if sub == "channel_list":
-                reload = req.form.get("reload", "false") == "true"
+                reload = "soft" if form["reload"] == "true" else None
                 ret = LogicKlive.get_channel_list(reload=reload)
                 updated_at = ModelSetting.get("channel_list_updated_at")
                 updated_at = datetime.fromisoformat(updated_at).strftime("%Y-%m-%d %H:%M:%S")
                 return jsonify({"list": [x.as_dict() for x in ret], "updated_at": updated_at})
             if sub == "play_url":
-                args = req.form.to_dict()
-                c = LogicKlive.channel_list[args["source"]][args["channel_id"]]
-                mode = "web_play" if args.get("web_play", "false") == "true" else "url"
+                c = LogicKlive.channel_list[form["source"]][form["channel_id"]]
+                mode = "web_play" if form.get("web_play", "false") == "true" else "url"
                 data = {"url": c.svc_url(mode=mode), "title": c.program.title}
                 return jsonify({"data": data})
             if sub == "group_list":
-                reload = req.form.get("reload", "false") == "true"
+                reload = form.get("reload", "false") == "true"
                 channel_group = deepcopy(LogicAlive.get_group_list(reload=reload))
                 for g in channel_group:
                     for c in g["channels"]:

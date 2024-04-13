@@ -72,7 +72,7 @@ video.addEventListener("play", (event) => {
 var hls;
 
 $(document).ready(function(){
-  load_channel_list(false);
+  load_channel_list();
 });
 
 function timeAgo(date) {
@@ -144,7 +144,7 @@ function src2ico(source) {
   return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgYAAAAAMAASsJTYQAAAAASUVORK5CYII="
 }
 
-function load_channel_list(reload) {
+function load_channel_list(reload=false) {
   reset_channel_list('로딩중...');
   $.ajax({
     url: `/${PACKAGE_NAME}/ajax/channel_list`,
