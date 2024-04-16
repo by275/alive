@@ -103,12 +103,6 @@ class Logic(PluginModuleBase):
         "use_streamlink": "False",
         "streamlink_list": "1|LeekBeats Radio: 24/7 chill lofi beats - DMCA safe music|https://www.twitch.tv/leekbeats\n2|2010년 히트곡|https://dailymotion.com/video/x77q22e",
         "streamlink_quality": "best",
-        # navertv
-        "use_navertv": "False",
-        "navertv_list": "1|스포츠 야구1|SPORTS_ad1|1080\n2|스포츠 야구2|SPORTS_ad2|1080\n3|스포츠 야구3|SPORTS_ad3|1080\n4|스포츠 야구4|SPORTS_ad4|1080\n5|스포츠 야구5|SPORTS_ad5|1080\n6|스포츠 Spocado|SPORTS_ch7|1080\n7|스포츠 sbsgolf|SPORTS_ch15|1080\n11|연합뉴스TV|https://tv.naver.com/l/44267\n12|TBS|https://tv.naver.com/l/43164|720\n",
-        # kakaotv
-        "use_kakaotv": "False",
-        "kakaotv_list": "1|KBS24|https://tv.kakao.com/channel/3193314/livelink/11817131\n2|연합뉴스|https://tv.kakao.com/channel/2663786/livelink/11834144\n3|케이블TV VOD 라이브 - 최신 영화·드라마·예능|https://tv.kakao.com/channel/2876224/livelink/11682940",
         # fix_url
         "use_fix_url": "False",
         "fix_url_list": "1|CBS 음악FM|http://aac.cbs.co.kr/cbs939/_definst_/cbs939.stream/playlist.m3u8|N\n2|CBS 표준FM|http://aac.cbs.co.kr/cbs981/_definst_/cbs981.stream/playlist.m3u8|N\n3|국방TV|http://mediaworks.dema.mil.kr:1935/live_edge/cudo.sdp/playlist.m3u8|Y",

@@ -9,10 +9,8 @@ from .model import ChannelItem
 from .setup import P
 from .source_base import SourceBase
 from .source_fix_url import SourceFixURL
-from .source_kakaotv import SourceKakaotv
 from .source_kbs import SourceKBS
 from .source_mbc import SourceMBC
-from .source_navertv import SourceNavertv
 from .source_sbs import SourceSBS
 from .source_streamlink import SourceStreamlink
 from .source_tving import SourceTving
@@ -50,10 +48,6 @@ class LogicKlive:
             src = SourceStreamlink()
             if src.is_installed():
                 srcs.append(src)
-        if ModelSetting.get_bool("use_navertv"):
-            srcs.append(SourceNavertv())
-        if ModelSetting.get_bool("use_kakaotv"):
-            srcs.append(SourceKakaotv())
         if ModelSetting.get_bool("use_fix_url"):
             srcs.append(SourceFixURL())
 

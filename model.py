@@ -22,8 +22,6 @@ source_id2name = {
     "mbc": "MBC",
     "sbs": "SBS",
     "streamlink": "StreamLink",
-    "navertv": "네이버TV",
-    "kakaotv": "카카오TV",
     "fix_url": "고정주소",
 }
 source_id2char = {
@@ -33,8 +31,6 @@ source_id2char = {
     "mbc": "m",
     "sbs": "s",
     "streamlink": "l",
-    "navertv": "n",
-    "kakaotv": "o",
     "fix_url": "f",
 }
 circled_alphabet = "ⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"

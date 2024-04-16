@@ -12,8 +12,6 @@
       {{ macros.m_tab_head('tving', '티빙', false) }}
       {{ macros.m_tab_head('ott_etc', '기타', false) }}
       {{ macros.m_tab_head('streamlink', 'Streamlink', false) }}
-      {{ macros.m_tab_head('navertv', '네이버TV', false) }}
-      {{ macros.m_tab_head('kakaotv', '카카오TV', false) }}
       {{ macros.m_tab_head('direct', '고정주소', false) }}
       {{ macros.m_tab_head('api', 'API', false) }}
     {{ macros.m_tab_head_end() }}
@@ -67,20 +65,6 @@
       </div>
     {{ macros.m_tab_content_end() }}
 
-    {{ macros.m_tab_content_start('navertv', false) }}
-      {{ macros.setting_checkbox('use_navertv', '네이버TV', value=arg['use_navertv'], desc=None) }}
-      <div id="use_navertv_div" class="collapse">
-        {{ macros.setting_input_textarea_wide('navertv_list', '채널 목록', desc=['형식 : 채널ID|채널이름|채널URL|화질. |화질 생략시 1080', '채널별 구분자 Enter'], value=arg['navertv_list'], row='20') }}
-      </div>
-    {{ macros.m_tab_content_end() }}
-
-    {{ macros.m_tab_content_start('kakaotv', false) }}
-      {{ macros.setting_checkbox('use_kakaotv', '카카오TV', value=arg['use_kakaotv'], desc=None) }}
-      <div id="use_kakaotv_div" class="collapse">
-        {{ macros.setting_input_textarea_wide('kakaotv_list', '채널 목록', desc=['형식 : 채널ID|채널이름|채널URL', '채널별 구분자 Enter. 360p만 가능'], value=arg['kakaotv_list'], row='20') }}
-      </div>
-    {{ macros.m_tab_content_end() }}
-
     {{ macros.m_tab_content_start('direct', false) }}
       {{ macros.setting_checkbox('use_fix_url', '고정주소', value=arg['use_fix_url'], desc=None) }}
       <div id="use_fix_url_div" class="collapse">
@@ -113,8 +97,6 @@ $(document).ready(function(){
   use_collapse("use_kbs")
   use_collapse("use_sbs")
   use_collapse("use_streamlink")
-  use_collapse("use_navertv")
-  use_collapse("use_kakaotv")
   use_collapse("use_fix_url")
   use_collapse("use_plex_proxy");
 });
@@ -124,8 +106,6 @@ $('#use_tving').change(function() {use_collapse('use_tving');});
 $('#use_kbs').change(function() {use_collapse('use_kbs');});
 $('#use_sbs').change(function() {use_collapse('use_sbs');});
 $('#use_streamlink').change(function() {use_collapse('use_streamlink');});
-$('#use_navertv').change(function() {use_collapse('use_navertv');});
-$('#use_kakaotv').change(function() {use_collapse('use_kakaotv');});
 $('#use_fix_url').change(function() {use_collapse('use_fix_url');});
 $('#use_plex_proxy').change(function() {use_collapse('use_plex_proxy');});
 
