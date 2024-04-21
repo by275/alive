@@ -90,24 +90,16 @@ class LogicKlive:
         return ret
 
     @classmethod
-    def get_url(cls, source: str, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
+    def make_m3u8(cls, source: str, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
         try:
             cls.get_channel_list()  # api에서 가장 먼저 call하는 entrypoint기 때문에...
             if quality is None or quality == "default":
                 if source in ["wavve", "tving"]:
                     quality = ModelSetting.get(f"{source}_quality")
-            return cls.source_list[source].get_url(channel_id, mode, quality=quality)
+            return cls.source_list[source].make_m3u8(channel_id, mode, quality)
         except Exception:
-            logger.exception("Playlist URL을 얻는 중 예외:")
+            logger.exception("m3u8 응답을 작성 중 예외:")
             return None, None
-
-    @classmethod
-    def repack_m3u8(cls, source: str, url: str, mode: str) -> str:
-        try:
-            return cls.source_list[source].repack_m3u8(url, mode=mode)
-        except Exception:
-            logger.exception("Playlist 수정 중 예외:")
-            return None
 
     @classmethod
     def get_m3uall(cls):

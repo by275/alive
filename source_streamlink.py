@@ -36,9 +36,9 @@ class SourceStreamlink(SourceBase):
             ret.append([c.channel_id, c])
         self.channel_list = OrderedDict(ret)
 
-    def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
+    def get_m3u8(self, channel_id: str) -> str:
         # logger.debug('channel_id:%s, quality:%s, mode:%s', channel_id, quality, mode)
-        from streamlink import Streamlink
+        from streamlink import Streamlink  # pylint: disable=import-error
 
         s = Streamlink()
         # logger.debug(StreamlinkItem.ch_list[channel_id].url)
@@ -54,6 +54,8 @@ class SourceStreamlink(SourceBase):
                         url = t.url
                     except Exception:
                         pass
-        if mode == "web_play":
-            return "return_after_read", url
+        return url
+
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
+        url = self.get_m3u8(channel_id)
         return "redirect", url

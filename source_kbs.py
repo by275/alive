@@ -61,8 +61,8 @@ class SourceKBS(SourceBase):
 
     def __get_m3u8(self, channel_id: str) -> str:
         url = self.get_data(channel_id)["channel_item"][0]["service_url"]
-        self.expires_in(url)  # debug
         return url
 
-    def get_url(self, channel_id: str, mode: str, quality: str = None) -> str:
-        return "redirect", self.get_m3u8(channel_id)
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
+        url = self.get_m3u8(channel_id)
+        return "redirect", url

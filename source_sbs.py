@@ -62,16 +62,19 @@ class SourceSBS(SourceBase):
     def __get_m3u8(self, channel_id: str) -> str:
         data = self.get_data(channel_id)
         url = data["onair"]["source"]["mediasource"]["mediaurl"]  # root playlist url
-        self.expires_in(url)  # debug
         data = self.plsess.get(url).text  # root playlist
         for line in data.splitlines():
             if line.startswith("chunklist.m3u8"):
                 return url.split("playlist.m3u8")[0] + line
         return None
 
-    def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
-        return "return_after_read", self.get_m3u8(channel_id)
+    def repack_m3u8(self, url: str) -> str:
+        m3u8 = self.plsess.get(url).text
+        return self.sub_ts(m3u8, url.split("chunklist.m3u8")[0])
 
-    def repack_m3u8(self, url: str, mode: str = None) -> str:
-        data = self.plsess.get(url).text
-        return self.sub_ts(data, url.split("chunklist.m3u8")[0])
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
+        stype = "direct" if self.channel_list[channel_id].is_tv else "redirect"
+        url = self.get_m3u8(channel_id)
+        if stype == "redirect":
+            return stype, url
+        return stype, self.repack_m3u8(url)

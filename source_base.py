@@ -24,7 +24,9 @@ def ttl_cache(seconds: int, maxsize: int = 10, margin: int = 10):
     def wrapper(func):
         @lru_cache(maxsize)
         def inner(__ttl, *args, **kwargs):
-            return func(*args, **kwargs)
+            ret = func(*args, **kwargs)
+            SourceBase.expires_in(ret)
+            return ret
 
         return lambda *args, **kwargs: inner(time.time() // (seconds - margin), *args, **kwargs)
 
@@ -44,28 +46,10 @@ class SourceBase:
         pass
 
     def get_channel_list(self) -> None:
-        raise NotImplementedError("method 'get_channel_list' must be implemented")
+        raise NotImplementedError
 
-    def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
-        raise NotImplementedError("method 'get_url' must be implemented")
-
-    def repack_m3u8(self, url: str, mode: str = None) -> str:
-        pass
-
-    def relay_ts(self, data: str, proxy: str = None) -> str:
-        base_url = f"{SystemModelSetting.get('ddns')}/{package_name}/api/relay"
-        apikey = None
-        if SystemModelSetting.get_bool("use_apikey"):
-            apikey = SystemModelSetting.get("apikey")
-        for m in self.PTN_URL.finditer(data):
-            u = m.group(0)
-            u2 = f"{base_url}?url={quote(u)}"
-            if apikey is not None:
-                u2 += f"&apikey={apikey}"
-            if proxy is not None:
-                u2 += f"&proxy={quote(proxy)}"
-            data = data.replace(u, u2)
-        return data
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
+        raise NotImplementedError
 
     #
     # utility
@@ -91,6 +75,22 @@ class SourceBase:
         if suffix is None:
             return m3u8
         return SourceBase.PTN_M3U8_END_TS.sub(rf"\g<0>{suffix}", m3u8)
+
+    @staticmethod
+    def relay_ts(m3u8: str, proxy: str = None) -> str:
+        base_url = f"{SystemModelSetting.get('ddns')}/{package_name}/api/relay"
+        apikey = None
+        if SystemModelSetting.get_bool("use_apikey"):
+            apikey = SystemModelSetting.get("apikey")
+        for m in SourceBase.PTN_URL.finditer(m3u8):
+            u = m.group(0)
+            u2 = f"{base_url}?url={quote(u)}"
+            if apikey is not None:
+                u2 += f"&apikey={apikey}"
+            if proxy is not None:
+                u2 += f"&proxy={quote(proxy)}"
+            m3u8 = m3u8.replace(u, u2)
+        return m3u8
 
     @staticmethod
     def b64decode(txt: str, to_json: bool = True) -> str:
@@ -121,5 +121,6 @@ class SourceBase:
         except Exception:
             logger.exception("Exception while parsing expiry in url: %s", url)
             exp = None
+        logger.debug("new url issued: %s", url)
         if exp is not None:
-            logger.debug("%s", timedelta(seconds=exp - time.time()))
+            logger.debug("which will expire in %s", timedelta(seconds=exp - time.time()))

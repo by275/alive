@@ -83,18 +83,17 @@ class SourceTving(SourceBase):
         data = self.get_data(channel_id, quality)
         data = self.plsess.get(url := data["url"]).text  # root playlist
         max_bandwidth = max(map(int, self.PTN_BANDWIDTH.findall(data)))
-        self.expires_in(url)  # debug
         return url.replace("playlist.m3u8", f"chunklist_b{max_bandwidth}.m3u8")
 
-    def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
-        if self.mod.is_drm_channel(channel_id):
-            # FIXME
-            raise ValueError("DRM 채널은 현재 지원되지 않습니다.")
-        return "return_after_read", self.get_m3u8(channel_id, quality)
-
-    def repack_m3u8(self, url: str, mode: str = None) -> str:
+    def repack_m3u8(self, url: str) -> str:
         data = self.plsess.get(url).text
         data = self.sub_ts(data, url.split("chunklist_")[0], url.split(".m3u8")[1])
-        if mode == "web_play":  # CORS issue
-            return self.relay_ts(data)
         return data
+
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
+        stype = "proxy" if mode == "web_play" else "direct"
+        url = self.get_m3u8(channel_id, quality)
+        data = self.repack_m3u8(url)
+        if stype == "direct":
+            return stype, data
+        return stype, self.relay_ts(data)  # proxy, web_play

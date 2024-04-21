@@ -90,22 +90,19 @@ class SourceWavve(SourceBase):
         # 2022-01-10 라디오. 대충 함 by soju6jan
         # if data['quality'] == '100p' or data['qualities']['list'][0]['name'] == '오디오모드':
         #     url = data['playurl'].replace('/100/100', '/100') + f"/live.m3u8{data['debug']['orgurl'].split('.m3u8')[1]}"
-        assert (url := data.get("playurl")) is not None, "Playlist URL is None!"
-        self.expires_in(url)  # debug
-        return url
+        return data.get("playurl")
 
-    def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
-        url = self.get_m3u8(channel_id, quality)
-
-        if ModelSetting.get("wavve_streaming_type") == "redirect":
-            if mode != "web_play":  # CORS issue
-                return "redirect", url
-        return "return_after_read", url
-
-    def repack_m3u8(self, url: str, mode: str = None) -> str:
+    def repack_m3u8(self, url: str) -> str:
         data = self.plsess.get(url).text
         data = self.sub_ts(data, url.split(".m3u8")[0].rsplit("/", 1)[0] + "/")
-        if ModelSetting.get("wavve_streaming_type") == "direct":
-            if mode != "web_play":  # CORS issue
-                return data
-        return self.relay_ts(data, proxy=self.mod.proxy)
+        return data
+
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
+        stype = "proxy" if mode == "web_play" else ModelSetting.get("wavve_streaming_type")
+        url = self.get_m3u8(channel_id, quality)
+        if stype == "redirect":
+            return stype, url
+        data = self.repack_m3u8(url)
+        if stype == "direct":
+            return stype, data
+        return stype, self.relay_ts(data, proxy=self.mod.proxy)  # proxy, web_play

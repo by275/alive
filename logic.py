@@ -189,10 +189,23 @@ class Logic(PluginModuleBase):
         except Exception:
             logger.exception("AJAX 요청 처리 중 예외:")
 
+    def process_m3u(self, sub, args):
+        if sub == "m3uall":
+            m3u = LogicKlive.get_m3uall()
+        elif sub == "m3u":
+            src_char = args.get("srcChar", "").lower() == "y"
+            m3u = LogicAlive.get_m3u(src_char=src_char)
+        elif sub == "m3utvh":
+            src_char = args.get("srcChar", "").lower() == "y"
+            m3u = LogicAlive.get_m3u(src_char=src_char, for_tvh=True)
+        return Response(m3u, content_type="audio/mpegurl")
+
     def process_api(self, sub, req):
         args = req.args.to_dict()
         # logger.debug("args: %s", args)
         try:
+            if sub in ["m3uall", "m3u", "m3utvh"]:
+                return self.process_m3u(sub, args)
             if sub == "url.m3u8":
                 mode = args["m"]
                 source = args["s"]
@@ -202,42 +215,17 @@ class Logic(PluginModuleBase):
                 if mode == "plex":
                     return Response(generate(req.url.replace("m=plex", "m=url")), mimetype="video/MP2T")
 
-                action, url = LogicKlive.get_url(source, channel_id, mode, quality=quality)
-                # logger.debug("action:%s, url:%s", action, url)
-
-                if url is None:
-                    return url
-
-                if action == "redirect":
-                    return redirect(url, code=302)
-                if action == "return_after_read":
-                    # logger.warning('return_after_read')
-                    data = LogicKlive.repack_m3u8(source, url, mode=mode)
-                    # logger.debug('Data len : %s', len(data))
-                    # logger.debug(data)
-                    return data, 200, {"Content-Type": "application/vnd.apple.mpegurl"}
-                if action == "return":
-                    return url
-
-                if mode == "url.m3u8":
-                    return redirect(url, code=302)
-                if mode == "lc":
-                    return url
-            elif sub == "m3uall":
-                m3u = LogicKlive.get_m3uall()
-                r = Response(m3u, content_type="audio/mpegurl")
-                return r, 200
-            elif sub == "m3u":
-                src_char = req.args.get("srcChar", "").lower() == "y"
-                m3u = LogicAlive.get_m3u(src_char=src_char)
-                r = Response(m3u, content_type="audio/mpegurl")
-                return r, 200
-            elif sub == "m3utvh":
-                src_char = req.args.get("srcChar", "").lower() == "y"
-                m3u = LogicAlive.get_m3u(src_char=src_char, for_tvh=True)
-                r = Response(m3u, content_type="audio/mpegurl")
-                return r, 200
-            elif sub == "relay":
+                stype, sdata = LogicKlive.make_m3u8(source, channel_id, mode, quality)
+                if sdata is None:
+                    return Response(status=204)
+                if stype == "redirect":
+                    r = redirect(sdata, code=302)
+                else:
+                    r = Response(sdata, content_type="application/vnd.apple.mpegurl")
+                l = [f"{source} {channel_id}", f"({stype})", req.remote_addr]
+                logger.debug("%s", " -> ".join(l))
+                return r
+            if sub == "relay":
                 url = args.get("url")
                 proxy = args.get("proxy")
                 proxies = None

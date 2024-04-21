@@ -27,8 +27,9 @@ class SourceFixURL(SourceBase):
             ret.append([c.channel_id, c])
         self.channel_list = OrderedDict(ret)
 
-    def get_url(self, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
-        url = self.channel_list[channel_id].url
-        if mode == "web_play":
-            return "return_after_read", url
+    def get_m3u8(self, channel_id: str) -> str:
+        return self.channel_list[channel_id].url
+
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
+        url = self.get_m3u8(channel_id)
         return "redirect", url
