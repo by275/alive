@@ -24,7 +24,6 @@ SystemModelSetting = F.SystemModelSetting
 
 class LogicKlive:
     source_list: OrderedDict[str, Type[SourceBase]] = OrderedDict()
-    channel_list: OrderedDict[str, OrderedDict[str, ChannelItem]] = OrderedDict()
 
     @classmethod
     def __load_sources(cls) -> None:
@@ -60,12 +59,11 @@ class LogicKlive:
             for f in as_completed(f2s):
                 logger.debug("%-10s: %s", f2s[f].source_id, len(f2s[f].channel_list))
 
-        cls.channel_list = OrderedDict([s.source_id, s.channel_list] for s in cls.source_list.values())
         ModelSetting.set("channel_list_updated_at", datetime.now().isoformat())
 
     @classmethod
     def should_reload_channel_list(cls, reload: bool) -> bool:
-        if not cls.channel_list or reload:
+        if not any(s.channel_list for s in cls.source_list.values()) or reload:
             return True
         channel_list_max_age = ModelSetting.get_int("channel_list_max_age")
         if channel_list_max_age <= 0:
@@ -83,8 +81,8 @@ class LogicKlive:
                 cls.__load_sources()
             if cls.should_reload_channel_list(reload in ["soft", "hard"]):
                 cls.__load_channels()
-            for ch in cls.channel_list.values():
-                ret.extend(ch.values())
+            for s in cls.source_list.values():
+                ret.extend(s.channel_list.values())
         except Exception:
             logger.exception("채널 목록을 얻는 중 예외:")
         return ret

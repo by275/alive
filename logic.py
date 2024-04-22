@@ -173,7 +173,7 @@ class Logic(PluginModuleBase):
                 updated_at = datetime.fromisoformat(updated_at).strftime("%Y-%m-%d %H:%M:%S")
                 return jsonify({"list": [x.as_dict() for x in ret], "updated_at": updated_at})
             if sub == "play_url":
-                c = LogicKlive.channel_list[form["source"]][form["channel_id"]]
+                c = LogicKlive.source_list[form["source"]].channel_list[form["channel_id"]]
                 mode = "web_play" if form.get("web_play", "false") == "true" else "url"
                 data = {"url": c.svc_url(mode=mode), "title": c.program.title}
                 return jsonify({"data": data})
