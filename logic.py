@@ -119,7 +119,7 @@ class Logic(PluginModuleBase):
         if not alive_prefs.exists():
             shutil.copyfile(Path(__file__).with_name("alive.example.yaml"), alive_prefs)
         if ModelSetting.get_bool("channel_list_on_plugin_load"):
-            t = threading.Thread(target=LogicKlive.get_channel_list, args=(), daemon=True)
+            t = threading.Thread(target=LogicKlive.all_channels, args=(), daemon=True)
             t.start()
 
     def process_menu(self, sub, req):
@@ -159,16 +159,16 @@ class Logic(PluginModuleBase):
                 saved, changed = ModelSetting.setting_save(req)
                 # NOTE 설정 텍스트 마지막에 whitespace가 있으면 변경사항이 제대로 감지가 안되는 버그가 있다.
                 if changed:
-                    LogicKlive.get_channel_list(reload="hard")
+                    LogicKlive.all_channels(reload="hard")
                 return jsonify(saved)
             if sub == "source_reload":
-                LogicKlive.get_channel_list(reload="hard")
+                LogicKlive.all_channels(reload="hard")
                 return jsonify(True)
 
             form = req.form.to_dict()
             if sub == "channel_list":
                 reload = "soft" if form["reload"] == "true" else None
-                ret = LogicKlive.get_channel_list(reload=reload)
+                ret = LogicKlive.all_channels(reload=reload)
                 updated_at = ModelSetting.get("channel_list_updated_at")
                 updated_at = datetime.fromisoformat(updated_at).strftime("%Y-%m-%d %H:%M:%S")
                 return jsonify({"list": [x.as_dict() for x in ret], "updated_at": updated_at})

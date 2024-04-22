@@ -71,7 +71,7 @@ class LogicKlive:
         return False
 
     @classmethod
-    def get_channel_list(cls, reload: Literal["soft", "hard"] = None) -> List[ChannelItem]:
+    def all_channels(cls, reload: Literal["soft", "hard"] = None) -> List[ChannelItem]:
         ret = []
         try:
             if not cls.sources or reload == "hard":
@@ -87,7 +87,7 @@ class LogicKlive:
     @classmethod
     def make_m3u8(cls, source: str, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
         try:
-            cls.get_channel_list()  # api에서 가장 먼저 call하는 entrypoint기 때문에...
+            cls.all_channels()  # api에서 가장 먼저 call하는 entrypoint기 때문에...
             if quality is None or quality == "default":
                 if source in ["wavve", "tving"]:
                     quality = ModelSetting.get(f"{source}_quality")
@@ -105,7 +105,7 @@ class LogicKlive:
             if SystemModelSetting.get_bool("use_apikey"):
                 apikey = SystemModelSetting.get("apikey")
             ddns = SystemModelSetting.get("ddns")
-            for c in cls.get_channel_list():
+            for c in cls.all_channels():
                 url = c.svc_url(apikey=apikey, ddns=ddns)
                 m3u.append(c.as_m3u(url=url, tvg_chno=idx, tvh_chnum=idx))
                 idx += 1

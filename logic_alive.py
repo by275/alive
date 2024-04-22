@@ -134,8 +134,8 @@ class LogicAlive:
                     logger.warning("채널 이름에 중복이 있습니다: %s", channel_name)
                 known_channel_names += channel_name
 
-        src_tv = [c for c in LogicKlive.get_channel_list() if c.is_tv]
-        src_radio = [c for c in LogicKlive.get_channel_list() if not c.is_tv]
+        src_tv = [c for c in LogicKlive.all_channels() if c.is_tv]
+        src_radio = [c for c in LogicKlive.all_channels() if not c.is_tv]
 
         #
         # grouping available sources based on predefined channel_group
