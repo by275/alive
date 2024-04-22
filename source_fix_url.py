@@ -25,10 +25,10 @@ class SourceFixURL(SourceBase):
             c = ChannelItem(self.source_id, cid, cname, None, radio_yn == "Y")
             c.url = url
             ret.append([c.channel_id, c])
-        self.channel_list = OrderedDict(ret)
+        self.channels = OrderedDict(ret)
 
     def get_m3u8(self, channel_id: str) -> str:
-        return self.channel_list[channel_id].url
+        return self.channels[channel_id].url
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
         url = self.get_m3u8(channel_id)

@@ -62,7 +62,7 @@ class SourceMBC(SourceBase):
                     ret.append([c.channel_id, c])
                 except Exception:
                     logger.exception("라이브 채널 분석 중 예외: %s", item)
-        self.channel_list = OrderedDict(ret)
+        self.channels = OrderedDict(ret)
 
     def get_data(self, channel_id: str) -> dict:
         path = "OnAirURLUtil" if channel_id == "0" else "OnAirPlusURLUtil"

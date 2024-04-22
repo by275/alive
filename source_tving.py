@@ -73,7 +73,7 @@ class SourceTving(SourceBase):
                 ret.append([c.channel_id, c])
             except Exception:
                 logger.exception("라이브 채널 분석 중 예외: %s", item)
-        self.channel_list = OrderedDict(ret)
+        self.channels = OrderedDict(ret)
 
     def get_data(self, channel_id: str, quality: str) -> dict:
         quality = self.mod.get_quality_to_tving(quality)

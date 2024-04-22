@@ -30,12 +30,10 @@ class LogicKlive:
         srcs = []
 
         if ModelSetting.get_bool("use_wavve"):
-            src = SourceWavve()
-            if src.mod is not None:
+            if (src := SourceWavve()).mod is not None:
                 srcs.append(src)
         if ModelSetting.get_bool("use_tving"):
-            src = SourceTving()
-            if src.mod is not None:
+            if (src := SourceTving()).mod is not None:
                 srcs.append(src)
         if ModelSetting.get_bool("use_kbs"):
             srcs.append(SourceKBS())
@@ -44,8 +42,7 @@ class LogicKlive:
         if ModelSetting.get_bool("use_sbs"):
             srcs.append(SourceSBS())
         if ModelSetting.get_bool("use_streamlink"):
-            src = SourceStreamlink()
-            if src.is_installed():
+            if (src := SourceStreamlink()).is_installed():
                 srcs.append(src)
         if ModelSetting.get_bool("use_fix_url"):
             srcs.append(SourceFixURL())
@@ -57,13 +54,13 @@ class LogicKlive:
         with ThreadPoolExecutor(max_workers=5) as exe:
             f2s = {exe.submit(s.get_channel_list): s for s in cls.sources.values()}
             for f in as_completed(f2s):
-                logger.debug("%-10s: %s", f2s[f].source_id, len(f2s[f].channel_list))
+                logger.debug("%-10s: %s", f2s[f].source_id, len(f2s[f].channels))
 
         ModelSetting.set("channel_list_updated_at", datetime.now().isoformat())
 
     @classmethod
     def should_reload_channel_list(cls, reload: bool) -> bool:
-        if not any(s.channel_list for s in cls.sources.values()) or reload:
+        if not any(s.channels for s in cls.sources.values()) or reload:
             return True
         channel_list_max_age = ModelSetting.get_int("channel_list_max_age")
         if channel_list_max_age <= 0:
@@ -82,7 +79,7 @@ class LogicKlive:
             if cls.should_reload_channel_list(reload in ["soft", "hard"]):
                 cls.__load_channels()
             for s in cls.sources.values():
-                ret.extend(s.channel_list.values())
+                ret.extend(s.channels.values())
         except Exception:
             logger.exception("채널 목록을 얻는 중 예외:")
         return ret

@@ -35,7 +35,7 @@ def ttl_cache(seconds: int, maxsize: int = 10, margin: int = 10):
 
 class SourceBase:
     source_id: str = None
-    channel_list: OrderedDict[str, ChannelItem] = OrderedDict()
+    channels: OrderedDict[str, ChannelItem] = OrderedDict()
     ttl: int = None
 
     PTN_M3U8_ALL_TS: re.Pattern = re.compile(r"^[^#].*\.ts.*$", re.MULTILINE)

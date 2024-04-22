@@ -34,7 +34,7 @@ class SourceStreamlink(SourceBase):
             c = ChannelItem(self.source_id, cid, cname, None, True)
             c.url = url
             ret.append([c.channel_id, c])
-        self.channel_list = OrderedDict(ret)
+        self.channels = OrderedDict(ret)
 
     def get_m3u8(self, channel_id: str) -> str:
         # logger.debug('channel_id:%s, quality:%s, mode:%s', channel_id, quality, mode)
@@ -42,13 +42,13 @@ class SourceStreamlink(SourceBase):
 
         s = Streamlink()
         # logger.debug(StreamlinkItem.ch_list[channel_id].url)
-        data = s.streams(self.channel_list[channel_id].url)
+        data = s.streams(self.channels[channel_id].url)
 
         try:
             stream = data[ModelSetting.get("streamlink_quality")]
             url = stream.url
         except Exception:
-            if "youtube" in self.channel_list[channel_id].url.lower():
+            if "youtube" in self.channels[channel_id].url.lower():
                 for t in data.values():
                     try:
                         url = t.url

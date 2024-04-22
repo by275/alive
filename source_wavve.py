@@ -78,7 +78,7 @@ class SourceWavve(SourceBase):
                 ret.append([c.channel_id, c])
             except Exception:
                 logger.exception("라이브 채널 분석 중 예외: %s", item)
-        self.channel_list = OrderedDict(ret)
+        self.channels = OrderedDict(ret)
 
     def __get_m3u8(self, channel_id: str, quality: str) -> str:
         """returns playlist url from streaming data

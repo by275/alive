@@ -53,7 +53,7 @@ class SourceKBS(SourceBase):
                     ret.append([c.channel_id, c])
                 except Exception:
                     logger.exception("라이브 채널 분석 중 예외: %s", cm)
-        self.channel_list = OrderedDict(ret)
+        self.channels = OrderedDict(ret)
 
     def get_data(self, channel_id: str) -> dict:
         tmp = f"https://cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/{channel_id}"

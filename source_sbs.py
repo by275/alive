@@ -48,7 +48,7 @@ class SourceSBS(SourceBase):
                     ret.append([c.channel_id, c])
                 except Exception:
                     logger.exception("라이브 채널 분석 중 예외: %s", item)
-        self.channel_list = OrderedDict(ret)
+        self.channels = OrderedDict(ret)
 
     def get_data(self, channel_id: str) -> dict:
         if channel_id.startswith("EVENT"):
@@ -73,7 +73,7 @@ class SourceSBS(SourceBase):
         return self.sub_ts(m3u8, url.split("chunklist.m3u8")[0])
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
-        stype = "direct" if self.channel_list[channel_id].is_tv else "redirect"
+        stype = "direct" if self.channels[channel_id].is_tv else "redirect"
         url = self.get_m3u8(channel_id)
         if stype == "redirect":
             return stype, url
