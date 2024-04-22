@@ -52,14 +52,14 @@ class LogicKlive:
     @classmethod
     def __load_channels(cls) -> None:
         with ThreadPoolExecutor(max_workers=5) as exe:
-            f2s = {exe.submit(s.get_channel_list): s for s in cls.sources.values()}
+            f2s = {exe.submit(s.load_channels): s for s in cls.sources.values()}
             for f in as_completed(f2s):
                 logger.debug("%-10s: %s", f2s[f].source_id, len(f2s[f].channels))
 
         ModelSetting.set("channel_list_updated_at", datetime.now().isoformat())
 
     @classmethod
-    def should_reload_channel_list(cls, reload: bool) -> bool:
+    def should_reload_channels(cls, reload: bool) -> bool:
         if not any(s.channels for s in cls.sources.values()) or reload:
             return True
         channel_list_max_age = ModelSetting.get_int("channel_list_max_age")
@@ -76,7 +76,7 @@ class LogicKlive:
         try:
             if not cls.sources or reload == "hard":
                 cls.__load_sources()
-            if cls.should_reload_channel_list(reload in ["soft", "hard"]):
+            if cls.should_reload_channels(reload in ["soft", "hard"]):
                 cls.__load_channels()
             for s in cls.sources.values():
                 ret.extend(s.channels.values())

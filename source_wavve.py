@@ -53,7 +53,7 @@ class SourceWavve(SourceBase):
         )
         return mod
 
-    def get_channel_list(self) -> None:
+    def load_channels(self) -> None:
         ret = []
         data = self.mod.live_all_channels()
         for item in data["list"]:

@@ -45,7 +45,7 @@ class SourceBase:
     def __init__(self):
         pass
 
-    def get_channel_list(self) -> None:
+    def load_channels(self) -> None:
         raise NotImplementedError
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:

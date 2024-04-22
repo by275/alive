@@ -23,7 +23,7 @@ class SourceSBS(SourceBase):
         # cached playlist url
         self.get_m3u8 = ttl_cache(self.ttl)(self.__get_m3u8)
 
-    def get_channel_list(self) -> None:
+    def load_channels(self) -> None:
         ret = []
         url_list = ["http://static.apis.sbs.co.kr/play-api/1.0/onair/channels"]
         if ModelSetting.get_bool("sbs_include_vod_ch"):

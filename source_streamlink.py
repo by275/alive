@@ -22,7 +22,7 @@ class SourceStreamlink(SourceBase):
         except ImportError:
             return False
 
-    def get_channel_list(self) -> None:
+    def load_channels(self) -> None:
         ret = []
         for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
             if not item:

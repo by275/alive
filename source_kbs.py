@@ -26,7 +26,7 @@ class SourceKBS(SourceBase):
         right = text.find(identifiers[1], left)
         return json.loads(text[left:right].replace("\\", ""))
 
-    def get_channel_list(self) -> None:
+    def load_channels(self) -> None:
         ret = []
         include_vod_ch = ModelSetting.get_bool("kbs_include_vod_ch")
         url = "http://onair.kbs.co.kr"

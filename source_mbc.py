@@ -34,7 +34,7 @@ class SourceMBC(SourceBase):
         # cached playlist url
         self.get_m3u8 = ttl_cache(self.ttl)(self.__get_m3u8)
 
-    def get_channel_list(self) -> None:
+    def load_channels(self) -> None:
         ret = []
         url = "https://control.imbc.com/Schedule/PCONAIR"
         data = self.apisess.get(url).json()
