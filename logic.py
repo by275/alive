@@ -96,8 +96,12 @@ class Logic(PluginModuleBase):
         "kbs_include_vod_ch": "False",
         "kbs_use_proxy": "False",
         "kbs_proxy_url": "",
-        # mbc sbs
+        # mbc
         "use_mbc": "False",
+        "mbc_use_proxy": "False",
+        "mbc_proxy_url": "",
+        "mbc_use_proxy_for_playlist": "False",
+        # sbs
         "use_sbs": "False",
         "sbs_include_vod_ch": "False",
         "sbs_use_proxy": "False",

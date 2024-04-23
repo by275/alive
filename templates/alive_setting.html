@@ -51,6 +51,13 @@
       </div>
       {{ macros.m_hr() }}
       {{ macros.setting_checkbox('use_mbc', 'MBC', value=arg['use_mbc'], desc=None) }}
+      <div id="use_mbc_div" class="collapse">
+        {{ macros.setting_checkbox('mbc_use_proxy', 'Proxy 사용', value=arg['mbc_use_proxy']) }}
+        <div id="mbc_use_proxy_div" class="collapse">
+          {{ macros.setting_input_text('mbc_proxy_url', 'Proxy URL', value=arg['mbc_proxy_url'], desc=None) }}
+          {{ macros.setting_checkbox('mbc_use_proxy_for_playlist', '재생 시 Proxy 사용', value=arg['mbc_use_proxy_for_playlist'], desc=['On: 재생할 때도 사용, Off: URL 얻을 때만 사용']) }}
+        </div>
+      </div>
       {{ macros.m_hr() }}
       {{ macros.setting_checkbox('use_sbs', 'SBS', value=arg['use_sbs'], desc=None) }}
       <div id="use_sbs_div" class="collapse">
@@ -100,6 +107,8 @@ $(document).ready(function(){
   use_collapse("use_tving")
   use_collapse("use_kbs")
   use_collapse("kbs_use_proxy")
+  use_collapse("use_mbc")
+  use_collapse("mbc_use_proxy")
   use_collapse("use_sbs")
   use_collapse("use_streamlink")
   use_collapse("use_fix_url")
@@ -110,6 +119,8 @@ $('#use_wavve').change(function() {use_collapse('use_wavve');});
 $('#use_tving').change(function() {use_collapse('use_tving');});
 $('#use_kbs').change(function() {use_collapse('use_kbs');});
 $('#kbs_use_proxy').change(function() {use_collapse('kbs_use_proxy');});
+$('#use_mbc').change(function() {use_collapse('use_mbc');});
+$('#mbc_use_proxy').change(function() {use_collapse('mbc_use_proxy');});
 $('#use_sbs').change(function() {use_collapse('use_sbs');});
 $('#use_streamlink').change(function() {use_collapse('use_streamlink');});
 $('#use_fix_url').change(function() {use_collapse('use_fix_url');});
