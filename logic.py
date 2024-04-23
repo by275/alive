@@ -91,9 +91,12 @@ class Logic(PluginModuleBase):
         "use_tving": "False",
         "tving_quality": "HD",
         "tving_include_drm": "False",
-        # kbs mbc sbs
+        # kbs
         "use_kbs": "False",
         "kbs_include_vod_ch": "False",
+        "kbs_use_proxy": "False",
+        "kbs_proxy_url": "",
+        # mbc sbs
         "use_mbc": "False",
         "use_sbs": "False",
         "sbs_include_vod_ch": "False",

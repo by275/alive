@@ -44,6 +44,10 @@
       {{ macros.setting_checkbox('use_kbs', 'KBS', value=arg['use_kbs'], desc=None) }}
       <div id="use_kbs_div" class="collapse">
         {{ macros.setting_checkbox('kbs_include_vod_ch', '정주행 채널 포함', value=arg['kbs_include_vod_ch'], desc=None) }}
+        {{ macros.setting_checkbox('kbs_use_proxy', 'Proxy 사용', value=arg['kbs_use_proxy'], desc=['URL을 얻을 때만 사용']) }}
+        <div id="kbs_use_proxy_div" class="collapse">
+          {{ macros.setting_input_text('kbs_proxy_url', 'Proxy URL', value=arg['kbs_proxy_url'], desc=None) }}
+        </div>
       </div>
       {{ macros.m_hr() }}
       {{ macros.setting_checkbox('use_mbc', 'MBC', value=arg['use_mbc'], desc=None) }}
@@ -95,6 +99,7 @@ $(document).ready(function(){
   use_collapse("use_wavve")
   use_collapse("use_tving")
   use_collapse("use_kbs")
+  use_collapse("kbs_use_proxy")
   use_collapse("use_sbs")
   use_collapse("use_streamlink")
   use_collapse("use_fix_url")
@@ -104,6 +109,7 @@ $(document).ready(function(){
 $('#use_wavve').change(function() {use_collapse('use_wavve');});
 $('#use_tving').change(function() {use_collapse('use_tving');});
 $('#use_kbs').change(function() {use_collapse('use_kbs');});
+$('#kbs_use_proxy').change(function() {use_collapse('kbs_use_proxy');});
 $('#use_sbs').change(function() {use_collapse('use_sbs');});
 $('#use_streamlink').change(function() {use_collapse('use_streamlink');});
 $('#use_fix_url').change(function() {use_collapse('use_fix_url');});

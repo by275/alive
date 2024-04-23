@@ -17,7 +17,8 @@ class SourceKBS(SourceBase):
 
     def __init__(self):
         # session for api
-        self.apisess = self.new_session()
+        proxy_url = ModelSetting.get("kbs_proxy_url") if ModelSetting.get_bool("kbs_use_proxy") else None
+        self.apisess = self.new_session(proxy_url=proxy_url)
         # cached playlist url
         self.get_m3u8 = ttl_cache(self.ttl)(self.__get_m3u8)
 
