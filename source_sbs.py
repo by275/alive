@@ -19,7 +19,8 @@ class SourceSBS(SourceBase):
         proxy_url = ModelSetting.get("sbs_proxy_url") if ModelSetting.get_bool("sbs_use_proxy") else None
         self.apisess = self.new_session(proxy_url=proxy_url, add_headers={"Referer": "https://www.sbs.co.kr/"})
         # session for playlists
-        self.plsess = self.new_session()
+        plproxy = proxy_url if ModelSetting.get_bool("sbs_use_proxy_for_playlist") else None
+        self.plsess = self.new_session(proxy_url=plproxy)
         # cached playlist url
         self.get_m3u8 = ttl_cache(self.ttl)(self.__get_m3u8)
 

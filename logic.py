@@ -106,6 +106,7 @@ class Logic(PluginModuleBase):
         "sbs_include_vod_ch": "False",
         "sbs_use_proxy": "False",
         "sbs_proxy_url": "",
+        "sbs_use_proxy_for_playlist": "False",
         # streamlink
         "use_streamlink": "False",
         "streamlink_list": "1|LeekBeats Radio: 24/7 chill lofi beats - DMCA safe music|https://www.twitch.tv/leekbeats\n2|2010년 히트곡|https://dailymotion.com/video/x77q22e",
