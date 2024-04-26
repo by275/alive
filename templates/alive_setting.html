@@ -21,7 +21,6 @@
     {{ macros.m_tab_content_start('basic', true) }}
       {{ macros.setting_button_with_info([['source_map_reload', '새로고침']], left='소스 다시 읽기', desc=['인증(크리덴셜, 토큰)과 프록시를 다시 적용하며 세션과 캐시가 초기화 됩니다. 재생 중인 방송이 끊길 수 있습니다.']) }}
       {{ macros.setting_input_int('channel_list_max_age', '채널 목록 유효 시간', value=arg['channel_list_max_age'], min='0', desc=['마지막으로 채널 목록을 얻어 온 후 이 시간이 지나면 강제로 새로고침 합니다. 0이면 새로고침 하지 않음. 단위: 분']) }}
-      {{ macros.setting_checkbox('channel_list_on_plugin_load', '시작할 때 채널 목록 읽기', value=arg['channel_list_on_plugin_load'], desc=['플러그인 로딩 시 채널 목록을 읽어옵니다.']) }}
     {{ macros.m_tab_content_end() }}
 
     {{ macros.m_tab_content_start('wavve', false) }}

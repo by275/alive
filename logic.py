@@ -2,7 +2,6 @@ import os
 import platform
 import shutil
 import subprocess
-import threading
 import time
 from copy import deepcopy
 from datetime import datetime
@@ -81,7 +80,6 @@ class Logic(PluginModuleBase):
     db_default = {
         "channel_list_updated_at": "1970-01-01T00:00:00",
         "channel_list_max_age": "60",  # minutes
-        "channel_list_on_plugin_load": "False",
         "epg_updated_at": "1970-01-01T00:00:00",
         # wavve
         "use_wavve": "False",
@@ -126,9 +124,6 @@ class Logic(PluginModuleBase):
         alive_prefs = Path(F.path_data).joinpath("db", "alive.yaml")
         if not alive_prefs.exists():
             shutil.copyfile(Path(__file__).with_name("alive.example.yaml"), alive_prefs)
-        if ModelSetting.get_bool("channel_list_on_plugin_load"):
-            t = threading.Thread(target=LogicKlive.all_channels, args=(), daemon=True)
-            t.start()
 
     def process_menu(self, sub, req):
         _ = req
