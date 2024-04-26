@@ -32,10 +32,9 @@
     {{ macros.m_tab_content_end() }}
 
     {{ macros.m_tab_content_start('tving', false) }}
-      {{ macros.setting_checkbox('use_tving', '티빙', value=arg['use_tving'], desc=['support site 플러그인을 설치하고 티빙 토큰을 입력하세요']) }}
+      {{ macros.setting_checkbox('use_tving', '티빙', value=arg['use_tving'], desc=['support site 플러그인을 설치하고 티빙 토큰을 입력하세요', 'DRM 채널은 현재 지원 안됨']) }}
       <div id="use_tving_div" class="collapse">
         {{ macros.setting_select('tving_quality', '티빙 화질', [['FHD','FHD'], ['HD','HD'], ['SD', 'SD']], col='3', value=arg['tving_quality'])}}
-        {{ macros.setting_checkbox('tving_include_drm', 'DRM 채널 포함', value=arg['tving_include_drm'], desc=['On: OCN 등 DRM 채널 포함.']) }}
       </div>
     {{ macros.m_tab_content_end() }}
 

@@ -88,7 +88,6 @@ class Logic(PluginModuleBase):
         # tving
         "use_tving": "False",
         "tving_quality": "HD",
-        "tving_include_drm": "False",
         # kbs
         "use_kbs": "False",
         "kbs_include_vod_ch": "False",

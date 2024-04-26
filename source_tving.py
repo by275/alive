@@ -57,7 +57,7 @@ class SourceTving(SourceBase):
 
     def load_channels(self) -> None:
         ret = []
-        data = self.mod.get_live_list(list_type="live", include_drm=ModelSetting.get_bool("tving_include_drm"))
+        data = self.mod.get_live_list(list_type="live", include_drm=False)
         for item in data:
             try:
                 p = ProgramItem(title=item["episode_title"], onair=not item["block"])
