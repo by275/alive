@@ -41,17 +41,10 @@ class SourceWavve(SourceBase):
 
     def load_support_module(self):
         if Path(__file__).with_name("wavve.py").is_file():
-            from .wavve import SupportWavve as mod
+            from .wavve import SupportWavve as SW
         else:
-            mod = SupportSC.load_module_f(__file__, "wavve").SupportWavve
-        from support_site.setup import P as SS  # pylint: disable=import-error
-
-        mod.initialize(
-            SS.ModelSetting.get("site_wavve_credential"),
-            SS.ModelSetting.get_bool("site_wavve_use_proxy"),
-            SS.ModelSetting.get("site_wavve_proxy_url"),
-        )
-        return mod
+            SW = SupportSC.load_module_f(__file__, "wavve").SupportWavve
+        return SW()
 
     def load_channels(self) -> None:
         ret = []

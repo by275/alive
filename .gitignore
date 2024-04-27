@@ -161,3 +161,4 @@ cython_debug/
 td.py
 tving.py
 wavve.py
+wavve.py.*.bak
