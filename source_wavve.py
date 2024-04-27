@@ -31,7 +31,8 @@ class SourceWavve(SourceBase):
         if self.mod is None:
             return
         # session for playlists
-        self.plsess = self.new_session(headers=self.mod.headers, proxies=self.mod.proxies)
+        plproxy = self.mod.proxy if ModelSetting.get_bool("wavve_use_proxy_for_playlist") else None
+        self.plsess = self.new_session(headers=self.mod.headers, proxy_url=plproxy)
         # cached playlist url
         if self.mod.session.headers.get("wavve-credential") != "none":
             ttl = 60 * 60 * 24  # 1일
@@ -98,4 +99,4 @@ class SourceWavve(SourceBase):
         data = self.repack_m3u8(url)
         if stype == "direct":
             return stype, data
-        return stype, self.relay_ts(data, proxy=self.mod.proxy)  # proxy, web_play
+        return stype, self.relay_ts(data, proxy=self.plsess.proxies.get("http"))  # proxy, web_play

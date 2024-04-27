@@ -85,6 +85,7 @@ class Logic(PluginModuleBase):
         "use_wavve": "False",
         "wavve_quality": "HD",
         "wavve_streaming_type": "direct",
+        "wavve_use_proxy_for_playlist": "False",
         # tving
         "use_tving": "False",
         "tving_quality": "HD",
@@ -142,6 +143,13 @@ class Logic(PluginModuleBase):
                 if use_apikey:
                     for tmp in ["api_m3u", "api_m3uall", "api_m3utvh"]:
                         arg[tmp] += f"?apikey={apikey}"
+
+                try:
+                    from support_site.setup import P as SS  # pylint: disable=import-error
+
+                    arg["site_wavve_use_proxy"] = SS.ModelSetting.get_bool("site_wavve_use_proxy")
+                except ImportError:
+                    arg["site_wavve_use_proxy"] = False
 
                 from .source_streamlink import SourceStreamlink
 
