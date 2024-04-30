@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from functools import lru_cache
 from typing import Tuple
 
 from .model import ChannelItem
@@ -12,50 +13,50 @@ ModelSetting = P.ModelSetting
 
 class SourceStreamlink(SourceBase):
     source_id = "streamlink"
+    is_installed: bool = True
 
-    @staticmethod
-    def is_installed():
+    def __init__(self):
         try:
-            import streamlink
+            from streamlink import Streamlink
 
-            return True
+            # session for streamlink
+            self.slsess = Streamlink()
+            # cached streamlink stream
+            self.get_stream = lru_cache(maxsize=10)(self.__get_stream)
         except ImportError:
-            return False
+            logger.error("streamlink<6.6 패키지가 필요합니다.")
+            self.is_installed = False
 
     def load_channels(self) -> None:
         ret = []
         for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
             if not item:
                 continue
-            tmp = item.split("|")
-            if len(tmp) != 3:
+            if len(tmp := item.split("|")) == 3:
+                (cid, cname, url), quality = tmp, ""
+            elif len(tmp) == 4:
+                cid, cname, url, quality = tmp
+            else:
                 continue
-            cid, cname, url = tmp
             c = ChannelItem(self.source_id, cid, cname, None, True)
             c.url = url
+            c.quality = quality.strip() or None
             ret.append([c.channel_id, c])
         self.channels = OrderedDict(ret)
 
-    def get_m3u8(self, channel_id: str) -> str:
-        # logger.debug('channel_id:%s, quality:%s, mode:%s', channel_id, quality, mode)
-        from streamlink import Streamlink  # pylint: disable=import-error
+    def __get_stream(self, channel_id: str, quality: str):
+        url = (c := self.channels[channel_id]).url
+        if quality in [None, "default"]:
+            quality = c.quality or "best"
+        streams = self.slsess.streams(url)
+        s = streams.get(quality)
+        logger.info("using %r among %s", quality, list(streams))
+        logger.debug("new url issued: %s", s.url)
+        return s
 
-        s = Streamlink()
-        # logger.debug(StreamlinkItem.ch_list[channel_id].url)
-        data = s.streams(self.channels[channel_id].url)
-
-        try:
-            stream = data[ModelSetting.get("streamlink_quality")]
-            url = stream.url
-        except Exception:
-            if "youtube" in self.channels[channel_id].url.lower():
-                for t in data.values():
-                    try:
-                        url = t.url
-                    except Exception:
-                        pass
-        return url
+    def get_m3u8(self, channel_id: str, quality: str) -> str:
+        return self.get_stream(channel_id, quality).url
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
-        url = self.get_m3u8(channel_id)
+        url = self.get_m3u8(channel_id, quality)
         return "redirect", url

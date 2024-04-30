@@ -76,15 +76,14 @@
       {{ macros.setting_checkbox('use_streamlink', 'Streamlink', value=arg['use_streamlink'], desc=['pip install \'streamlink<6.6\'로 직접 설치 후 사용', '최신 버전은 에러가 납니다. 6.6 미만 설치']) }}
       <div id="use_streamlink_div" class="collapse">
         {{ macros.info_text('is_streamlink_installed', '설치상태', value=arg['is_streamlink_installed']) }}
-        {{ macros.setting_input_text('streamlink_quality', 'streamlink 화질', col='3', value=arg['streamlink_quality']) }}
-        {{ macros.setting_input_textarea_wide('streamlink_list', '채널 목록', desc=['형식 : 채널ID|채널이름|채널URL', '채널별 구분자 Enter'], value=arg['streamlink_list'], row='20') }}
+        {{ macros.setting_input_textarea_wide('streamlink_list', '채널 목록', desc=['형식: 채널ID|채널이름|채널URL|화질(생략하면 best)', '구분자: Enter'], value=arg['streamlink_list'], row='20') }}
       </div>
     {{ macros.m_tab_content_end() }}
 
     {{ macros.m_tab_content_start('direct', false) }}
       {{ macros.setting_checkbox('use_fix_url', '고정주소', value=arg['use_fix_url'], desc=None) }}
       <div id="use_fix_url_div" class="collapse">
-        {{ macros.setting_input_textarea_wide('fix_url_list', '채널 목록', desc=['형식 : 채널ID|채널이름|채널URL|{TV면 Y, 라디오면 N}', '채널별 구분자 Enter', '참고 : https://iptvcat.com/south_korea'], value=arg['fix_url_list'], row='20') }}
+        {{ macros.setting_input_textarea_wide('fix_url_list', '채널 목록', desc=['형식: 채널ID|채널이름|채널URL|{TV면 Y, 라디오면 N}', '구분자: Enter', '참고: https://iptvcat.com/south_korea'], value=arg['fix_url_list'], row='20') }}
       </div>
     {{ macros.m_tab_content_end() }}
 

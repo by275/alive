@@ -42,7 +42,7 @@ class LogicKlive:
         if ModelSetting.get_bool("use_sbs"):
             srcs.append(SourceSBS())
         if ModelSetting.get_bool("use_streamlink"):
-            if (src := SourceStreamlink()).is_installed():
+            if (src := SourceStreamlink()).is_installed:
                 srcs.append(src)
         if ModelSetting.get_bool("use_fix_url"):
             srcs.append(SourceFixURL())
