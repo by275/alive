@@ -18,6 +18,7 @@ class SourceTving(SourceBase):
     source_id = "tving"
     mod = None
     ttl = 60 * 60 * 24  # 1일
+    default_quality: str = ModelSetting.get("tving_quality")
 
     PTN_BANDWIDTH = re.compile(r"BANDWIDTH=(\d+)", re.MULTILINE)
 
@@ -76,6 +77,8 @@ class SourceTving(SourceBase):
         self.channels = OrderedDict(ret)
 
     def get_data(self, channel_id: str, quality: str) -> dict:
+        if quality in [None, "default"]:
+            quality = self.default_quality
         quality = self.mod.get_quality_to_tving(quality)
         return self.mod.get_info(channel_id, quality)
 

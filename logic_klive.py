@@ -88,9 +88,6 @@ class LogicKlive:
     def make_m3u8(cls, source: str, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
         try:
             cls.all_channels()  # api에서 가장 먼저 call하는 entrypoint기 때문에...
-            if quality is None or quality == "default":
-                if source in ["wavve", "tving"]:
-                    quality = ModelSetting.get(f"{source}_quality")
             return cls.sources[source].make_m3u8(channel_id, mode, quality)
         except Exception:
             logger.exception("m3u8 응답을 작성 중 예외:")

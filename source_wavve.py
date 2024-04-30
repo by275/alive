@@ -18,6 +18,7 @@ ModelSetting = P.ModelSetting
 class SourceWavve(SourceBase):
     source_id = "wavve"
     mod = None
+    default_quality: str = ModelSetting.get("wavve_quality")
 
     def __init__(self):
         if self.mod is not None:
@@ -80,6 +81,8 @@ class SourceWavve(SourceBase):
         새로운 playlist는 최신의/연속된 MEDIA SEQUENCE를 보장할 수 없다. (Error: Received stale playlist)
         따라서 한 번 얻은 playlist url을 최대한 유지해야 한다. (cache를 사용하는 이유)
         """
+        if quality in [None, "default"]:
+            quality = self.default_quality
         data = self.mod.streaming("live", channel_id, quality)
         # 2022-01-10 라디오. 대충 함 by soju6jan
         # if data['quality'] == '100p' or data['qualities']['list'][0]['name'] == '오디오모드':
