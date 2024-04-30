@@ -84,7 +84,7 @@ class SourceWavve(SourceBase):
         # 2022-01-10 라디오. 대충 함 by soju6jan
         # if data['quality'] == '100p' or data['qualities']['list'][0]['name'] == '오디오모드':
         #     url = data['playurl'].replace('/100/100', '/100') + f"/live.m3u8{data['debug']['orgurl'].split('.m3u8')[1]}"
-        return data.get("playurl")
+        return data["play_info"].get("hls")
 
     def repack_m3u8(self, url: str) -> str:
         data = self.plsess.get(url).text
