@@ -59,7 +59,7 @@ def get_source(ch, priority_list):
                 return deepcopy(src), srcs
     for src in srcs:
         if not src.program.onair:
-            logger.debug("%-10s: 현재 방송불가: %s", ch["name"], src.source_name)
+            logger.debug("%-10s: 현재 방송불가: %s", src.source, ch["name"])
             continue
         return deepcopy(src), srcs
     return deepcopy(srcs[0]), srcs
