@@ -76,6 +76,20 @@ def generate(url):
                 break
 
 
+@stream_with_context
+def _streamlink(stream):
+    fd = None
+    try:
+        fd = stream.open()
+        while True:
+            if (chunk := fd.read(8192)) == b"":
+                break
+            yield chunk
+    finally:
+        if fd:
+            fd.close()
+
+
 class Logic(PluginModuleBase):
     db_default = {
         "channel_list_updated_at": "1970-01-01T00:00:00",
@@ -109,6 +123,9 @@ class Logic(PluginModuleBase):
         # streamlink
         "use_streamlink": "False",
         "streamlink_list": "1|LeekBeats Radio: 24/7 chill lofi beats - DMCA safe music|https://www.twitch.tv/leekbeats\n2|2010년 히트곡|https://dailymotion.com/video/x77q22e",
+        "streamlink_streaming_type": "redirect",
+        "streamlink_use_proxy": "False",
+        "streamlink_proxy_url": "",
         # fix_url
         "use_fix_url": "False",
         "fix_url_list": "1|CBS 음악FM|http://aac.cbs.co.kr/cbs939/_definst_/cbs939.stream/playlist.m3u8|N\n2|CBS 표준FM|http://aac.cbs.co.kr/cbs981/_definst_/cbs981.stream/playlist.m3u8|N\n3|국방TV|http://mediaworks.dema.mil.kr:1935/live_edge/cudo.sdp/playlist.m3u8|Y",
@@ -230,6 +247,8 @@ class Logic(PluginModuleBase):
                     return Response(status=204)
                 if stype == "redirect":
                     r = redirect(sdata, code=302)
+                elif stype == "stream":
+                    r = Response(_streamlink(sdata), mimetype="video/MP2T", direct_passthrough=True)
                 else:
                     r = Response(sdata, content_type="application/vnd.apple.mpegurl")
                 l = [f"{source} {channel_id}", f"({stype})", req.remote_addr]

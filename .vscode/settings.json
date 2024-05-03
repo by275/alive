@@ -1,7 +1,7 @@
 {
     "editor.formatOnSave": false,
     "editor.minimap.enabled": false,
-    "python.defaultInterpreterPath": "venv/bin/python",
+    "python.defaultInterpreterPath": "~/dev/flaskfarm/venv/bin/python",
     "python.languageServer": "Jedi",
     "pylint.args": [
         "--disable",

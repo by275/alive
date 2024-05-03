@@ -116,6 +116,8 @@ class SourceBase:
 
     @staticmethod
     def expires_in(url: str) -> None:
+        if not isinstance(url, str):
+            return
         try:
             exp = SourceBase.parse_expiry(url)
         except Exception:
