@@ -68,7 +68,8 @@ class SourceMBC(SourceBase):
 
     def get_data(self, channel_id: str) -> dict:
         path = "OnAirURLUtil" if channel_id == "0" else "OnAirPlusURLUtil"
-        url = f"https://mediaapi.imbc.com/Player/{path}?ch={channel_id}&type=PC&t={int(time.time())}"
+        now = int(time.time() * 1000)  # timestamp in ms
+        url = f"https://mediaapi.imbc.com/Player/{path}?ch={channel_id}&type=PC&t={now}"
         data = self.apisess.get(url).json()
         return data
 
