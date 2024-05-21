@@ -32,7 +32,7 @@ class SourceMBC(SourceBase):
         self.apisess = self.new_session(proxy_url=proxy_url, add_headers={"Referer": "https://onair.imbc.com/"})
         # session for playlists
         plproxy = proxy_url if ModelSetting.get_bool("mbc_use_proxy_for_playlist") else None
-        self.plsess = self.new_session(proxy_url=plproxy)
+        self.plsess = self.new_session(proxy_url=plproxy, add_headers={"Referer": "https://onair.imbc.com/"})
         # cached playlist url
         self.get_m3u8 = ttl_cache(self.ttl)(self.__get_m3u8)
 
