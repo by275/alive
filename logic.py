@@ -263,12 +263,13 @@ class Logic(PluginModuleBase):
                     proxy = unquote(proxy)
                     proxies = {"https": proxy, "http": proxy}
                 url = unquote(url)
+                source = args.get("source")
                 # logger.debug('REDIRECT:%s', url)
                 # logger.warning(f"redirect : {url}")
                 # 2021-06-03
                 headers = {"Connection": "keep-alive"}
                 headers.update(default_headers)
-                if "imbc.com" in url:
+                if source == "mbc":
                     headers.update({"Referer": "https://onair.imbc.com/"})
                 r = requests.get(url, headers=headers, stream=True, proxies=proxies, verify=False, timeout=30)
                 rv = Response(

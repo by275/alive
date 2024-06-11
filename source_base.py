@@ -77,14 +77,14 @@ class SourceBase:
         return SourceBase.PTN_M3U8_END_TS.sub(rf"\g<0>{suffix}", m3u8)
 
     @staticmethod
-    def relay_ts(m3u8: str, proxy: str = None) -> str:
-        base_url = f"{SystemModelSetting.get('ddns')}/{package_name}/api/relay"
+    def relay_ts(m3u8: str, source: str, proxy: str = None) -> str:
+        base_url = f"{SystemModelSetting.get('ddns')}/{package_name}/api/relay?source={source}"
         apikey = None
         if SystemModelSetting.get_bool("use_apikey"):
             apikey = SystemModelSetting.get("apikey")
         for m in SourceBase.PTN_URL.finditer(m3u8):
             u = m.group(0)
-            u2 = f"{base_url}?url={quote(u)}"
+            u2 = f"{base_url}&url={quote(u)}"
             if apikey is not None:
                 u2 += f"&apikey={apikey}"
             if proxy is not None:

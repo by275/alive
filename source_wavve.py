@@ -102,4 +102,4 @@ class SourceWavve(SourceBase):
         data = self.repack_m3u8(url)
         if stype == "direct":
             return stype, data
-        return stype, self.relay_ts(data, proxy=self.plsess.proxies.get("http"))  # proxy, web_play
+        return stype, self.relay_ts(data, self.source_id, proxy=self.plsess.proxies.get("http"))  # proxy, web_play
