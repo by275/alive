@@ -85,8 +85,11 @@ class SourceMBC(SourceBase):
         return self.sub_ts(m3u8, url.split("chunklist.m3u8")[0])
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
-        stype = "redirect" if len(channel_id) == 3 else "direct"
+        stype = "redirect" if len(channel_id) == 3 else ModelSetting.get("mbc_streaming_type")
         url = self.get_m3u8(channel_id)
         if stype == "redirect":
             return stype, url
-        return stype, self.repack_m3u8(url)
+        data = self.repack_m3u8(url)
+        if stype == "direct":
+            return stype, data
+        return stype, self.relay_ts(data, proxy=self.plsess.proxies.get("http"))  # proxy, web_play
