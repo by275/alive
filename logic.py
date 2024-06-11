@@ -268,6 +268,8 @@ class Logic(PluginModuleBase):
                 # 2021-06-03
                 headers = {"Connection": "keep-alive"}
                 headers.update(default_headers)
+                if "imbc.com" in url:
+                    headers.update({"Referer": "https://onair.imbc.com/"})
                 r = requests.get(url, headers=headers, stream=True, proxies=proxies, verify=False, timeout=30)
                 rv = Response(
                     r.iter_content(chunk_size=1048576),
