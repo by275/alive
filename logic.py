@@ -47,6 +47,7 @@ def generate(url):
     # 2020-12-17 by 잠자
     ffmpeg_cmd = [
         [ffmpeg_bin],
+        ["-user_agent", default_headers["user-agent"]],
         ["-loglevel", "quiet"],
         ["-i", url],
         ["-c:v", "copy"],
