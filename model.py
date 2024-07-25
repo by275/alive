@@ -119,7 +119,6 @@ class ChannelItem:
             url = kwargs.setdefault("url", self.svc_url())
         else:
             url = self.url
-
         data = (tvg_id, tvg_name, tvg_logo, group_title, tvg_chno, tvh_chnum, display_name, url)
         if self.is_tv:
             return M3U_FORMAT % data
