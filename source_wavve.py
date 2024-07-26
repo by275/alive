@@ -1,10 +1,7 @@
 from collections import OrderedDict
 from html import unescape
-from pathlib import Path
 from typing import Tuple
 from urllib.parse import quote
-
-from support import SupportSC  # pylint: disable=import-error
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
@@ -32,8 +29,8 @@ class SourceWavve(SourceBase):
         if self.mod is None:
             return
         # session for playlists
-        plproxy = self.mod.proxy if ModelSetting.get_bool("wavve_use_proxy_for_playlist") else None
-        self.plsess = self.new_session(headers=self.mod.headers, proxy_url=plproxy)
+        plproxy = self.mod.proxy_url if ModelSetting.get_bool("wavve_use_proxy_for_playlist") else None
+        self.plsess = self.new_session(headers=self.mod.session.headers, proxy_url=plproxy)
         # cached playlist url
         if self.mod.session.headers.get("wavve-credential") != "none":
             ttl = 60 * 60 * 24  # 1일
@@ -42,11 +39,9 @@ class SourceWavve(SourceBase):
         self.get_m3u8 = ttl_cache(ttl)(self.__get_m3u8)
 
     def load_support_module(self):
-        if Path(__file__).with_name("wavve.py").is_file():
-            from .wavve import SupportWavve as SW
-        else:
-            SW = SupportSC.load_module_f(__file__, "wavve").SupportWavve
-        return SW()
+        from support_site import SupportWavve as SW
+
+        return SW
 
     def load_channels(self) -> None:
         ret = []
