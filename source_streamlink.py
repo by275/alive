@@ -72,6 +72,10 @@ class SourceStreamlink(SourceBase):
         if stype == "stream":
             return stype, stream
         if stype == "redirect":
+            from streamlink.stream.hls import MuxedHLSStream
+
+            if isinstance(stream, MuxedHLSStream):
+                return stype, stream.to_manifest_url()
             return stype, stream.url
         if stype == "direct":
             return stype, self.repack_m3u8(stream)
