@@ -115,10 +115,10 @@ class ChannelItem:
         tvg_chno = kwargs.setdefault("tvg_chno", 0)
         tvh_chnum = kwargs.setdefault("tvh_chnum", 0)
         display_name = kwargs.setdefault("display_name", self.name)
-        if self.url == None or self.url.startswith('http'):
+        if self.url is None or self.url.startswith("http"):
             url = kwargs.setdefault("url", self.svc_url())
         else:
-            url = self.url
+            url = self.url  # m3u를 통해 drm 정보 전송
         data = (tvg_id, tvg_name, tvg_logo, group_title, tvg_chno, tvh_chnum, display_name, url)
         if self.is_tv:
             return M3U_FORMAT % data
