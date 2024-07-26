@@ -1,9 +1,6 @@
 import re
 from collections import OrderedDict
-from pathlib import Path
 from typing import Tuple
-
-from support import SupportSC  # pylint: disable=import-error
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
@@ -12,6 +9,13 @@ from .source_base import SourceBase, ttl_cache
 logger = P.logger
 package_name = P.package_name
 ModelSetting = P.ModelSetting
+
+quality_map = {
+    "SD": "480p",
+    "HD": "720p",
+    "FHD": "1080p",
+    "UHD": "2160p",
+}
 
 
 class SourceTving(SourceBase):
@@ -34,27 +38,21 @@ class SourceTving(SourceBase):
         if self.mod is None:
             return
         # session for playlists
-        self.plsess = self.new_session(headers=self.mod.headers, proxies=self.mod.proxies)
+        self.plsess = self.new_session(
+            headers=self.mod._SupportTving__headers,
+            proxies=self.mod._SupportTving__proxies,
+        )
         # cached playlist url
         self.get_m3u8 = ttl_cache(self.ttl)(self.__get_m3u8)
 
     def load_support_module(self):
-        from support_site.setup import P as SS
+        from support_site import SupportTving as ST
 
-        token = SS.ModelSetting.get("site_tving_token").strip()
+        token = ST._SupportTving__token.strip()  # pylint: disable=protected-access
         if not token:
             logger.error("티빙 토큰이 필요합니다.")
             return None
-        proxy = None
-        if SS.ModelSetting.get_bool("site_tving_use_proxy"):
-            proxy = SS.ModelSetting.get("site_tving_proxy_url")
-        deviceid = SS.ModelSetting.get("site_tving_deviceid")
-
-        if Path(__file__).with_name("tving.py").is_file():
-            from .tving import SupportTving
-
-            return SupportTving(token=token, proxy=proxy, deviceid=deviceid)
-        return SupportSC.load_module_f(__file__, "tving").SupportTving(token=token, proxy=proxy, deviceid=deviceid)
+        return ST
 
     def load_channels(self) -> None:
         ret = []
@@ -79,7 +77,7 @@ class SourceTving(SourceBase):
     def get_data(self, channel_id: str, quality: str) -> dict:
         if quality in [None, "default"]:
             quality = self.default_quality
-        quality = self.mod.get_quality_to_tving(quality)
+        quality = quality_map.get(quality, "stream50")
         return self.mod.get_info(channel_id, quality)
 
     def __get_m3u8(self, channel_id: str, quality: str) -> str:
