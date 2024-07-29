@@ -79,7 +79,6 @@ class ChannelItem:
     quality: str = None
     program: ProgramItem = ProgramItem()
 
-
     @property
     def source_name(self):
         return source_id2name.get(self.source, None)

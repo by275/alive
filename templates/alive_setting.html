@@ -39,7 +39,7 @@
       {{ macros.setting_checkbox('use_tving', '티빙', value=arg['use_tving'], desc=['support site 플러그인을 설치하고 티빙 토큰을 입력하세요']) }}
       <div id="use_tving_div" class="collapse">
         {{ macros.setting_select('tving_quality', '티빙 화질', [['FHD','FHD'], ['HD','HD'], ['SD', 'SD']], col='3', value=arg['tving_quality'])}}
-        {{ macros.setting_checkbox('use_tving_drm', 'DRM 채널', value=arg['use_tving_drm'], desc=['On: 사용']) }}
+        {{ macros.setting_checkbox('tving_include_drm', 'DRM 채널', value=arg['tving_include_drm'], desc=['On: 사용']) }}
       </div>
     {{ macros.m_tab_content_end() }}
 

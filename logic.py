@@ -11,8 +11,7 @@ from pathlib import Path
 from urllib.parse import unquote
 
 import requests
-from flask import (Response, abort, jsonify, redirect, render_template,
-                   request, stream_with_context)
+from flask import Response, abort, jsonify, redirect, render_template, request, stream_with_context
 from plugin import F, PluginModuleBase  # pylint: disable=import-error
 
 db = F.db
@@ -107,7 +106,7 @@ class Logic(PluginModuleBase):
         # tving
         "use_tving": "False",
         "tving_quality": "HD",
-        "use_tving_drm": "False",
+        "tving_include_drm": "False",
         # kbs
         "use_kbs": "False",
         "kbs_include_vod_ch": "False",
@@ -167,8 +166,7 @@ class Logic(PluginModuleBase):
                         arg[tmp] += f"?apikey={apikey}"
 
                 try:
-                    from support_site.setup import \
-                        P as SS  # pylint: disable=import-error
+                    from support_site.setup import P as SS  # pylint: disable=import-error
 
                     arg["site_wavve_use_proxy"] = SS.ModelSetting.get_bool("site_wavve_use_proxy")
                 except ImportError:
@@ -284,19 +282,15 @@ class Logic(PluginModuleBase):
                     direct_passthrough=True,
                 )
                 return rv
-            elif sub == "url.mpd":
-                try:
-                    mode = request.args.get("m")
-                    source = request.args.get("s")
-                    source_id = request.args.get("i")
-                    quality = request.args.get("q")
-                    dummy, data = LogicKlive.make_m3u8(source, source_id, mode, quality)
-                    if isinstance(data, str):
-                        data = json.loads(data)
-                    return jsonify(data)
-                except Exception as e:
-                    logger.error(f"Exception:{e}")
-            #         logger.error(traceback.format_exc())
+            if sub == "url.mpd":
+                mode = request.args.get("m")
+                source = request.args.get("s")
+                source_id = request.args.get("i")
+                quality = request.args.get("q")
+                dummy, data = LogicKlive.make_m3u8(source, source_id, mode, quality)
+                if isinstance(data, str):
+                    data = json.loads(data)
+                return jsonify(data)
             # elif sub == "url.strm":
             #     try:
             #         mode = request.args.get("m")
@@ -389,28 +383,29 @@ def plex_proxy(sub):
 #########################################################
 @blueprint.route("/license", methods=["OPTIONS", "POST"])
 def license():
-    headers         = {k:v for k,v in request.headers if k.lower() != "host"}
-    headers["Origin"] = headers['Real-Origin']
-    headers["Referer"] = headers['Real-Referer']
-    url = headers['Real-Url']
+    headers = {k: v for k, v in request.headers if k.lower() != "host"}
+    headers["Origin"] = headers["Real-Origin"]
+    headers["Referer"] = headers["Real-Referer"]
+    url = headers["Real-Url"]
     del headers["Real-Origin"]
     del headers["Real-Referer"]
     del headers["Real-Url"]
     res = requests.request(  # ref. https://stackoverflow.com/a/36601467/248616
-        method          = request.method,
-        url             = url,
-        headers         = headers,
-        data            = request.get_data(),
-        cookies         = request.cookies,
-        allow_redirects = False,
+        method=request.method,
+        url=url,
+        headers=headers,
+        data=request.get_data(),
+        cookies=request.cookies,
+        allow_redirects=False,
     )
-    #region exlcude some keys in :res response
-    excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']  #NOTE we here exclude all "hop-by-hop headers" defined by RFC 2616 section 13.5.1 ref. https://www.rfc-editor.org/rfc/rfc2616#section-13.5.1
-    headers          = [
-        (k,v) for k,v in res.raw.headers.items()
-        if k.lower() not in excluded_headers
-    ]
-    #endregion exlcude some keys in :res response
+    # region exlcude some keys in :res response
+    excluded_headers = [
+        "content-encoding",
+        "content-length",
+        "transfer-encoding",
+        "connection",
+    ]  # NOTE we here exclude all "hop-by-hop headers" defined by RFC 2616 section 13.5.1 ref. https://www.rfc-editor.org/rfc/rfc2616#section-13.5.1
+    headers = [(k, v) for k, v in res.raw.headers.items() if k.lower() not in excluded_headers]
+    # endregion exlcude some keys in :res response
     response = Response(res.content, res.status_code, headers)
     return response
-

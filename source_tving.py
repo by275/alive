@@ -56,10 +56,9 @@ class SourceTving(SourceBase):
 
     def load_channels(self) -> None:
         ret = []
-        data = self.mod.get_live_list(list_type="live", include_drm=P.ModelSetting.get_bool('use_tving_drm'))
+        data = self.mod.get_live_list(list_type="live", include_drm=P.ModelSetting.get_bool("tving_include_drm"))
         for item in data:
             try:
-                #p = ProgramItem(title=item["episode_title"], onair=not item["block"])
                 p = ProgramItem(title=item["episode_title"], onair=not item.get("block", False))
                 c = ChannelItem(
                     self.source_id,
@@ -81,7 +80,6 @@ class SourceTving(SourceBase):
         quality = quality_map.get(quality, "stream50")
         return self.mod.get_info(channel_id, quality)
 
-
     def __get_m3u8(self, channel_id: str, quality: str) -> str:
         data = self.get_data(channel_id, quality)
         if not self.mod.is_drm_channel(channel_id):
@@ -90,8 +88,7 @@ class SourceTving(SourceBase):
             return url.replace("playlist.m3u8", f"chunklist_b{max_bandwidth}.m3u8")
         else:
             del data["play_info"]["mpd_headers"]
-            return data['play_info']
-
+            return data["play_info"]
 
     def repack_m3u8(self, url: str) -> str:
         data = self.plsess.get(url).text
@@ -101,7 +98,7 @@ class SourceTving(SourceBase):
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
         stype = "proxy" if mode == "web_play" else "direct"
         url = self.get_m3u8(channel_id, quality)
-        if not self.mod.is_drm_channel(channel_id): 
+        if not self.mod.is_drm_channel(channel_id):
             data = self.repack_m3u8(url)
             if stype == "direct":
                 return stype, data
@@ -109,7 +106,7 @@ class SourceTving(SourceBase):
         else:
             if mode == "web_play":
                 ret = {
-                    "src": url['uri'],
+                    "src": url["uri"],
                     "type": "application/dash+xml",
                     "keySystems": {
                         "com.widevine.alpha": {
@@ -118,14 +115,12 @@ class SourceTving(SourceBase):
                                 "Real-Url": url["drm_license_uri"],
                                 "Real-Origin": url["drm_key_request_properties"]["origin"],
                                 "Real-Referer": url["drm_key_request_properties"]["referer"],
-                                "Real-Referer": url["drm_key_request_properties"]["referer"],
-                                "Pallycon-Customdata-V2": url["drm_key_request_properties"]["pallycon-customdata-v2"],
+                                "Pallycon-Customdata-V2": url["drm_key_request_properties"]["Pallycon-Customdata-V2"],
                             },
                             "persistentState": "required",
                         }
-                    }
+                    },
                 }
                 return stype, ret
             else:
                 return stype, url
-            
