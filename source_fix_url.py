@@ -20,14 +20,11 @@ class SourceFixURL(SourceBase):
             if not item:
                 continue
             tmp = item.split("|")
-            drm_yn = "N"
-            if len(tmp) == 4:
-                cid, cname, url, radio_yn = tmp
-            elif len(tmp) == 5:
-                cid, cname, url, radio_yn, drm_yn = tmp
-            else:
+            if len(tmp) < 4:
                 continue
-            c = ChannelItem(self.source_id, cid, cname, None, radio_yn == "Y", drm_yn == "Y")
+            try: cid, cname, url, radio_yn = tmp
+            except: cid, cname, url, radio_yn, _ = tmp
+            c = ChannelItem(self.source_id, cid, cname, None, radio_yn == "Y", not url.startswith('http'))
             c.url = url
             ret.append([c.channel_id, c])
         self.channels = OrderedDict(ret)

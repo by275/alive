@@ -115,7 +115,7 @@ class SourceTving(SourceBase):
                                 "Real-Url": url["drm_license_uri"],
                                 "Real-Origin": url["drm_key_request_properties"]["origin"],
                                 "Real-Referer": url["drm_key_request_properties"]["referer"],
-                                "Pallycon-Customdata-V2": url["drm_key_request_properties"]["Pallycon-Customdata-V2"],
+                                "Pallycon-Customdata-V2": url["drm_key_request_properties"]["pallycon-customdata-v2"],
                             },
                             "persistentState": "required",
                         }
