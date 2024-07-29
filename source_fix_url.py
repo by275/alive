@@ -1,3 +1,4 @@
+import json
 from collections import OrderedDict
 from typing import Tuple
 
@@ -40,10 +41,7 @@ class SourceFixURL(SourceBase):
             url = self.get_m3u8(channel_id)
             # 매우 좋지 않지만 spotv만 .....
             if url.startswith('{') and 'spotvnow' in url:
-                import json
                 info = json.loads(url)
-                from support import d
-                logger.info(d(info))
                 ret = {
                     "src": info['uri'],
                     "type": "application/x-mpegurl",
