@@ -35,7 +35,7 @@ class SourceWavve(SourceBase):
         if self.mod.session.headers.get("wavve-credential") != "none":
             ttl = 60 * 60 * 24  # 1일
         else:
-            ttl = 60 * 10  # 10분
+            ttl = 60 * 2  # 2분
         self.get_m3u8 = ttl_cache(ttl)(self.__get_m3u8)
 
     def load_support_module(self):
