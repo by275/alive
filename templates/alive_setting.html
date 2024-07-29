@@ -36,9 +36,10 @@
     {{ macros.m_tab_content_end() }}
 
     {{ macros.m_tab_content_start('tving', false) }}
-      {{ macros.setting_checkbox('use_tving', '티빙', value=arg['use_tving'], desc=['support site 플러그인을 설치하고 티빙 토큰을 입력하세요', 'DRM 채널은 현재 지원 안됨']) }}
+      {{ macros.setting_checkbox('use_tving', '티빙', value=arg['use_tving'], desc=['support site 플러그인을 설치하고 티빙 토큰을 입력하세요']) }}
       <div id="use_tving_div" class="collapse">
         {{ macros.setting_select('tving_quality', '티빙 화질', [['FHD','FHD'], ['HD','HD'], ['SD', 'SD']], col='3', value=arg['tving_quality'])}}
+        {{ macros.setting_checkbox('tving_include_drm', 'DRM 채널', value=arg['tving_include_drm'], desc=['On: 사용']) }}
       </div>
     {{ macros.m_tab_content_end() }}
 
@@ -89,7 +90,7 @@
     {{ macros.m_tab_content_start('direct', false) }}
       {{ macros.setting_checkbox('use_fix_url', '고정주소', value=arg['use_fix_url'], desc=None) }}
       <div id="use_fix_url_div" class="collapse">
-        {{ macros.setting_input_textarea_wide('fix_url_list', '채널 목록', desc=['형식: 채널ID|채널이름|채널URL|{TV면 Y, 라디오면 N}', '구분자: Enter', '참고: https://iptvcat.com/south_korea'], value=arg['fix_url_list'], row='20') }}
+        {{ macros.setting_input_textarea_wide('fix_url_list', '채널 목록', desc=['형식: 채널ID|채널이름|채널URL|{TV면 Y, 라디오면 N}|{DRM 영상인 경우 Y}', '구분자: Enter', '참고: https://iptvcat.com/south_korea'], value=arg['fix_url_list'], row='20') }}
       </div>
     {{ macros.m_tab_content_end() }}
 

@@ -53,6 +53,11 @@
   </div>
 
 </div> <!--전체-->
+<form name="playform">
+  <input type="hidden" id="play_title" name="play_title">
+  <input type="hidden" id="play_source_src"  name="play_source_src">
+  <input type="hidden" id="play_source_type"  name="play_source_type">
+</form>
 
 <script type="text/javascript">
 
@@ -252,6 +257,31 @@ $("body").on('click', '#play_btn', function(e){
   });
 });
 
+$("body").on('click', '#play2_btn', function(e){
+  e.preventDefault();
+  get_play_url($(this).data('source'), $(this).data('id'), true, function(ret){
+    if (ret == null) {
+      notify('에러', 'danger');
+      return;
+    }
+    var form = document.playform;
+    var popupWidth = 980;
+    var leftPos = screen.width - popupWidth;
+    window.open('', ret.url, "location=no, directories=no,resizable=no,status=no,toolbar=no,menubar=no,width=" + popupWidth + ", height=560, top=100, left=" + leftPos);
+    form.method = "post";
+    form.target = ret.url;
+    $('#play_title').val(ret.title);
+    $('#play_source_src').val(ret.url);
+    $('#play_source_type').val('application/x-mpegURL');
+    if (ret.url.indexOf("url.mpd") != -1) {
+      form.action = "/videojs_drm";
+    } else {
+      form.action = "/videojs";
+    }
+    form.submit();
+  });
+});
+
 $("body").on('click', '#play_url_btn', function(e){
   e.preventDefault();
   let wantPlay = $(this);
@@ -297,6 +327,7 @@ function make_channel_list(data) {
       buttons += j_button('play_btn', '<i class="fa fa-play px-1" aria-hidden="true"></i>', {}, 'secondary', false, true);
     }
     buttons += j_button('play_url_btn', '<i class="fa fa-external-link px-1" aria-hidden="true"></i>', {}, 'secondary', false, true);
+    buttons += j_button('play2_btn', '<i class="fa fa-play px-1" aria-hidden="true"></i>', {'source':data[i].source, 'id':data[i].channel_id}, 'secondary', false, true);
     buttons = j_button_group(buttons);
     channel_clone.querySelector('#channel-action').innerHTML = buttons;
 

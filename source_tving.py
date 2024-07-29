@@ -56,10 +56,10 @@ class SourceTving(SourceBase):
 
     def load_channels(self) -> None:
         ret = []
-        data = self.mod.get_live_list(list_type="live", include_drm=False)
+        data = self.mod.get_live_list(list_type="live", include_drm=P.ModelSetting.get_bool("tving_include_drm"))
         for item in data:
             try:
-                p = ProgramItem(title=item["episode_title"], onair=not item["block"])
+                p = ProgramItem(title=item["episode_title"], onair=not item.get("block", False))
                 c = ChannelItem(
                     self.source_id,
                     item["id"],
@@ -82,9 +82,13 @@ class SourceTving(SourceBase):
 
     def __get_m3u8(self, channel_id: str, quality: str) -> str:
         data = self.get_data(channel_id, quality)
-        data = self.plsess.get(url := data["url"]).text  # root playlist
-        max_bandwidth = max(map(int, self.PTN_BANDWIDTH.findall(data)))
-        return url.replace("playlist.m3u8", f"chunklist_b{max_bandwidth}.m3u8")
+        if not self.mod.is_drm_channel(channel_id):
+            data = self.plsess.get(url := data["url"]).text  # root playlist
+            max_bandwidth = max(map(int, self.PTN_BANDWIDTH.findall(data)))
+            return url.replace("playlist.m3u8", f"chunklist_b{max_bandwidth}.m3u8")
+        else:
+            del data["play_info"]["mpd_headers"]
+            return data["play_info"]
 
     def repack_m3u8(self, url: str) -> str:
         data = self.plsess.get(url).text
@@ -94,7 +98,29 @@ class SourceTving(SourceBase):
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
         stype = "proxy" if mode == "web_play" else "direct"
         url = self.get_m3u8(channel_id, quality)
-        data = self.repack_m3u8(url)
-        if stype == "direct":
-            return stype, data
-        return stype, self.relay_ts(data, self.source_id)  # proxy, web_play
+        if not self.mod.is_drm_channel(channel_id):
+            data = self.repack_m3u8(url)
+            if stype == "direct":
+                return stype, data
+            return stype, self.relay_ts(data, self.source_id)  # proxy, web_play
+        else:
+            if mode == "web_play":
+                ret = {
+                    "src": url["uri"],
+                    "type": "application/dash+xml",
+                    "keySystems": {
+                        "com.widevine.alpha": {
+                            "url": "/alive/license",
+                            "licenseHeaders": {
+                                "Real-Url": url["drm_license_uri"],
+                                "Real-Origin": url["drm_key_request_properties"]["origin"],
+                                "Real-Referer": url["drm_key_request_properties"]["referer"],
+                                "Pallycon-Customdata-V2": url["drm_key_request_properties"]["Pallycon-Customdata-V2"],
+                            },
+                            "persistentState": "required",
+                        }
+                    },
+                }
+                return stype, ret
+            else:
+                return stype, url

@@ -73,12 +73,11 @@ class ChannelItem:
     name: str  # {channel_}name
     icon: str
     is_tv: bool
+    is_drm: bool = False  # DRM 채널 / 현재 tving만
 
     url: str = None
     quality: str = None
     program: ProgramItem = ProgramItem()
-
-    is_drm: bool = False  # DRM 채널 / 현재 tving만
 
     @property
     def source_name(self):
@@ -115,10 +114,7 @@ class ChannelItem:
         tvg_chno = kwargs.setdefault("tvg_chno", 0)
         tvh_chnum = kwargs.setdefault("tvh_chnum", 0)
         display_name = kwargs.setdefault("display_name", self.name)
-        if self.url is None or self.url.startswith("http"):
-            url = kwargs.setdefault("url", self.svc_url())
-        else:
-            url = self.url  # m3u를 통해 drm 정보 전송
+        url = kwargs.setdefault("url", self.svc_url())
         data = (tvg_id, tvg_name, tvg_logo, group_title, tvg_chno, tvh_chnum, display_name, url)
         if self.is_tv:
             return M3U_FORMAT % data
