@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from typing import Tuple
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
@@ -73,7 +72,7 @@ class SourceSBS(SourceBase):
         m3u8 = self.plsess.get(url).text
         return self.sub_ts(m3u8, url.split("chunklist.m3u8")[0])
 
-    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
         stype = "direct" if self.channels[channel_id].is_tv else "redirect"
         url = self.get_m3u8(channel_id)
         if stype == "redirect":

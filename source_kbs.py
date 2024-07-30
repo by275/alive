@@ -1,6 +1,5 @@
 import json
 from collections import OrderedDict
-from typing import Tuple
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
@@ -22,7 +21,7 @@ class SourceKBS(SourceBase):
         # cached playlist url
         self.get_m3u8 = ttl_cache(self.ttl)(self.__get_m3u8)
 
-    def __parse_var(self, text: str, identifiers: Tuple[str, str]) -> dict:
+    def __parse_var(self, text: str, identifiers: tuple[str, str]) -> dict:
         left = text.find(identifiers[0]) + len(identifiers[0])
         right = text.find(identifiers[1], left)
         return json.loads(text[left:right].replace("\\", ""))
@@ -64,6 +63,6 @@ class SourceKBS(SourceBase):
         url = self.get_data(channel_id)["channel_item"][0]["service_url"]
         return url
 
-    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
         url = self.get_m3u8(channel_id)
         return "redirect", url

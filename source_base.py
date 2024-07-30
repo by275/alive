@@ -5,7 +5,6 @@ from base64 import b64decode
 from collections import OrderedDict
 from datetime import timedelta
 from functools import lru_cache
-from typing import Tuple
 from urllib.parse import parse_qs, quote, urlparse
 
 import requests
@@ -48,7 +47,7 @@ class SourceBase:
     def load_channels(self) -> None:
         raise NotImplementedError
 
-    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
         raise NotImplementedError
 
     #

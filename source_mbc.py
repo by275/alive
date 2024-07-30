@@ -1,6 +1,5 @@
 import time
 from collections import OrderedDict
-from typing import Tuple
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
@@ -84,7 +83,7 @@ class SourceMBC(SourceBase):
         m3u8 = self.plsess.get(url).text
         return self.sub_ts(m3u8, url.split("chunklist.m3u8")[0])
 
-    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
         stype = "proxy" if mode == "web_play" else ModelSetting.get("mbc_streaming_type")
         stype = "redirect" if len(channel_id) == 3 else stype
         url = self.get_m3u8(channel_id)
