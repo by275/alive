@@ -1,6 +1,5 @@
 import re
 from collections import OrderedDict
-from typing import Tuple
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
@@ -80,47 +79,46 @@ class SourceTving(SourceBase):
         quality = quality_map.get(quality, "stream50")
         return self.mod.get_info(channel_id, quality)
 
-    def __get_m3u8(self, channel_id: str, quality: str) -> str:
+    def __get_m3u8(self, channel_id: str, quality: str) -> str | dict:
         data = self.get_data(channel_id, quality)
-        if not self.mod.is_drm_channel(channel_id):
-            data = self.plsess.get(url := data["url"]).text  # root playlist
-            max_bandwidth = max(map(int, self.PTN_BANDWIDTH.findall(data)))
-            return url.replace("playlist.m3u8", f"chunklist_b{max_bandwidth}.m3u8")
-        else:
+        if self.mod.is_drm_channel(channel_id):
             del data["play_info"]["mpd_headers"]
             return data["play_info"]
+        data = self.plsess.get(url := data["url"]).text  # root playlist
+        max_bandwidth = max(map(int, self.PTN_BANDWIDTH.findall(data)))
+        return url.replace("playlist.m3u8", f"chunklist_b{max_bandwidth}.m3u8")
 
     def repack_m3u8(self, url: str) -> str:
         data = self.plsess.get(url).text
         data = self.sub_ts(data, url.split("chunklist_")[0], url.split(".m3u8")[1])
         return data
 
-    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
-        stype = "proxy" if mode == "web_play" else "direct"
+    def make_drm(self, data: dict, mode: str) -> tuple[str, dict]:
+        if mode == "web_play":
+            return "drm+web", {
+                "src": data["uri"],
+                "type": "application/dash+xml",
+                "keySystems": {
+                    "com.widevine.alpha": {
+                        "url": "/alive/license",
+                        "licenseHeaders": {
+                            "Real-Url": data["drm_license_uri"],
+                            "Real-Origin": data["drm_key_request_properties"]["origin"],
+                            "Real-Referer": data["drm_key_request_properties"]["referer"],
+                            "Pallycon-Customdata-V2": data["drm_key_request_properties"]["pallycon-customdata-v2"],
+                        },
+                        "persistentState": "required",
+                    }
+                },
+            }
+        return "drm", data
+
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
         url = self.get_m3u8(channel_id, quality)
-        if not self.mod.is_drm_channel(channel_id):
-            data = self.repack_m3u8(url)
-            if stype == "direct":
-                return stype, data
-            return stype, self.relay_ts(data, self.source_id)  # proxy, web_play
-        else:
-            if mode == "web_play":
-                ret = {
-                    "src": url["uri"],
-                    "type": "application/dash+xml",
-                    "keySystems": {
-                        "com.widevine.alpha": {
-                            "url": "/alive/license",
-                            "licenseHeaders": {
-                                "Real-Url": url["drm_license_uri"],
-                                "Real-Origin": url["drm_key_request_properties"]["origin"],
-                                "Real-Referer": url["drm_key_request_properties"]["referer"],
-                                "Pallycon-Customdata-V2": url["drm_key_request_properties"]["pallycon-customdata-v2"],
-                            },
-                            "persistentState": "required",
-                        }
-                    },
-                }
-                return stype, ret
-            else:
-                return stype, url
+        if self.mod.is_drm_channel(channel_id):
+            return self.make_drm(url, mode)
+        stype = "proxy" if mode == "web_play" else "direct"
+        data = self.repack_m3u8(url)
+        if stype == "direct":
+            return stype, data
+        return stype, self.relay_ts(data, self.source_id)  # proxy, web_play

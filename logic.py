@@ -255,8 +255,7 @@ class Logic(PluginModuleBase):
                     r = Response(_streamlink(sdata), mimetype="video/MP2T", direct_passthrough=True)
                 else:
                     r = Response(sdata, content_type="application/vnd.apple.mpegurl")
-                l = [f"{source} {channel_id}", f"({stype})", req.remote_addr]
-                logger.debug("%s", " -> ".join(l))
+                logger.debug("%s", " -> ".join([f"{source} {channel_id}", f"({stype})", req.remote_addr]))
                 return r
             if sub == "relay":
                 url = args.get("url")
@@ -283,13 +282,14 @@ class Logic(PluginModuleBase):
                 )
                 return rv
             if sub == "url.mpd":
-                mode = request.args.get("m")
-                source = request.args.get("s")
-                source_id = request.args.get("i")
-                quality = request.args.get("q")
-                dummy, data = LogicKlive.make_m3u8(source, source_id, mode, quality)
+                mode = args["m"]
+                source = args["s"]
+                channel_id = args["i"]
+                quality = args.get("q")
+                stype, data = LogicKlive.make_m3u8(source, channel_id, mode, quality)
                 if isinstance(data, str):
                     data = json.loads(data)
+                logger.debug("%s", " -> ".join([f"{source} {channel_id}", f"({stype})", req.remote_addr]))
                 return jsonify(data)
             # elif sub == "url.strm":
             #     try:
@@ -382,14 +382,11 @@ def plex_proxy(sub):
 # drm license proxy
 #########################################################
 @blueprint.route("/license", methods=["OPTIONS", "POST"])
-def license():
+def license_proxy():
     headers = {k: v for k, v in request.headers if k.lower() != "host"}
-    headers["Origin"] = headers["Real-Origin"]
-    headers["Referer"] = headers["Real-Referer"]
-    url = headers["Real-Url"]
-    del headers["Real-Origin"]
-    del headers["Real-Referer"]
-    del headers["Real-Url"]
+    headers["Origin"] = headers.pop("Real-Origin")
+    headers["Referer"] = headers.pop("Real-Referer")
+    url = headers.pop("Real-Url")
     res = requests.request(  # ref. https://stackoverflow.com/a/36601467/248616
         method=request.method,
         url=url,
@@ -397,6 +394,7 @@ def license():
         data=request.get_data(),
         cookies=request.cookies,
         allow_redirects=False,
+        timeout=10,
     )
     # region exlcude some keys in :res response
     excluded_headers = [
