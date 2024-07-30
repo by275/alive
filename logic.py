@@ -97,6 +97,7 @@ class Logic(PluginModuleBase):
         "channel_list_updated_at": "1970-01-01T00:00:00",
         "channel_list_max_age": "60",  # minutes
         "epg_updated_at": "1970-01-01T00:00:00",
+        "web_player_target": "blank",
         # wavve
         "use_wavve": "False",
         "wavve_quality": "HD",

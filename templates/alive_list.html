@@ -1,11 +1,20 @@
 {% extends "base.html" %}
 
+{% if arg['web_player_target'] == 'self' %}
 {% block head %}
 {{ super() }}
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.3.0/video-js.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.3.0/video.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/videojs-contrib-eme@5.5.0/dist/videojs-contrib-eme.min.js" integrity="sha256-BR3Ahb+PBLjfG27qayaTaZrPPrq9w8qC9wmFs6vvZQA=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@silvermine/videojs-airplay@1.3.0/dist/silvermine-videojs-airplay.min.js" integrity="sha256-cIRJkMSkhrahLY7MROH9ws3KTIRJd14ApTZPdvyhb+o=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@silvermine/videojs-airplay@1.3.0/dist/silvermine-videojs-airplay.min.css">
 {% endblock %}
+{% endif %}
 
 {% block content %}
+
+{% if arg['web_player_target'] == 'self' %}
 <style type="text/css">
   #result_table.table tbody {
     display: block;
@@ -21,12 +30,13 @@
 </style>
 
 <div class="container col-sm-8 d-flex justify-content-center align-items-center mt-0 mb-0 flex-column">
-<video id="hjs1" controls="" autoplay="false" playsinline="" style="width: 100%; background-color: black;"></video>
+<video-js id="vid1" class="vjs-16-9" controls="" autoplay="false" playsinline="" style="width: 100%; background-color: black;"></video-js>
 <p class="text-sm ml-1 mb-0">
 <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=" width="15" height="15" title="" id="play_src">
 <span id="play_info" class="align-text-top"></span>
 </p>
 </div>
+{% endif %}
 
 <div>
   {{ macros.m_button_group([['list_channel_reload_btn', '새로고침']])}}
@@ -64,17 +74,39 @@
 var channelTemplate = document.querySelector('#channel-template');
 var channelScroller = document.querySelector('#channel-list');
 
-var video = document.getElementById('hjs1');
+{% if arg['web_player_target'] == 'self' %}
+let options = {
+  html5: {
+    nativeTextTracks: false
+  },
+  controls: true,
+  preload: "auto",
+  controlBar: {
+      playToggle: false,
+      pictureInPictureToggle: true,
+      remainingTimeDisplay: true,
+      qualitySelector: true,
+  },
+  plugins: {
+    airPlay: {
+        addButtonToControlBar: true, // defaults to `true`
+    }
+  },
+};
+
+const player = videojs('vid1', options);
+player.eme();
+player.airPlay(); // initializes the AirPlay plugin
 var nowPlaying;
-video.addEventListener("pause", (event) => {
+player.on("pause", (event) => {
   if (!nowPlaying) { return; }
   nowPlaying.find('i.fa').removeClass('fa-pause').addClass('fa-play');  // to play
 });
-video.addEventListener("play", (event) => {
+player.on("play", (event) => {
   if (!nowPlaying) { return; }
   nowPlaying.find('i.fa').removeClass('fa-play').addClass('fa-pause');  // to pause
 });
-var hls;
+{% endif %}
 
 $(document).ready(function(){
   load_channel_list();
@@ -189,54 +221,11 @@ function get_play_url(source, channel_id, web_play, callback) {
   });
 }
 
-function loadSource(url) {
-  if (hls) {
-    hls.destroy();
-    hls = null;
-  }
-  hls = new Hls();
-  hls.loadSource(url);
-  hls.attachMedia(video);
-  // https://github.com/video-dev/hls.js/issues/5989
-  while (video.firstChild) {
-    video.removeChild(video.lastChild);
-  }
-  const source = document.createElement('source');
-  source.src = url;
-  video.appendChild(source);
-  video.disableRemotePlayback = false;
-
-  hls.on(Hls.Events.ERROR, function (event, data) {
-    if (data.fatal) {
-      switch (data.type) {
-        case Hls.ErrorTypes.MEDIA_ERROR:
-          console.log('fatal media error encountered, try to recover');
-          hls.recoverMediaError();
-          break;
-        case Hls.ErrorTypes.NETWORK_ERROR:
-          console.error('fatal network error encountered', data);
-          // All retries and media options have been exhausted.
-          // Immediately trying to restart loading could cause loop loading.
-          // Consider modifying loading policies to best fit your asset and network
-          // conditions (manifestLoadPolicy, playlistLoadPolicy, fragLoadPolicy).
-          break;
-        default:
-          // cannot recover
-          hls.destroy();
-          break;
-      }
-    }
-  });
-  hls.on(Hls.Events.MANIFEST_PARSED,function() {
-    video.play();
-  });
-}
-
 $("body").on('click', '#play_btn', function(e){
   e.preventDefault();
   let wantPlay = $(this);
   if (wantPlay.is(nowPlaying)) {
-    if (video.paused) { video.play(); } else { video.pause(); }
+    if (player.paused()) { player.play(); } else { player.pause(); }
     return
   }
   let source_name = wantPlay.closest('tr').find('#channel-source').html();
@@ -253,7 +242,23 @@ $("body").on('click', '#play_btn', function(e){
     $('#play_src').prop('src', src2ico(source))
     $('#play_info').html(`${channel_name} - ${program_title}`);
     nowPlaying = wantPlay;
-    loadSource(ret.url);
+
+    if (ret.url.indexOf("url.mpd") != -1) {
+      player.ready(function(){
+        $.ajax({
+          url: ret.url,
+          type: "GET",
+          success: function(result) {
+            player.src(result);
+          },
+          error:function(error) {
+          }
+        });
+      });
+    } else {
+      player.src(ret.url);
+    }
+    player.play();
   });
 });
 
@@ -323,11 +328,12 @@ function make_channel_list(data) {
     channel_clone.querySelector('#channel-program').title = data[i].program.program_id;
 
     buttons = '';
-    if (data[i].source == "wavve" || data[i].source == "tving" || data[i].source == "mbc" || data[i].source == "kbs" || data[i].source == "sbs") {
-      buttons += j_button('play_btn', '<i class="fa fa-play px-1" aria-hidden="true"></i>', {}, 'secondary', false, true);
-    }
-    buttons += j_button('play_url_btn', '<i class="fa fa-external-link px-1" aria-hidden="true"></i>', {}, 'secondary', false, true);
+    {% if arg['web_player_target'] == 'self' %}
+    buttons += j_button('play_btn', '<i class="fa fa-play px-1" aria-hidden="true"></i>', {}, 'secondary', false, true);
+    {% elif arg['web_player_target'] == 'blank' %}
     buttons += j_button('play2_btn', '<i class="fa fa-play px-1" aria-hidden="true"></i>', {'source':data[i].source, 'id':data[i].channel_id}, 'secondary', false, true);
+    {% endif %}
+    buttons += j_button('play_url_btn', '<i class="fa fa-external-link px-1" aria-hidden="true"></i>', {}, 'secondary', false, true);
     buttons = j_button_group(buttons);
     channel_clone.querySelector('#channel-action').innerHTML = buttons;
 
