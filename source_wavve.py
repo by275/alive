@@ -31,7 +31,7 @@ class SourceWavve(SourceBase):
         plproxy = self.mod.proxy_url if ModelSetting.get_bool("wavve_use_proxy_for_playlist") else None
         self.plsess = self.new_session(headers=self.mod.session.headers, proxy_url=plproxy)
         # cached playlist url
-        if self.mod.session.headers.get("wavve-credential") != "none":
+        if self.mod.credential != "none":
             ttl = 60 * 60 * 24  # 1일
         else:
             ttl = 60 * 2  # 2분
