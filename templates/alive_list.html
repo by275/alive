@@ -14,18 +14,21 @@
 
 {% block content %}
 
+<style type="text/css">
+  #result_table.table thead,
+  #result_table.table tbody tr {
+    display: table;
+    width:100%;
+    table-layout: fixed;
+  }
+</style>
+
 {% if arg['web_player_target'] == 'self' %}
 <style type="text/css">
   #result_table.table tbody {
     display: block;
     max-height: 1000px;
     overflow-y: auto;
-  }
-  #result_table.table thead,
-  #result_table.table tbody tr {
-    display: table;
-    width:100%;
-    table-layout: fixed;
   }
 </style>
 
