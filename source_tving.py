@@ -20,7 +20,7 @@ quality_map = {
 class SourceTving(SourceBase):
     source_id = "tving"
     mod = None
-    ttl = 60 * 60 * 24  # 1일
+    ttl = 60 * 60 * 3  # 3시간
     default_quality: str = ModelSetting.get("tving_quality")
 
     PTN_BANDWIDTH = re.compile(r"BANDWIDTH=(\d+)", re.MULTILINE)
