@@ -1,6 +1,5 @@
 from collections import OrderedDict
 from html import unescape
-from typing import Tuple
 from urllib.parse import quote
 
 from .model import ChannelItem, ProgramItem
@@ -89,7 +88,7 @@ class SourceWavve(SourceBase):
         data = self.sub_ts(data, url.split(".m3u8")[0].rsplit("/", 1)[0] + "/")
         return data
 
-    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
         stype = "proxy" if mode == "web_play" else ModelSetting.get("wavve_streaming_type")
         url = self.get_m3u8(channel_id, quality)
         if stype == "redirect":

@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from typing import Tuple
 
 from .model import ChannelItem
 from .setup import P
@@ -66,7 +65,7 @@ class SourceStreamlink(SourceBase):
         )
         return res.text
 
-    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> Tuple[str, str]:
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
         stype = ModelSetting.get("streamlink_streaming_type")
         stream = self.get_stream(channel_id, quality)
         if stype == "stream":

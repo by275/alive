@@ -49,7 +49,7 @@ class SourceFixURL(SourceBase):
             }
         return "drm", data
 
-    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
         url = self.get_m3u8(channel_id)
         if self.channels[channel_id].is_drm:
             # 매우 좋지 않지만 spotv만 .....

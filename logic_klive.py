@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from typing import List, Literal, Tuple, Type
+from typing import Literal, Type
 
 from plugin import F  # pylint: disable=import-error
 
@@ -71,7 +71,7 @@ class LogicKlive:
         return False
 
     @classmethod
-    def all_channels(cls, reload: Literal["soft", "hard"] = None) -> List[ChannelItem]:
+    def all_channels(cls, reload: Literal["soft", "hard"] = None) -> list[ChannelItem]:
         ret = []
         try:
             if not cls.sources or reload == "hard":
@@ -85,7 +85,7 @@ class LogicKlive:
         return ret
 
     @classmethod
-    def make_m3u8(cls, source: str, channel_id: str, mode: str, quality: str = None) -> Tuple[str, str]:
+    def make_m3u8(cls, source: str, channel_id: str, mode: str, quality: str = None) -> tuple[str, str | dict]:
         try:
             cls.all_channels()  # api에서 가장 먼저 call하는 entrypoint기 때문에...
             return cls.sources[source].make_m3u8(channel_id, mode, quality)
