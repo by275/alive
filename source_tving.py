@@ -24,6 +24,7 @@ class SourceTving(SourceBase):
     default_quality: str = ModelSetting.get("tving_quality")
 
     PTN_BANDWIDTH = re.compile(r"BANDWIDTH=(\d+)", re.MULTILINE)
+    PTN_HTTP = re.compile(r"^http:\/\/")
 
     def __init__(self):
         if self.mod is not None:
@@ -79,8 +80,17 @@ class SourceTving(SourceBase):
         quality = quality_map.get(quality, "stream50")
         return self.mod.get_info(channel_id, quality)
 
+    def upgrade_http(self, d):
+        """in-place replacement of http urls in data"""
+        if isinstance(d, (dict, list)):
+            for k, v in d.items() if isinstance(d, dict) else enumerate(d):
+                if isinstance(v, str) and v.startswith("http://"):
+                    d[k] = self.PTN_HTTP.sub("https://", d[k])
+                self.upgrade_http(v)
+
     def __get_m3u8(self, channel_id: str, quality: str) -> str | dict:
         data = self.get_data(channel_id, quality)
+        self.upgrade_http(data)
         if self.mod.is_drm_channel(channel_id):
             del data["play_info"]["mpd_headers"]
             return data["play_info"]
