@@ -111,8 +111,10 @@ class Logic(PluginModuleBase):
         # kbs
         "use_kbs": "False",
         "kbs_include_vod_ch": "False",
+        "kbs_streaming_type": "redirect",
         "kbs_use_proxy": "False",
         "kbs_proxy_url": "",
+        "kbs_use_proxy_for_playlist": "False",
         # mbc
         "use_mbc": "False",
         "mbc_streaming_type": "direct",

@@ -48,9 +48,11 @@
       {{ macros.setting_checkbox('use_kbs', 'KBS', value=arg['use_kbs'], desc=None) }}
       <div id="use_kbs_div" class="collapse">
         {{ macros.setting_checkbox('kbs_include_vod_ch', '정주행 채널 포함', value=arg['kbs_include_vod_ch'], desc=None) }}
+        {{ macros.setting_radio_with_value('kbs_streaming_type', '스트리밍 타입', [['redirect', 'Redirect'], ['direct', 'Direct'], ['proxy', 'Proxy']], value=arg['kbs_streaming_type'], desc=['다음 스트리밍 타입 중 가능한 것을 선택하세요.', ' - Redirect: API로부터 얻은 재생 주소를 redirect로 전달합니다. 가장 좋은 성능', ' - Direct: FF가 Playlist를 변조하여 전달합니다. Proxy 옵션보다 성능이 좋습니다.', ' - Proxy: FF가 방송 데이터를 받아서 Player에 보냅니다. 트래픽 소모']) }}
         {{ macros.setting_checkbox('kbs_use_proxy', 'Proxy 사용', value=arg['kbs_use_proxy'], desc=['URL을 얻을 때만 사용']) }}
         <div id="kbs_use_proxy_div" class="collapse">
           {{ macros.setting_input_text('kbs_proxy_url', 'Proxy URL', value=arg['kbs_proxy_url'], desc=None) }}
+          {{ macros.setting_checkbox('kbs_use_proxy_for_playlist', '재생 시 Proxy', value=arg['kbs_use_proxy_for_playlist'], desc=['On: 재생할 때도 사용, Off: URL 얻을 때만 사용']) }}
         </div>
       </div>
       {{ macros.m_hr() }}

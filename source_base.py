@@ -37,8 +37,8 @@ class SourceBase:
     channels: OrderedDict[str, ChannelItem] = OrderedDict()
     ttl: int = None
 
-    PTN_M3U8_ALL_TS: re.Pattern = re.compile(r"^[^#].*\.ts.*$", re.MULTILINE)
-    PTN_M3U8_END_TS: re.Pattern = re.compile(r"^[^#].*\.ts$", re.MULTILINE)
+    PTN_M3U8_ALL_TS: re.Pattern = re.compile(r"^[^#].*\.(ts|aac).*$", re.MULTILINE)
+    PTN_M3U8_END_TS: re.Pattern = re.compile(r"^[^#].*\.(ts|aac)$", re.MULTILINE)
     PTN_URL: re.Pattern = re.compile(r"^http(.*?)$", re.MULTILINE)
 
     def __init__(self):
