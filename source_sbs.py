@@ -25,9 +25,9 @@ class SourceSBS(SourceBase):
 
     def load_channels(self) -> None:
         ret = []
-        url_list = ["http://static.apis.sbs.co.kr/play-api/1.0/onair/channels"]
+        url_list = ["https://static.apis.sbs.co.kr/play-api/1.0/onair/channels"]
         if ModelSetting.get_bool("sbs_include_vod_ch"):
-            url_list += ["http://static.apis.sbs.co.kr/play-api/1.0/onair/virtual/channels"]
+            url_list += ["https://static.apis.sbs.co.kr/play-api/1.0/onair/virtual/channels"]
         for url in url_list:
             data = self.apisess.get(url).json()
             for item in data["list"]:
