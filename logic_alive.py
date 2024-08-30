@@ -5,12 +5,6 @@ from pathlib import Path
 
 import requests
 import yaml
-
-try:
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader
-
 from plugin import F  # pylint: disable=import-error
 
 SystemModelSetting = F.SystemModelSetting
@@ -72,14 +66,6 @@ def get_src_item(ch, priority_list, attrib):
     return ""
 
 
-def load_yaml(file):
-    try:
-        return yaml.load(file, Loader=Loader)
-    except TypeError:
-        with open(file, "r", encoding="utf-8") as fp:
-            return yaml.load(fp, Loader=Loader)
-
-
 class LogicAlive:
     epg_names: list = []
     group_list: list = []
@@ -88,7 +74,8 @@ class LogicAlive:
     @classmethod
     def load_prefs(cls) -> bool:
         file = Path(F.path_data).joinpath("db", "alive.yaml")
-        prefs = load_yaml(file)
+        with file.open("r", encoding="utf-8") as strm:
+            prefs = yaml.full_load(strm.read())
         if prefs != cls.prefs:
             cls.prefs = prefs
             return True

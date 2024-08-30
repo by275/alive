@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 
 from plugin import F  # pylint: disable=import-error
@@ -77,7 +77,7 @@ class ChannelItem:
 
     url: str = None
     quality: str = None
-    program: ProgramItem = ProgramItem()
+    program: ProgramItem = field(default_factory=ProgramItem)
 
     @property
     def source_name(self):
