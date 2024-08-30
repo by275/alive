@@ -132,6 +132,7 @@ channel_group:
   - {name: EDGE TV}
   - {name: PLAYY웹드라마}
   - {name: PLAYY 중국 드라마}
+  - {name: 위라이크}
 
 - name: 영화
   type: regular
