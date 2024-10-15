@@ -54,8 +54,13 @@ class SourceSBS(SourceBase):
         if channel_id.startswith("EVENT"):
             prefix = ""
         else:
-            prefix = "" if channel_id != "SBS" and int(channel_id[1:]) < 21 else "virtual/"
-        url = f"https://apis.sbs.co.kr/play-api/1.0/onair/{prefix}channel/{channel_id}?jwt-token=&platform=pcweb&service=&absolute_show=&ssl=Y&rscuse=&v_type=2&protocol=hls&extra="
+            prefix = "virtual/"
+            try:
+                if int(channel_id[1:]) < 21:
+                    prefix = ""
+            except ValueError:
+                pass
+        url = f"https://apis.sbs.co.kr/play-api/1.0/onair/{prefix}channel/{channel_id}?v_type=2&platform=pcweb&protocol=hls&ssl=N&rscuse=&jwt-token=&sbsmain="
         data = self.apisess.get(url).json()
         return data
 
