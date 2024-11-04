@@ -69,6 +69,7 @@
       {{ macros.setting_checkbox('use_sbs', 'SBS', value=arg['use_sbs'], desc=None) }}
       <div id="use_sbs_div" class="collapse">
         {{ macros.setting_checkbox('sbs_include_vod_ch', '정주행 채널 포함', value=arg['sbs_include_vod_ch'], desc=None) }}
+        {{ macros.setting_radio_with_value('sbs_streaming_type', '스트리밍 타입', [['direct', 'Direct'], ['proxy', 'Proxy']], value=arg['sbs_streaming_type'], desc=['다음 스트리밍 타입 중 가능한 것을 선택하세요.', ' - Direct: FF가 Playlist를 변조하여 전달합니다. Proxy 옵션보다 성능이 좋습니다.', ' - Proxy: FF가 방송 데이터를 받아서 Player에 보냅니다. 트래픽 소모']) }}
         {{ macros.setting_checkbox('sbs_use_proxy', 'Proxy 사용', value=arg['sbs_use_proxy']) }}
         <div id="sbs_use_proxy_div" class="collapse">
           {{ macros.setting_input_text('sbs_proxy_url', 'Proxy URL', value=arg['sbs_proxy_url'], desc=None) }}

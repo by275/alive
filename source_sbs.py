@@ -78,8 +78,9 @@ class SourceSBS(SourceBase):
         return self.sub_ts(m3u8, url.split("chunklist.m3u8")[0])
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
-        stype = "direct" if self.channels[channel_id].is_tv else "redirect"
+        stype = ModelSetting.get("sbs_streaming_type")
         url = self.get_m3u8(channel_id)
-        if stype == "redirect":
-            return stype, url
-        return stype, self.repack_m3u8(url)
+        data = self.repack_m3u8(url)
+        if stype == "direct":
+            return stype, data
+        return stype, self.relay_ts(data, self.source_id, proxy=self.plsess.proxies.get("http"))  # proxy

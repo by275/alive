@@ -124,6 +124,7 @@ class Logic(PluginModuleBase):
         # sbs
         "use_sbs": "False",
         "sbs_include_vod_ch": "False",
+        "sbs_streaming_type": "direct",
         "sbs_use_proxy": "False",
         "sbs_proxy_url": "",
         "sbs_use_proxy_for_playlist": "False",
