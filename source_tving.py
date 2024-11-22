@@ -94,6 +94,8 @@ class SourceTving(SourceBase):
         if self.mod.is_drm_channel(channel_id):
             del data["play_info"]["mpd_headers"]
             return data["play_info"]
+        cookies = "; ".join("CloudFront-" + c for c in data["url"].split("?")[1].split("&"))
+        self.plsess.headers.update({"Cookie": cookies})  # tvn 같은 몇몇 채널은 쿠키 인증이 필요
         data = self.plsess.get(url := data["url"]).text  # root playlist
         max_bandwidth = max(map(int, self.PTN_BANDWIDTH.findall(data)))
         return url.replace("playlist.m3u8", f"chunklist_b{max_bandwidth}.m3u8")
