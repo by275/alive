@@ -233,6 +233,8 @@ class Logic(PluginModuleBase):
         elif sub == "m3utvh":
             src_char = args.get("srcChar", "").lower() == "y"
             m3u = LogicAlive.get_m3u(src_char=src_char, for_tvh=True)
+        else:
+            raise NotImplementedError(f"잘못된 sub: {sub}")
         return Response(m3u, content_type="audio/mpegurl")
 
     def process_api(self, sub, req):
