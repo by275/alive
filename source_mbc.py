@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
-from .source_base import SourceBase, ttl_cache
+from .source_base import SourceBase, URLCacher
 
 logger = P.logger
 package_name = P.package_name
@@ -33,7 +33,7 @@ class SourceMBC(SourceBase):
         plproxy = proxy_url if ModelSetting.get_bool("mbc_use_proxy_for_playlist") else None
         self.plsess = self.new_session(proxy_url=plproxy, add_headers={"Referer": "https://onair.imbc.com/"})
         # cached playlist url
-        self.get_m3u8 = ttl_cache(self.ttl)(self.__get_m3u8)
+        self.get_m3u8 = URLCacher(self.ttl)(self.__get_m3u8)
 
     def load_channels(self) -> None:
         ret = []

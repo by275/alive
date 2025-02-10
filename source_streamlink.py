@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from .model import ChannelItem
 from .setup import P
-from .source_base import SourceBase, ttl_cache
+from .source_base import SourceBase, URLCacher
 
 logger = P.logger
 package_name = P.package_name
@@ -24,7 +24,7 @@ class SourceStreamlink(SourceBase):
                 options = {"http-proxy": ModelSetting.get("streamlink_proxy_url")}
             self.slsess = Streamlink(options=options)
             # cached streamlink stream
-            self.get_stream = ttl_cache(self.ttl)(self.__get_stream)
+            self.get_stream = URLCacher(self.ttl)(self.__get_stream)
         except ImportError:
             logger.error("streamlink<6.6 패키지가 필요합니다.")
             self.is_installed = False

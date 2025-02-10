@@ -5,6 +5,7 @@ from base64 import b64decode
 from collections import OrderedDict
 from datetime import timedelta
 from functools import lru_cache
+from typing import Callable
 from urllib.parse import parse_qs, quote, urlparse
 
 import requests
@@ -19,17 +20,63 @@ ModelSetting = P.ModelSetting
 SystemModelSetting = F.SystemModelSetting
 
 
-def ttl_cache(seconds: int, maxsize: int = 10, margin: int = 10):
-    def wrapper(func):
-        @lru_cache(maxsize)
-        def inner(__ttl, *args, **kwargs):
-            ret = func(*args, **kwargs)
-            SourceBase.expires_in(ret)
-            return ret
+class URLCacher:
+    def __init__(self, ttl: int, maxsize: int = 10, margin: int = 10):
+        self.ttl = ttl
+        self.maxsize = maxsize
+        self.margin = margin
 
-        return lambda *args, **kwargs: inner(time.time() // (seconds - margin), *args, **kwargs)
+    @property
+    def hash(self):
+        return time.time() // (self.ttl - self.margin)
 
-    return wrapper
+    def __call__(self, func: Callable) -> Callable:
+        @lru_cache(self.maxsize)
+        def inner(_ttl, *args, **kwargs):
+            url = func(*args, **kwargs)
+            self.expires_in(url)
+            return url
+
+        def wrapper(*args, **kwargs):
+            return inner(self.hash, *args, **kwargs)
+
+        return wrapper
+
+    def b64decode(self, txt: str, to_json: bool = True) -> str | dict:
+        txt = b64decode(txt.rstrip("_") + "===")  # fix incorrect padding
+        if to_json:
+            return json.loads(txt)
+        return txt
+
+    def parse_expiry(self, url: str) -> int:
+        """returns linux epoch"""
+        u = urlparse(url)
+        q = parse_qs(u.query)
+        if policy := q.get("Policy", [None])[0]:
+            # AWS cloudfront - wavve, tving, kbs
+            p = self.b64decode(policy)
+            return p["Statement"][0]["Condition"]["DateLessThan"]["AWS:EpochTime"]
+        if token := q.get("token", [None])[0]:
+            # sbs
+            for t in token.split("."):
+                try:
+                    return self.b64decode(t)["exp"]
+                except Exception:
+                    pass
+        return None
+
+    def expires_in(self, url: str) -> None:
+        if not isinstance(url, str):
+            return
+        try:
+            exp = self.parse_expiry(url)
+        except Exception:
+            logger.exception("Exception while parsing expiry in url: %s", url)
+            exp = None
+        logger.debug("new url issued: %s", url)
+        if exp is not None:
+            exp_in = timedelta(seconds=exp - time.time())
+            logger.debug("which will expire in %s", exp_in)
 
 
 class SourceBase:
@@ -90,38 +137,3 @@ class SourceBase:
                 u2 += f"&proxy={quote(proxy)}"
             m3u8 = m3u8.replace(u, u2)
         return m3u8
-
-    @staticmethod
-    def b64decode(txt: str, to_json: bool = True) -> str:
-        txt = b64decode(txt.rstrip("_") + "===")  # fix incorrect padding
-        if to_json:
-            return json.loads(txt)
-        return txt
-
-    @staticmethod
-    def parse_expiry(url: str) -> int:
-        u = urlparse(url)
-        q = parse_qs(u.query)
-        if policy := q.get("Policy", [None])[0]:
-            p = SourceBase.b64decode(policy)
-            return p["Statement"][0]["Condition"]["DateLessThan"]["AWS:EpochTime"]
-        if token := q.get("token", [None])[0]:
-            for t in token.split("."):
-                try:
-                    return SourceBase.b64decode(t)["exp"]
-                except Exception:
-                    pass
-        return None
-
-    @staticmethod
-    def expires_in(url: str) -> None:
-        if not isinstance(url, str):
-            return
-        try:
-            exp = SourceBase.parse_expiry(url)
-        except Exception:
-            logger.exception("Exception while parsing expiry in url: %s", url)
-            exp = None
-        logger.debug("new url issued: %s", url)
-        if exp is not None:
-            logger.debug("which will expire in %s", timedelta(seconds=exp - time.time()))

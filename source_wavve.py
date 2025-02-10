@@ -4,7 +4,7 @@ from urllib.parse import quote
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
-from .source_base import SourceBase, ttl_cache
+from .source_base import SourceBase, URLCacher
 
 logger = P.logger
 package_name = P.package_name
@@ -35,7 +35,7 @@ class SourceWavve(SourceBase):
             ttl = 60 * 60 * 24  # 1일
         else:
             ttl = 60 * 2  # 2분
-        self.get_m3u8 = ttl_cache(ttl)(self.__get_m3u8)
+        self.get_m3u8 = URLCacher(ttl)(self.__get_m3u8)
 
     def load_support_module(self):
         from support_site import SupportWavve as SW

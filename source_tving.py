@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
-from .source_base import SourceBase, ttl_cache
+from .source_base import SourceBase, URLCacher
 
 logger = P.logger
 package_name = P.package_name
@@ -43,7 +43,7 @@ class SourceTving(SourceBase):
             proxies=self.mod._SupportTving__proxies,
         )
         # cached playlist url
-        self.get_m3u8 = ttl_cache(self.ttl)(self.__get_m3u8)
+        self.get_m3u8 = URLCacher(self.ttl)(self.__get_m3u8)
 
     def load_support_module(self):
         from support_site import SupportTving as ST
