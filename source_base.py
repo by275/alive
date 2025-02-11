@@ -21,14 +21,14 @@ SystemModelSetting = F.SystemModelSetting
 
 
 class URLCacher:
-    def __init__(self, ttl: int, maxsize: int = 10, margin: int = 10):
+    def __init__(self, ttl: int, maxsize: int = 10, factor: float = 0.85):
         self.ttl = ttl
         self.maxsize = maxsize
-        self.margin = margin
+        self.factor = factor
 
     @property
     def hash(self):
-        return time.time() // (self.ttl - self.margin)
+        return time.time() // (self.ttl * self.factor)
 
     def __call__(self, func: Callable) -> Callable:
         @lru_cache(self.maxsize)
@@ -77,6 +77,10 @@ class URLCacher:
         if exp is not None:
             exp_in = timedelta(seconds=exp - time.time())
             logger.debug("which will expire in %s", exp_in)
+            ttl = int((exp_in.total_seconds() + 30) // 60 * 60)  # to nearest multiple of 60
+            if ttl > 0 and self.ttl != ttl:
+                logger.debug("detected and changing to the new ttl: %d -> %d", self.ttl, ttl)
+                self.ttl = ttl
 
 
 class SourceBase:
