@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import Literal, Type
 
-from plugin import F  # pylint: disable=import-error
+from plugin import F  # type: ignore # pylint: disable=import-error
 
 from .model import ChannelItem
 from .setup import P

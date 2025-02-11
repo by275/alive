@@ -5,7 +5,7 @@ from pathlib import Path
 
 import requests
 import yaml
-from plugin import F  # pylint: disable=import-error
+from plugin import F  # type: ignore # pylint: disable=import-error
 
 SystemModelSetting = F.SystemModelSetting
 

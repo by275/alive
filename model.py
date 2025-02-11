@@ -1,7 +1,7 @@
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 
-from plugin import F  # pylint: disable=import-error
+from plugin import F  # type: ignore # pylint: disable=import-error
 
 db = F.db
 SystemModelSetting = F.SystemModelSetting

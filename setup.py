@@ -26,7 +26,7 @@ default_headers = {
 }
 
 # pylint: disable=import-error
-from plugin import create_plugin_instance
+from plugin import create_plugin_instance  # type: ignore
 
 P = create_plugin_instance(setting)
 

@@ -9,7 +9,7 @@ from typing import Callable
 from urllib.parse import parse_qs, quote, urlparse
 
 import requests
-from plugin import F  # pylint: disable=import-error
+from plugin import F  # type: ignore # pylint: disable=import-error
 
 from .model import ChannelItem
 from .setup import P, default_headers

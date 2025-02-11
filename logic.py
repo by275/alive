@@ -12,7 +12,7 @@ from urllib.parse import unquote
 
 import requests
 from flask import Response, abort, jsonify, redirect, render_template, request, stream_with_context
-from plugin import F, PluginModuleBase  # pylint: disable=import-error
+from plugin import F, PluginModuleBase  # type: ignore # pylint: disable=import-error
 
 db = F.db
 scheduler = F.scheduler
@@ -170,7 +170,7 @@ class Logic(PluginModuleBase):
                         arg[tmp] += f"?apikey={apikey}"
 
                 try:
-                    from support_site.setup import P as SS  # pylint: disable=import-error
+                    from support_site.setup import P as SS  # type: ignore # pylint: disable=import-error
 
                     arg["site_wavve_use_proxy"] = SS.ModelSetting.get_bool("site_wavve_use_proxy")
                 except ImportError:

@@ -38,7 +38,7 @@ class SourceWavve(SourceBase):
         self.get_m3u8 = URLCacher(ttl)(self.__get_m3u8)
 
     def load_support_module(self):
-        from support_site import SupportWavve as SW
+        from support_site import SupportWavve as SW  # type: ignore
 
         return SW
 

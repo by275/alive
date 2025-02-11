@@ -46,7 +46,7 @@ class SourceTving(SourceBase):
         self.get_m3u8 = URLCacher(self.ttl)(self.__get_m3u8)
 
     def load_support_module(self):
-        from support_site import SupportTving as ST
+        from support_site import SupportTving as ST  # type: ignore
 
         token = ST._SupportTving__token.strip()  # pylint: disable=protected-access
         if not token:

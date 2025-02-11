@@ -1,7 +1,7 @@
 from datetime import date, datetime
 
 from flask.json.provider import DefaultJSONProvider
-from plugin import F  # pylint: disable=import-error
+from plugin import F  # type: ignore # pylint: disable=import-error
 
 
 class UpdatedJSONProvider(DefaultJSONProvider):
