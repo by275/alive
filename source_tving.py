@@ -56,14 +56,22 @@ class SourceTving(SourceBase):
 
     def load_channels(self) -> None:
         ret = []
+        name_counter = {}
+
         data = self.mod.get_live_list(list_type="live", include_drm=P.ModelSetting.get_bool("tving_include_drm"))
         for item in data:
             try:
+                name = item["title"]
+                if "KBO" in name:  # KBO 프로야구 중복 채널명 문제
+                    count = name_counter.setdefault(name, 0) + 1
+                    name_counter[name] = count
+                    name = f"{name} {count}"
+
                 p = ProgramItem(title=item["episode_title"], onair=not item.get("block", False))
                 c = ChannelItem(
                     self.source_id,
                     item["id"],
-                    item["title"],
+                    name,
                     item["img"],
                     True,
                     is_drm=item["is_drm"],
