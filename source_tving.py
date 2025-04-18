@@ -21,7 +21,6 @@ class SourceTving(SourceBase):
     source_id = "tving"
     mod = None
     ttl = 60 * 60 * 3  # 3시간
-    default_quality: str = ModelSetting.get("tving_quality")
 
     PTN_BANDWIDTH = re.compile(r"BANDWIDTH=(\d+)", re.MULTILINE)
     PTN_HTTP = re.compile(r"^http:\/\/")
@@ -84,8 +83,8 @@ class SourceTving(SourceBase):
 
     def get_data(self, channel_id: str, quality: str) -> dict:
         if quality in [None, "default"]:
-            quality = self.default_quality
-        quality = quality_map.get(quality, "stream50")
+            quality = ModelSetting.get("tving_quality")
+        quality = quality_map.get(quality, "1080p")
         return self.mod.get_info(channel_id, quality)
 
     def upgrade_http(self, d):
