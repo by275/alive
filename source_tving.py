@@ -76,10 +76,10 @@ class SourceTving(SourceBase):
                     is_drm=item["is_drm"],
                     program=p,
                 )
-                ret.append([c.channel_id, c])
+                ret.append(c)
             except Exception:
                 logger.exception("라이브 채널 분석 중 예외: %s", item)
-        self.channels = OrderedDict(ret)
+        self.channels = OrderedDict((c.channel_id, c) for c in ret)
 
     def get_data(self, channel_id: str, quality: str) -> dict:
         if quality in [None, "default"]:

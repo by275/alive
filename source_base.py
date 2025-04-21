@@ -42,11 +42,9 @@ class URLCacher:
 
         return wrapper
 
-    def b64decode(self, txt: str, to_json: bool = True) -> str | dict:
-        txt = b64decode(txt.rstrip("_") + "===")  # fix incorrect padding
-        if to_json:
-            return json.loads(txt)
-        return txt
+    def b64decode(self, raw: str, to_json: bool = True) -> str | dict:
+        raw = b64decode(raw.rstrip("_") + "===")  # fix incorrect padding
+        return json.loads(raw) if to_json else raw.decode("utf-8")
 
     def parse_expiry(self, url: str) -> int:
         """returns linux epoch"""
@@ -132,12 +130,14 @@ class SourceBase:
         apikey = None
         if SystemModelSetting.get_bool("use_apikey"):
             apikey = SystemModelSetting.get("apikey")
-        for m in SourceBase.PTN_URL.finditer(m3u8):
+
+        def repl(m):
             u = m.group(0)
             u2 = f"{base_url}&url={quote(u)}"
             if apikey is not None:
                 u2 += f"&apikey={apikey}"
             if proxy is not None:
                 u2 += f"&proxy={quote(proxy)}"
-            m3u8 = m3u8.replace(u, u2)
-        return m3u8
+            return u2
+
+        return SourceBase.PTN_URL.sub(repl, m3u8)

@@ -43,8 +43,8 @@ class SourceStreamlink(SourceBase):
             c = ChannelItem(self.source_id, cid, cname, None, True)
             c.url = url
             c.quality = quality.strip() or None
-            ret.append([c.channel_id, c])
-        self.channels = OrderedDict(ret)
+            ret.append(c)
+        self.channels = OrderedDict((c.channel_id, c) for c in ret)
 
     def __get_stream(self, channel_id: str, quality: str):
         url = (c := self.channels[channel_id]).url

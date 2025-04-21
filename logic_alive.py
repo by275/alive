@@ -113,16 +113,17 @@ class LogicAlive:
         #
         # check duplicates
         #
-        known_channel_names = []
+        known_channel_names = set()
         for group in channel_group:
             for channel in group.get("channels", []):
                 channel_name = channel["name"]
                 if channel_name in known_channel_names:
                     logger.warning("채널 이름에 중복이 있습니다: %s", channel_name)
-                known_channel_names += channel_name
+                known_channel_names.add(channel_name)
 
-        src_tv = [c for c in LogicKlive.all_channels() if c.is_tv]
-        src_radio = [c for c in LogicKlive.all_channels() if not c.is_tv]
+        all_channels = LogicKlive.all_channels()
+        src_tv = [c for c in all_channels if c.is_tv]
+        src_radio = [c for c in all_channels if not c.is_tv]
 
         #
         # grouping available sources based on predefined channel_group

@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from typing import Literal, Type
+from typing import Literal
 
 from plugin import F  # type: ignore # pylint: disable=import-error
 
@@ -23,7 +23,7 @@ SystemModelSetting = F.SystemModelSetting
 
 
 class LogicKlive:
-    sources: OrderedDict[str, Type[SourceBase]] = OrderedDict()
+    sources: OrderedDict[str, SourceBase] = OrderedDict()
 
     @classmethod
     def __load_sources(cls) -> None:
@@ -47,7 +47,7 @@ class LogicKlive:
         if ModelSetting.get_bool("use_fix_url"):
             srcs.append(SourceFixURL())
 
-        cls.sources = OrderedDict([s.source_id, s] for s in srcs)
+        cls.sources = OrderedDict((s.source_id, s) for s in srcs)
 
     @classmethod
     def __load_channels(cls) -> None:
@@ -95,17 +95,15 @@ class LogicKlive:
 
     @classmethod
     def get_m3uall(cls):
-        idx = 1
         m3u = ["#EXTM3U\n"]
         try:
             apikey = None
             if SystemModelSetting.get_bool("use_apikey"):
                 apikey = SystemModelSetting.get("apikey")
             ddns = SystemModelSetting.get("ddns")
-            for c in cls.all_channels():
+            for idx, c in enumerate(cls.all_channels(), 1):
                 url = c.svc_url(apikey=apikey, ddns=ddns)
                 m3u.append(c.as_m3u(url=url, tvg_chno=idx, tvh_chnum=idx))
-                idx += 1
         except Exception:
             logger.exception("Exception:")
         return "".join(m3u)

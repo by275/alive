@@ -24,8 +24,8 @@ class SourceFixURL(SourceBase):
             cid, cname, url, radio_yn = tmp[:4]
             c = ChannelItem(self.source_id, cid, cname, None, radio_yn == "Y", not url.startswith("http"))
             c.url = url
-            ret.append([c.channel_id, c])
-        self.channels = OrderedDict(ret)
+            ret.append(c)
+        self.channels = OrderedDict((c.channel_id, c) for c in ret)
 
     def get_m3u8(self, channel_id: str) -> str:
         return self.channels[channel_id].url

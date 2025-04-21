@@ -1,5 +1,6 @@
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
+from urllib.parse import urlencode
 
 from plugin import F  # type: ignore # pylint: disable=import-error
 
@@ -89,18 +90,23 @@ class ChannelItem:
         return circled_alphabet[ord(char) - ord("a")]
 
     def svc_url(self, apikey=None, ddns=None, mode="url", for_tvh=False):
-        if apikey is None:
-            if SystemModelSetting.get_bool("use_apikey"):
-                apikey = SystemModelSetting.get("apikey")
+        if apikey is None and SystemModelSetting.get_bool("use_apikey"):
+            apikey = SystemModelSetting.get("apikey")
 
         url_base = f'{ddns or SystemModelSetting.get("ddns")}/{package_name}'
-        url = url_base + f"/api/url.m3u8?m={mode}&s={self.source}&i={self.channel_id}"
+        params = {"m": mode, "s": self.source, "i": self.channel_id}
         if apikey is not None:
-            url += f"&apikey={apikey}"
-        if self.is_drm:
-            url = url.replace("url.m3u8", "url.mpd")
+            params["apikey"] = apikey
+
+        path = "url.mpd" if self.is_drm else "url.m3u8"
+        url = f"{url_base}/api/{path}?{urlencode(params)}"
+
         if for_tvh:
-            return f'pipe://ffmpeg -loglevel quiet -i "{url}" -c copy -metadata service_provider=sjva_klive -metadata service_name="{self.name}" -c:v copy -c:a aac -b:a 128k -f mpegts -tune zerolatency pipe:1'
+            return (
+                f'pipe://ffmpeg -loglevel quiet -i "{url}" -c copy '
+                f'-metadata service_provider=sjva_klive -metadata service_name="{self.name}" '
+                f"-c:v copy -c:a aac -b:a 128k -f mpegts -tune zerolatency pipe:1"
+            )
         return url
 
     def as_dict(self):

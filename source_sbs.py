@@ -45,10 +45,10 @@ class SourceSBS(SourceBase):
                         image=item["thumbimg"],
                     )
                     c = ChannelItem(self.source_id, item["channelid"], cname, None, is_tv, program=p)
-                    ret.append([c.channel_id, c])
+                    ret.append(c)
                 except Exception:
                     logger.exception("라이브 채널 분석 중 예외: %s", item)
-        self.channels = OrderedDict(ret)
+        self.channels = OrderedDict((c.channel_id, c) for c in ret)
 
     def get_data(self, channel_id: str) -> dict:
         if channel_id.startswith("EVENT"):
