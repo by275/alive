@@ -163,7 +163,7 @@ class Logic(PluginModuleBase):
                 arg["api_m3u"] = url_base + "/api/m3u"
                 arg["api_m3utvh"] = url_base + "/api/m3utvh"
                 arg["api_m3uall"] = url_base + "/api/m3uall"
-                arg["plex_proxy"] = url_base + "/proxy"
+                arg["plex_proxy"] = url_base + "/proxy/plex"
 
                 if use_apikey:
                     for tmp in ["api_m3u", "api_m3uall", "api_m3utvh"]:
@@ -179,8 +179,6 @@ class Logic(PluginModuleBase):
                 from .source_streamlink import SourceStreamlink
 
                 arg["is_streamlink_installed"] = "Installed" if SourceStreamlink.is_installed else "Not Installed"
-            if sub == "proxy":
-                return redirect(f"/{package_name}/proxy/discover.json")
             if sub == "group":
                 arg["alive_prefs"] = str(Path(F.path_data).joinpath("db", "alive.yaml"))
             return render_template(f"{package_name}_{sub}.html", sub=sub, arg=arg)
@@ -332,11 +330,12 @@ class Logic(PluginModuleBase):
 
 
 #########################################################
-# Proxy
+# Plex Proxy
 #########################################################
-@blueprint.route("/proxy/<sub>", methods=["GET", "POST"])
+@blueprint.route("/proxy/plex", defaults={"sub": None}, methods=["GET", "POST"])
+@blueprint.route("/proxy/plex/<sub>", methods=["GET", "POST"])
 def plex_proxy(sub):
-    logger.debug("proxy %s", sub)
+    logger.debug("/alive/proxy/plex %s", sub)
     if not ModelSetting.get_bool("use_plex_proxy"):
         abort(403)
     allowed_host = ModelSetting.get("plex_proxy_host").strip()
@@ -344,6 +343,9 @@ def plex_proxy(sub):
         logger.debug("request host %s does not match with allowed host: %s", request.host, allowed_host)
         abort(403)
     try:
+        sub_root = f"{request.url_root}alive/proxy/plex"
+        if sub is None:
+            return redirect(f"{sub_root}/discover.json")
         if sub == "discover.json":
             data = {
                 "FriendlyName": "HDHomeRun CONNECT",
@@ -352,8 +354,8 @@ def plex_proxy(sub):
                 "FirmwareVersion": "20190621",
                 "DeviceID": "104E8010",
                 "DeviceAuth": "UF4CFfWQh05c3jROcArmAZaf",
-                "BaseURL": f"{request.url_root}alive/proxy",
-                "LineupURL": f"{request.url_root}alive/proxy/lineup.json",
+                "BaseURL": sub_root,
+                "LineupURL": f"{sub_root}/lineup.json",
                 "TunerCount": 20,
             }
             return jsonify(data)
