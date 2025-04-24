@@ -389,7 +389,7 @@ def plex_proxy(sub):
 #########################################################
 # drm license proxy
 #########################################################
-@blueprint.route("/license", methods=["OPTIONS", "POST"])
+@blueprint.route("/proxy/license", methods=["OPTIONS", "POST"])
 def license_proxy():
     headers = {k: v for k, v in request.headers if k.lower() != "host"}
     headers["Origin"] = headers.pop("Real-Origin")

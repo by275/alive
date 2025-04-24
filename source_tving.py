@@ -119,7 +119,7 @@ class SourceTving(SourceBase):
                 "type": "application/dash+xml",
                 "keySystems": {
                     "com.widevine.alpha": {
-                        "url": "/alive/license",
+                        "url": "/alive/proxy/license",
                         "licenseHeaders": {
                             "Real-Url": data["drm_license_uri"],
                             "Real-Origin": data["drm_key_request_properties"]["origin"],

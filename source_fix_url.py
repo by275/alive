@@ -37,7 +37,7 @@ class SourceFixURL(SourceBase):
                 "type": "application/x-mpegurl",
                 "keySystems": {
                     "com.widevine.alpha": {
-                        "url": "/alive/license",
+                        "url": "/alive/proxy/license",
                         "licenseHeaders": {
                             "Real-Url": data["drm_license_uri"],
                             "Real-Origin": data["drm_key_request_properties"]["origin"],
