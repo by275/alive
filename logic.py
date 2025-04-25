@@ -4,11 +4,11 @@ import platform
 import shutil
 import subprocess
 import time
+from base64 import urlsafe_b64decode
 from copy import deepcopy
 from datetime import datetime
 from itertools import chain
 from pathlib import Path
-from urllib.parse import unquote
 
 import requests
 from flask import Response, abort, jsonify, redirect, render_template, request, stream_with_context
@@ -261,30 +261,6 @@ class Logic(PluginModuleBase):
                     r = Response(sdata, content_type="application/vnd.apple.mpegurl")
                 logger.debug("%s", " -> ".join([f"{source} {channel_id}", f"({stype})", req.remote_addr]))
                 return r
-            if sub == "relay":
-                url = args.get("url")
-                proxy = args.get("proxy")
-                proxies = None
-                if proxy is not None:
-                    proxy = unquote(proxy)
-                    proxies = {"https": proxy, "http": proxy}
-                url = unquote(url)
-                source = args.get("source")
-                # logger.debug('REDIRECT:%s', url)
-                # logger.warning(f"redirect : {url}")
-                # 2021-06-03
-                headers = {"Connection": "keep-alive"}
-                headers.update(default_headers)
-                if source == "mbc":
-                    headers.update({"Referer": "https://onair.imbc.com/"})
-                r = requests.get(url, headers=headers, stream=True, proxies=proxies, verify=False, timeout=30)
-                rv = Response(
-                    r.iter_content(chunk_size=1048576),
-                    r.status_code,
-                    content_type=r.headers["Content-Type"],
-                    direct_passthrough=True,
-                )
-                return rv
             if sub == "url.mpd":
                 mode = args["m"]
                 source = args["s"]
@@ -415,3 +391,25 @@ def license_proxy():
     # endregion exlcude some keys in :res response
     response = Response(res.content, res.status_code, headers)
     return response
+
+
+@blueprint.route("/proxy/hls/chunk", methods=["GET"])
+def proxy_chunk():
+    try:
+        url = urlsafe_b64decode(request.args["url"]).decode()
+        sid = request.args["s"]
+        source = LogicKlive.sources[sid]
+    except Exception:
+        abort(404)
+    try:
+        r = source.plsess.get(url, stream=True, timeout=30)
+        return Response(
+            r.iter_content(chunk_size=1048576),
+            r.status_code,
+            content_type=r.headers["Content-Type"],
+            direct_passthrough=True,
+        )
+    except Exception:
+        # 어떤 예외든 404로 위장
+        logger.debug("Exception proxing for chunks", exc_info=True)
+        abort(404)

@@ -1,12 +1,12 @@
 import json
 import re
 import time
-from base64 import b64decode
+from base64 import b64decode, urlsafe_b64encode
 from collections import OrderedDict
 from datetime import timedelta
 from functools import lru_cache
 from typing import Callable
-from urllib.parse import parse_qs, quote, urlparse
+from urllib.parse import parse_qs, urlparse
 
 import requests
 from plugin import F  # type: ignore # pylint: disable=import-error
@@ -88,7 +88,7 @@ class SourceBase:
 
     PTN_M3U8_ALL_TS: re.Pattern = re.compile(r"^[^#].*\.(ts|aac).*$", re.MULTILINE)
     PTN_M3U8_END_TS: re.Pattern = re.compile(r"^[^#].*\.(ts|aac)$", re.MULTILINE)
-    PTN_URL: re.Pattern = re.compile(r"^http(.*?)$", re.MULTILINE)
+    PTN_URL: re.Pattern = re.compile(r"^(https?:\/\/[^\/\s]+(?::\d+)?\/[^\s#]*)$", re.MULTILINE)
 
     def __init__(self):
         pass
@@ -124,20 +124,8 @@ class SourceBase:
             return m3u8
         return SourceBase.PTN_M3U8_END_TS.sub(rf"\g<0>{suffix}", m3u8)
 
-    @staticmethod
-    def relay_ts(m3u8: str, source: str, proxy: str = None) -> str:
-        base_url = f"{SystemModelSetting.get('ddns')}/{package_name}/api/relay?source={source}"
-        apikey = None
-        if SystemModelSetting.get_bool("use_apikey"):
-            apikey = SystemModelSetting.get("apikey")
-
-        def repl(m):
-            u = m.group(0)
-            u2 = f"{base_url}&url={quote(u)}"
-            if apikey is not None:
-                u2 += f"&apikey={apikey}"
-            if proxy is not None:
-                u2 += f"&proxy={quote(proxy)}"
-            return u2
-
-        return SourceBase.PTN_URL.sub(repl, m3u8)
+    def rewrite_chunk_urls(self, m3u8: str) -> str:
+        return self.PTN_URL.sub(
+            lambda m: f"/alive/proxy/hls/chunk?s={self.source_id}&url={urlsafe_b64encode(m.group(1).encode()).decode()}",
+            m3u8,
+        )
