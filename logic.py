@@ -271,36 +271,6 @@ class Logic(PluginModuleBase):
                     data = json.loads(data)
                 logger.debug("%s", " -> ".join([f"{source} {channel_id}", f"({stype})", req.remote_addr]))
                 return jsonify(data)
-            # elif sub == "url.strm":
-            #     try:
-            #         mode = request.args.get("m")
-            #         source = request.args.get("s")
-            #         source_id = request.args.get("i")
-            #         quality = request.args.get("q")
-            #         return_format = "strm"
-            #         data = LogicKlive.get_play_info(source, source_id, quality, mode=mode, return_format=return_format)
-            #         # return data
-
-            #         import framework.common.util as CommonUtil
-
-            #         from .model import ModelCustom
-
-            #         db_item = ModelCustom.get(source, source_id)
-            #         if db_item is not None:
-            #             basename = "%s.strm" % db_item.title
-            #         else:
-            #             basename = "%s.strm" % source_id
-            #         filename = os.path.join(path_data, "tmp", basename)
-            #         CommonUtil.write_file(data, filename)
-            #         return send_file(filename, as_attachment=True, attachment_filename=basename)
-
-            #         # return data
-            #     except Exception as e:
-            #         logger.error("Exception:%s", e)
-            #         logger.error(traceback.format_exc())
-            # elif sub == "sinaplayer":
-            #     data = LogicKlive.get_m3u_for_sinaplayer()
-            #     return data
         except Exception:
             logger.exception("API 요청 처리 중 예외:")
 
