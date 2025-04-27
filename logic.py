@@ -242,15 +242,12 @@ class Logic(PluginModuleBase):
             if sub in ["m3uall", "m3u", "m3utvh"]:
                 return self.process_m3u(sub, args)
             if sub == "url.m3u8":
-                mode = args["m"]
-                source = args["s"]
-                channel_id = args["i"]
-                quality = args.get("q")
-
-                if mode == "plex":
+                if (mode := args["m"]) == "plex":
                     return Response(generate(req.url.replace("m=plex", "m=url")), mimetype="video/MP2T")
 
-                stype, sdata = LogicKlive.make_m3u8(source, channel_id, mode, quality)
+                stype, sdata = LogicKlive.get_source(source := args["s"]).make_m3u8(
+                    channel_id := args["i"], mode, args.get("q")
+                )
                 if sdata is None:
                     return Response(status=204)
                 if stype == "redirect":
@@ -262,11 +259,9 @@ class Logic(PluginModuleBase):
                 logger.debug("%s", " -> ".join([f"{source} {channel_id}", f"({stype})", req.remote_addr]))
                 return r
             if sub == "url.mpd":
-                mode = args["m"]
-                source = args["s"]
-                channel_id = args["i"]
-                quality = args.get("q")
-                stype, data = LogicKlive.make_m3u8(source, channel_id, mode, quality)
+                stype, data = LogicKlive.get_source(source := args["s"]).make_m3u8(
+                    channel_id := args["i"], args["m"], args.get("q")
+                )
                 if isinstance(data, str):
                     data = json.loads(data)
                 logger.debug("%s", " -> ".join([f"{source} {channel_id}", f"({stype})", req.remote_addr]))

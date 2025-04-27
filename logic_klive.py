@@ -87,13 +87,9 @@ class LogicKlive:
             return []
 
     @classmethod
-    def make_m3u8(cls, source: str, channel_id: str, mode: str, quality: str = None) -> tuple[str, str | dict]:
-        try:
-            cls.load_channels()  # api에서 가장 먼저 call하는 entrypoint기 때문에...
-            return cls.sources[source].make_m3u8(channel_id, mode, quality)
-        except Exception:
-            logger.exception("m3u8 응답을 작성 중 예외:")
-            return None, None
+    def get_source(cls, source: str) -> SourceBase | None:
+        cls.load_channels()
+        return cls.sources.get(source)
 
     @classmethod
     def get_m3uall(cls):
