@@ -71,23 +71,25 @@ class LogicKlive:
         return False
 
     @classmethod
+    def load_channels(cls, reload: Literal["soft", "hard"] = None) -> None:
+        if not cls.sources or reload == "hard":
+            cls.__load_sources()
+        if cls.should_reload_channels(reload in ["soft", "hard"]):
+            cls.__load_channels()
+
+    @classmethod
     def all_channels(cls, reload: Literal["soft", "hard"] = None) -> list[ChannelItem]:
-        ret = []
         try:
-            if not cls.sources or reload == "hard":
-                cls.__load_sources()
-            if cls.should_reload_channels(reload in ["soft", "hard"]):
-                cls.__load_channels()
-            for s in cls.sources.values():
-                ret.extend(s.channels.values())
+            cls.load_channels(reload)
+            return [c for s in cls.sources.values() for c in s.channels.values()]
         except Exception:
             logger.exception("채널 목록을 얻는 중 예외:")
-        return ret
+            return []
 
     @classmethod
     def make_m3u8(cls, source: str, channel_id: str, mode: str, quality: str = None) -> tuple[str, str | dict]:
         try:
-            cls.all_channels()  # api에서 가장 먼저 call하는 entrypoint기 때문에...
+            cls.load_channels()  # api에서 가장 먼저 call하는 entrypoint기 때문에...
             return cls.sources[source].make_m3u8(channel_id, mode, quality)
         except Exception:
             logger.exception("m3u8 응답을 작성 중 예외:")

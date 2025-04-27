@@ -192,10 +192,10 @@ class Logic(PluginModuleBase):
                 saved, changed = ModelSetting.setting_save(req)
                 # NOTE 설정 텍스트 마지막에 whitespace가 있으면 변경사항이 제대로 감지가 안되는 버그가 있다.
                 if changed:
-                    LogicKlive.all_channels(reload="hard")
+                    LogicKlive.load_channels(reload="hard")
                 return jsonify(saved)
             if sub == "source_reload":
-                LogicKlive.all_channels(reload="hard")
+                LogicKlive.load_channels(reload="hard")
                 return jsonify(True)
 
             form = req.form.to_dict()
