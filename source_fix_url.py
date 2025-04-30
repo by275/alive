@@ -27,7 +27,7 @@ class SourceFixURL(SourceBase):
             ret.append(c)
         self.channels = OrderedDict((c.channel_id, c) for c in ret)
 
-    def get_m3u8(self, channel_id: str) -> str:
+    def get_url(self, channel_id: str) -> str:
         return self.channels[channel_id].url
 
     def make_drm(self, data: dict, mode: str) -> tuple[str, dict]:
@@ -50,7 +50,7 @@ class SourceFixURL(SourceBase):
         return "drm", data
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
-        url = self.get_m3u8(channel_id)
+        url = self.get_url(channel_id)
         if self.channels[channel_id].is_drm:
             # 매우 좋지 않지만 spotv만 .....
             return self.make_drm(json.loads(url), mode)

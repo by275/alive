@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from functools import lru_cache
 from html import unescape
 from urllib.parse import quote
 
@@ -14,6 +15,7 @@ ModelSetting = P.ModelSetting
 class SourceWavve(SourceBase):
     source_id = "wavve"
     mod = None
+    ttl = 60 * 2  # 2분
 
     def __init__(self):
         if self.mod is not None:
@@ -29,12 +31,12 @@ class SourceWavve(SourceBase):
         # session for playlists
         plproxy = self.mod.proxy_url if ModelSetting.get_bool("wavve_use_proxy_for_playlist") else None
         self.plsess = self.new_session(headers=self.mod.session.headers, proxy_url=plproxy)
-        # cached playlist url
+        # dynamic ttl
         if self.mod.credential != "none":
-            ttl = 60 * 60 * 24  # 1일
-        else:
-            ttl = 60 * 2  # 2분
-        self.get_m3u8 = URLCacher(ttl)(self.__get_m3u8)
+            self.ttl = 60 * 60 * 24  # 1일
+        # cached methods
+        self.get_url = URLCacher(self.ttl)(self.__get_url)  # master playlist url
+        self.get_m3u8 = lru_cache(maxsize=10)(self.__get_m3u8)  # contents of master playlist
 
     def load_support_module(self):
         from support_site import SupportWavve as SW  # type: ignore
@@ -68,19 +70,22 @@ class SourceWavve(SourceBase):
                 logger.exception("라이브 채널 분석 중 예외: %s", item)
         self.channels = OrderedDict((c.channel_id, c) for c in ret)
 
-    def __get_m3u8(self, channel_id: str, quality: str) -> str:
-        """returns playlist url from streaming data
+    def __get_url(self, channel_id: str, quality: str) -> str:
+        """returns m3u8 master playlist url from streaming data
 
         새로운 playlist는 최신의/연속된 MEDIA SEQUENCE를 보장할 수 없다. (Error: Received stale playlist)
         따라서 한 번 얻은 playlist url을 최대한 유지해야 한다. (cache를 사용하는 이유)
         """
         if quality in [None, "default"]:
             quality = ModelSetting.get("wavve_quality")
-        data = self.mod.streaming("live", channel_id, quality)
-        # 2022-01-10 라디오. 대충 함 by soju6jan
-        # if data['quality'] == '100p' or data['qualities']['list'][0]['name'] == '오디오모드':
-        #     url = data['playurl'].replace('/100/100', '/100') + f"/live.m3u8{data['debug']['orgurl'].split('.m3u8')[1]}"
+        data = self.mod.streaming("live", channel_id, quality, isabr="y")
         return data["play_info"].get("hls")
+
+    def __get_m3u8(self, url: str, **params) -> str:
+        logger.debug("opening url: %s", url)
+        data = self.plsess.get(url).text
+        data = self.sub_m3u8(data, url.split(".m3u8")[0].rsplit("/", 1)[0] + "/")
+        return self.rewrite_m3u8_urls(data, **params)
 
     def repack_m3u8(self, url: str) -> str:
         data = self.plsess.get(url).text
@@ -89,10 +94,8 @@ class SourceWavve(SourceBase):
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
         stype = "proxy" if mode == "web_play" else ModelSetting.get("wavve_streaming_type")
-        url = self.get_m3u8(channel_id, quality)
+        url = self.get_url(channel_id, quality)
         if stype == "redirect":
             return stype, url
-        data = self.repack_m3u8(url)
-        if stype == "direct":
-            return stype, data
-        return stype, self.rewrite_chunk_urls(data)  # proxy, web_play
+        params = {"i": channel_id, "t": stype}
+        return stype, self.get_m3u8(url, **params)

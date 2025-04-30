@@ -6,7 +6,7 @@ from collections import OrderedDict
 from datetime import timedelta
 from functools import lru_cache
 from typing import Callable
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
 from plugin import F  # type: ignore # pylint: disable=import-error
@@ -82,12 +82,20 @@ class URLCacher:
 
 
 class SourceBase:
+    # class variables
     source_id: str = None
-    channels: OrderedDict[str, ChannelItem] = OrderedDict()
     ttl: int = None
 
-    PTN_M3U8_ALL_TS: re.Pattern = re.compile(r"^[^#].*\.(ts|aac).*$", re.MULTILINE)
-    PTN_M3U8_END_TS: re.Pattern = re.compile(r"^[^#].*\.(ts|aac)$", re.MULTILINE)
+    # instance variables
+    channels: OrderedDict[str, ChannelItem] = OrderedDict()
+    plsess: requests.Session = None
+
+    PTN_M3U8_ALL: re.Pattern = re.compile(r"^[^#].*\.m3u8.*$", re.MULTILINE)
+    PTN_M3U8_END: re.Pattern = re.compile(r"^[^#].*\.m3u8$", re.MULTILINE)
+    PTN_M3U8_URL: re.Pattern = re.compile(r'(https?:\/\/(?=.*\.m3u8)[^\s"\']+)')
+
+    PTN_CHUNK_ALL: re.Pattern = re.compile(r"^[^#].*\.(ts|aac).*$", re.MULTILINE)
+    PTN_CHUNK_END: re.Pattern = re.compile(r"^[^#].*\.(ts|aac)$", re.MULTILINE)
     PTN_URL: re.Pattern = re.compile(r"^(https?:\/\/[^\/\s]+(?::\d+)?\/[^\s#]*)$", re.MULTILINE)
 
     def __init__(self):
@@ -118,14 +126,29 @@ class SourceBase:
         return sess
 
     @staticmethod
-    def sub_ts(m3u8: str, prefix: str, suffix: str = None) -> str:
-        m3u8 = SourceBase.PTN_M3U8_ALL_TS.sub(rf"{prefix}\g<0>", m3u8)
+    def sub_m3u8(m3u8: str, prefix: str, suffix: str = None) -> str:
+        m3u8 = SourceBase.PTN_M3U8_ALL.sub(rf"{prefix}\g<0>", m3u8)
         if suffix is None:
             return m3u8
-        return SourceBase.PTN_M3U8_END_TS.sub(rf"\g<0>{suffix}", m3u8)
+        return SourceBase.PTN_M3U8_END.sub(rf"\g<0>{suffix}", m3u8)
+
+    def rewrite_m3u8_urls(self, m3u8: str, **params) -> str:
+        q = urlencode({"s": self.source_id, **params})
+        return SourceBase.PTN_M3U8_URL.sub(
+            lambda m: f"/alive/proxy/hls/playlist?{q}&url={urlsafe_b64encode(m.group(1).encode()).decode()}",
+            m3u8,
+        )
+
+    @staticmethod
+    def sub_ts(m3u8: str, prefix: str, suffix: str = None) -> str:
+        m3u8 = SourceBase.PTN_CHUNK_ALL.sub(rf"{prefix}\g<0>", m3u8)
+        if suffix is None:
+            return m3u8
+        return SourceBase.PTN_CHUNK_END.sub(rf"\g<0>{suffix}", m3u8)
 
     def rewrite_chunk_urls(self, m3u8: str) -> str:
-        return self.PTN_URL.sub(
-            lambda m: f"/alive/proxy/hls/chunk?s={self.source_id}&url={urlsafe_b64encode(m.group(1).encode()).decode()}",
+        q = urlencode({"s": self.source_id})
+        return SourceBase.PTN_URL.sub(
+            lambda m: f"/alive/proxy/hls/chunk?{q}&url={urlsafe_b64encode(m.group(1).encode()).decode()}",
             m3u8,
         )

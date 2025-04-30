@@ -22,7 +22,7 @@ class SourceKBS(SourceBase):
         plproxy = proxy_url if ModelSetting.get_bool("kbs_use_proxy_for_playlist") else None
         self.plsess = self.new_session(proxy_url=plproxy, add_headers={"Referer": "https://onair.kbs.co.kr"})
         # cached playlist url
-        self.get_m3u8 = URLCacher(self.ttl)(self.__get_m3u8)
+        self.get_url = URLCacher(self.ttl)(self.__get_url)
 
     def __parse_var(self, text: str, identifiers: tuple[str, str]) -> dict:
         left = text.find(identifiers[0]) + len(identifiers[0])
@@ -62,7 +62,7 @@ class SourceKBS(SourceBase):
         tmp = f"https://cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/{channel_id}"
         return self.apisess.get(tmp).json()
 
-    def __get_m3u8(self, channel_id: str) -> str:
+    def __get_url(self, channel_id: str) -> str:
         url = self.get_data(channel_id)["channel_item"][0]["service_url"]
         if "dokdo" in url:  # 독도
             url = url.replace("playlist.m3u8", "chunklist.m3u8")
@@ -74,7 +74,7 @@ class SourceKBS(SourceBase):
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
         stype = ModelSetting.get("kbs_streaming_type")
-        url = self.get_m3u8(channel_id)
+        url = self.get_url(channel_id)
         if stype == "redirect":
             return stype, url
         data = self.repack_m3u8(url)

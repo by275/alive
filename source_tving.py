@@ -1,5 +1,6 @@
 import re
 from collections import OrderedDict
+from functools import lru_cache
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
@@ -41,8 +42,9 @@ class SourceTving(SourceBase):
             headers=self.mod._SupportTving__headers,
             proxies=self.mod._SupportTving__proxies,
         )
-        # cached playlist url
-        self.get_m3u8 = URLCacher(self.ttl)(self.__get_m3u8)
+        # cached methods
+        self.get_url = URLCacher(self.ttl)(self.__get_url)  # master playlist url
+        self.get_m3u8 = lru_cache(maxsize=10)(self.__get_m3u8)  # contents of master playlist
 
     def load_support_module(self):
         from support_site import SupportTving as ST  # type: ignore
@@ -95,17 +97,22 @@ class SourceTving(SourceBase):
                     d[k] = self.PTN_HTTP.sub("https://", d[k])
                 self.upgrade_http(v)
 
-    def __get_m3u8(self, channel_id: str, quality: str) -> str | dict:
+    def __get_url(self, channel_id: str, quality: str) -> str | dict:
         data = self.get_data(channel_id, quality)
         self.upgrade_http(data)
-        if self.mod.is_drm_channel(channel_id):
+        if self.channels[channel_id].is_drm:
             del data["play_info"]["mpd_headers"]
             return data["play_info"]
         cookies = "; ".join("CloudFront-" + c for c in data["url"].split("?")[1].split("&"))
         self.plsess.headers.update({"Cookie": cookies})  # tvn 같은 몇몇 채널은 쿠키 인증이 필요
-        data = self.plsess.get(url := data["url"]).text  # root playlist
-        max_bandwidth = max(map(int, self.PTN_BANDWIDTH.findall(data)))
-        return url.replace("playlist.m3u8", f"chunklist_b{max_bandwidth}.m3u8")
+        return data["url"]
+
+    def __get_m3u8(self, url: str, **params) -> str:
+        logger.debug("opening url: %s", url)
+        data = self.plsess.get(url).text
+        prefix, suffix = url.split("playlist.m3u8")
+        data = self.sub_m3u8(data, prefix, suffix)
+        return self.rewrite_m3u8_urls(data, **params)
 
     def repack_m3u8(self, url: str) -> str:
         data = self.plsess.get(url).text
@@ -133,11 +140,9 @@ class SourceTving(SourceBase):
         return "drm", data
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
-        url = self.get_m3u8(channel_id, quality)
-        if self.mod.is_drm_channel(channel_id):
+        url = self.get_url(channel_id, quality)
+        if self.channels[channel_id].is_drm:
             return self.make_drm(url, mode)
         stype = "proxy" if mode == "web_play" else "direct"
-        data = self.repack_m3u8(url)
-        if stype == "direct":
-            return stype, data
-        return stype, self.rewrite_chunk_urls(data)  # proxy, web_play
+        params = {"i": channel_id, "t": stype}
+        return stype, self.get_m3u8(url, **params)

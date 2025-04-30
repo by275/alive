@@ -358,16 +358,40 @@ def license_proxy():
     return response
 
 
-@blueprint.route("/proxy/hls/chunk", methods=["GET"])
-def proxy_chunk():
+#########################################################
+# hls proxy
+#########################################################
+@blueprint.route("/proxy/hls/playlist", methods=["GET"])
+def proxy_playlist():
     try:
-        url = urlsafe_b64decode(request.args["url"]).decode()
         sid = request.args["s"]
-        source = LogicKlive.sources[sid]
+        cid = request.args["i"]
+        stype = request.args["t"]
+        src = LogicKlive.get_source(sid)
+        url = urlsafe_b64decode(request.args["url"]).decode()
     except Exception:
         abort(404)
     try:
-        r = source.plsess.get(url, stream=True, timeout=30)
+        m3u8 = src.repack_m3u8(url)
+        if stype == "proxy":
+            m3u8 = src.rewrite_chunk_urls(m3u8)
+        logger.debug("%s", " -> ".join([f"{sid} {cid}", f"({stype})", request.remote_addr]))
+        return Response(m3u8, content_type="application/vnd.apple.mpegurl")
+    except Exception:
+        # 어떤 예외든 404로 위장
+        logger.debug("Exception proxing for playlists", exc_info=True)
+        abort(404)
+
+
+@blueprint.route("/proxy/hls/chunk", methods=["GET"])
+def proxy_chunk():
+    try:
+        src = LogicKlive.get_source(request.args["s"])
+        url = urlsafe_b64decode(request.args["url"]).decode()
+    except Exception:
+        abort(404)
+    try:
+        r = src.plsess.get(url, stream=True, timeout=30)
         return Response(
             r.iter_content(chunk_size=1048576),
             r.status_code,

@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from functools import lru_cache
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
@@ -20,8 +21,9 @@ class SourceSBS(SourceBase):
         # session for playlists
         plproxy = proxy_url if ModelSetting.get_bool("sbs_use_proxy_for_playlist") else None
         self.plsess = self.new_session(proxy_url=plproxy)
-        # cached playlist url
-        self.get_m3u8 = URLCacher(self.ttl)(self.__get_m3u8)
+        # cached methods
+        self.get_url = URLCacher(self.ttl)(self.__get_url)  # master playlist url
+        self.get_m3u8 = lru_cache(maxsize=10)(self.__get_m3u8)  # contents of master playlist
 
     def load_channels(self) -> None:
         ret = []
@@ -64,14 +66,15 @@ class SourceSBS(SourceBase):
         data = self.apisess.get(url).json()
         return data
 
-    def __get_m3u8(self, channel_id: str) -> str:
+    def __get_url(self, channel_id: str) -> str:
         data = self.get_data(channel_id)
-        url = data["onair"]["source"]["mediasource"]["mediaurl"]  # root playlist url
-        data = self.plsess.get(url).text  # root playlist
-        for line in data.splitlines():
-            if line.startswith("chunklist.m3u8"):
-                return url.split("playlist.m3u8")[0] + line
-        return None
+        return data["onair"]["source"]["mediasource"]["mediaurl"]  # master playlist url
+
+    def __get_m3u8(self, url: str, **params) -> str:
+        logger.debug("opening url: %s", url)
+        data = self.plsess.get(url).text
+        data = self.sub_m3u8(data, url.split("playlist.m3u8")[0])
+        return self.rewrite_m3u8_urls(data, **params)
 
     def repack_m3u8(self, url: str) -> str:
         m3u8 = self.plsess.get(url).text
@@ -79,8 +82,6 @@ class SourceSBS(SourceBase):
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
         stype = ModelSetting.get("sbs_streaming_type")
-        url = self.get_m3u8(channel_id)
-        data = self.repack_m3u8(url)
-        if stype == "direct":
-            return stype, data
-        return stype, self.rewrite_chunk_urls(data)  # proxy
+        url = self.get_url(channel_id)
+        params = {"i": channel_id, "t": stype}
+        return stype, self.get_m3u8(url, **params)
