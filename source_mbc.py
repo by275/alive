@@ -94,6 +94,6 @@ class SourceMBC(SourceBase):
         url = self.get_url(channel_id)
         if not self.channels[channel_id].is_tv:
             return "redirect", url
-        stype = "proxy" if mode == "web_play" else ModelSetting.get("mbc_streaming_type")
+        stype = "proxy"
         params = {"i": channel_id, "t": stype}
         return stype, self.get_m3u8(url, **params)
