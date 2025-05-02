@@ -178,7 +178,7 @@ class Logic(PluginModuleBase):
 
                 from .source_streamlink import SourceStreamlink
 
-                arg["is_streamlink_installed"] = "Installed" if SourceStreamlink.is_installed else "Not Installed"
+                arg["streamlink_ver"] = SourceStreamlink.streamlink_ver()
             if sub == "group":
                 arg["alive_prefs"] = str(Path(F.path_data).joinpath("db", "alive.yaml"))
             return render_template(f"{package_name}_{sub}.html", sub=sub, arg=arg)

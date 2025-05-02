@@ -11,23 +11,30 @@ ModelSetting = P.ModelSetting
 
 class SourceStreamlink(SourceBase):
     source_id = "streamlink"
-    is_installed: bool = True
     ttl = 60 * 60 * 1  # 1시간 (youtube는 6시간)
+
+    @classmethod
+    def streamlink_ver(cls) -> str | None:
+        try:
+            import streamlink  # type: ignore # pylint: disable=import-error
+
+            return streamlink.__version__
+        except ImportError:
+            return None
 
     def __init__(self):
         try:
-            from streamlink import Streamlink
-
-            # session for streamlink
-            options = None
-            if ModelSetting.get_bool("streamlink_use_proxy"):
-                options = {"http-proxy": ModelSetting.get("streamlink_proxy_url")}
-            self.slsess = Streamlink(options=options)
-            # cached streamlink stream
-            self.get_stream = URLCacher(self.ttl)(self.__get_stream)
+            from streamlink import Streamlink  # type: ignore # pylint: disable=import-error
         except ImportError:
             logger.error("streamlink 패키지가 필요합니다.")
-            self.is_installed = False
+            return
+        # session for streamlink
+        options = None
+        if ModelSetting.get_bool("streamlink_use_proxy"):
+            options = {"http-proxy": ModelSetting.get("streamlink_proxy_url")}
+        self.slsess = Streamlink(options=options)
+        # cached streamlink stream
+        self.get_stream = URLCacher(self.ttl)(self.__get_stream)
 
     def load_channels(self) -> None:
         ret = []
@@ -71,7 +78,7 @@ class SourceStreamlink(SourceBase):
         if stype == "stream":
             return stype, stream
         if stype == "redirect":
-            from streamlink.stream.hls import MuxedHLSStream
+            from streamlink.stream.hls import MuxedHLSStream  # type: ignore # pylint: disable=import-error
 
             if isinstance(stream, MuxedHLSStream):
                 return stype, stream.to_manifest_url()
