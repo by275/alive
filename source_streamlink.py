@@ -73,7 +73,7 @@ class SourceStreamlink(SourceBase):
         return res.text
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
-        stype = ModelSetting.get("streamlink_streaming_type")
+        stype = "direct" if mode == "web_play" else ModelSetting.get("streamlink_streaming_type")
         stream = self.get_stream(channel_id, quality)
         if stype == "stream":
             return stype, stream
