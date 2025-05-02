@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from functools import lru_cache
 from html import unescape
 from urllib.parse import quote
 
@@ -34,9 +33,8 @@ class SourceWavve(SourceBase):
         # dynamic ttl
         if self.mod.credential != "none":
             self.ttl = 60 * 60 * 24  # 1일
-        # cached methods
-        self.get_url = URLCacher(self.ttl)(self.__get_url)  # master playlist url
-        self.get_m3u8 = lru_cache(maxsize=10)(self.__get_m3u8)  # contents of master playlist
+        # caching master playlist url
+        self.get_url = URLCacher(self.ttl)(self.__get_url)
 
     def load_support_module(self):
         from support_site import SupportWavve as SW  # type: ignore
@@ -81,21 +79,9 @@ class SourceWavve(SourceBase):
         data = self.mod.streaming("live", channel_id, quality, isabr="y")
         return data["play_info"].get("hls")
 
-    def __get_m3u8(self, url: str, **params) -> str:
-        logger.debug("opening url: %s", url)
-        data = self.plsess.get(url).text
-        data = self.sub_m3u8(data, url.split(".m3u8")[0].rsplit("/", 1)[0] + "/")
-        return self.rewrite_m3u8_urls(data, **params)
-
-    def repack_m3u8(self, url: str) -> str:
-        data = self.plsess.get(url).text
-        data = self.sub_ts(data, url.split(".m3u8")[0].rsplit("/", 1)[0] + "/")
-        return data
-
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
         stype = "proxy" if mode == "web_play" else ModelSetting.get("wavve_streaming_type")
         url = self.get_url(channel_id, quality)
         if stype == "redirect":
             return stype, url
-        params = {"i": channel_id, "t": stype}
-        return stype, self.get_m3u8(url, **params)
+        return stype, self.get_m3u8(url, stype)  # direct, proxy(web_play)

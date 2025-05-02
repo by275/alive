@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from functools import lru_cache
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
@@ -21,9 +20,8 @@ class SourceSBS(SourceBase):
         # session for playlists
         plproxy = proxy_url if ModelSetting.get_bool("sbs_use_proxy_for_playlist") else None
         self.plsess = self.new_session(proxy_url=plproxy)
-        # cached methods
-        self.get_url = URLCacher(self.ttl)(self.__get_url)  # master playlist url
-        self.get_m3u8 = lru_cache(maxsize=10)(self.__get_m3u8)  # contents of master playlist
+        # caching master playlist url
+        self.get_url = URLCacher(self.ttl)(self.__get_url)
 
     def load_channels(self) -> None:
         ret = []
@@ -70,18 +68,7 @@ class SourceSBS(SourceBase):
         data = self.get_data(channel_id)
         return data["onair"]["source"]["mediasource"]["mediaurl"]  # master playlist url
 
-    def __get_m3u8(self, url: str, **params) -> str:
-        logger.debug("opening url: %s", url)
-        data = self.plsess.get(url).text
-        data = self.sub_m3u8(data, url.split("playlist.m3u8")[0])
-        return self.rewrite_m3u8_urls(data, **params)
-
-    def repack_m3u8(self, url: str) -> str:
-        m3u8 = self.plsess.get(url).text
-        return self.sub_ts(m3u8, url.split("chunklist.m3u8")[0])
-
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
         stype = ModelSetting.get("sbs_streaming_type")
         url = self.get_url(channel_id)
-        params = {"i": channel_id, "t": stype}
-        return stype, self.get_m3u8(url, **params)
+        return stype, self.get_m3u8(url, stype)  # direct, proxy

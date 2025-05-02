@@ -1,6 +1,5 @@
 import time
 from collections import OrderedDict
-from functools import lru_cache
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
@@ -33,9 +32,8 @@ class SourceMBC(SourceBase):
         # session for playlists
         plproxy = proxy_url if ModelSetting.get_bool("mbc_use_proxy_for_playlist") else None
         self.plsess = SourceBase.new_session(proxy_url=plproxy, add_headers={"Referer": "https://onair.imbc.com/"})
-        # cached methods
-        self.get_url = URLCacher(self.ttl)(self.__get_url)  # master playlist url
-        self.get_m3u8 = lru_cache(maxsize=10)(self.__get_m3u8)  # contents of master playlist
+        # caching master playlist url
+        self.get_url = URLCacher(self.ttl)(self.__get_url)
 
     def load_channels(self) -> None:
         ret = []
@@ -80,20 +78,9 @@ class SourceMBC(SourceBase):
             return self.apisess.get(url).text
         return self.get_data(channel_id)["MediaInfo"]["MediaURL"]
 
-    def __get_m3u8(self, url: str, **params) -> str:
-        logger.debug("opening url: %s", url)
-        data = self.plsess.get(url).text
-        data = self.sub_m3u8(data, url.split("playlist.m3u8")[0])
-        return self.rewrite_m3u8_urls(data, **params)
-
-    def repack_m3u8(self, url: str) -> str:
-        m3u8 = self.plsess.get(url).text
-        return self.sub_ts(m3u8, url.split("chunklist.m3u8")[0])
-
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
         url = self.get_url(channel_id)
         if not self.channels[channel_id].is_tv:
             return "redirect", url
-        stype = "proxy"
-        params = {"i": channel_id, "t": stype}
-        return stype, self.get_m3u8(url, **params)
+        stype = "proxy"  # chunk를 받아올 때도 referer가 필요하기 때문에 proxy만 가능
+        return stype, self.get_m3u8(url, stype)

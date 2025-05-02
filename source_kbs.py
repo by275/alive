@@ -68,16 +68,9 @@ class SourceKBS(SourceBase):
             url = url.replace("playlist.m3u8", "chunklist.m3u8")
         return url
 
-    def repack_m3u8(self, url: str) -> str:
-        m3u8 = self.plsess.get(url).text
-        return self.sub_ts(m3u8, url.split(".m3u8")[0].rsplit("/", 1)[0] + "/", url.split(".m3u8")[1])
-
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
         stype = ModelSetting.get("kbs_streaming_type")
         url = self.get_url(channel_id)
         if stype == "redirect":
             return stype, url
-        data = self.repack_m3u8(url)
-        if stype == "direct":
-            return stype, data
-        return stype, self.rewrite_chunk_urls(data)  # proxy, web_play
+        return stype, self.repack_m3u8(url, stype)  # direct, proxy

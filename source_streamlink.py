@@ -62,7 +62,7 @@ class SourceStreamlink(SourceBase):
         logger.info("using %r among %s", quality, list(streams))
         return s
 
-    def repack_m3u8(self, stream) -> str:
+    def open_stream(self, stream) -> str:
         reqargs = stream.session.http.valid_request_args(**stream.args)
         reqargs.setdefault("method", "GET")
         timeout = stream.session.options.get("stream-timeout")
@@ -84,5 +84,5 @@ class SourceStreamlink(SourceBase):
                 return stype, stream.to_manifest_url()
             return stype, stream.url
         if stype == "direct":
-            return stype, self.repack_m3u8(stream)
+            return stype, self.open_stream(stream)
         raise NotImplementedError(f"잘못된 스트리밍 타입: {stype}")

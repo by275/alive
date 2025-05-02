@@ -81,6 +81,18 @@ class URLCacher:
                 self.ttl = ttl
 
 
+class CachedMethod:
+    def __init__(self, func):
+        self.func = func
+        self.cache = lru_cache(maxsize=10)(self._call)
+
+    def _call(self, obj, *args, **kwargs):
+        return self.func(obj, *args, **kwargs)
+
+    def __get__(self, obj, objtype=None):
+        return lambda *args, **kwargs: self.cache(obj, *args, **kwargs)
+
+
 class SourceBase:
     # class variables
     source_id: str = None
@@ -98,11 +110,25 @@ class SourceBase:
     PTN_CHUNK_END: re.Pattern = re.compile(r"^[^#].*\.(ts|aac)$", re.MULTILINE)
     PTN_URL: re.Pattern = re.compile(r"^(https?:\/\/[^\/\s]+(?::\d+)?\/[^\s#]*)$", re.MULTILINE)
 
-    def __init__(self):
-        pass
-
     def load_channels(self) -> None:
         raise NotImplementedError
+
+    @CachedMethod
+    def get_m3u8(self, url: str, streaming_type: str) -> str:
+        logger.debug("opening url: %s", url)
+        data = self.plsess.get(url).text
+        prefix, suffix = self.split_m3u8_url(url)
+        data = self.complete_m3u8_urls(data, prefix, suffix)
+        return self.rewrite_m3u8_urls(data, streaming_type)
+
+    def repack_m3u8(self, url: str, streaming_type: str) -> str:
+        """repack m3u8 media playlist"""
+        data = self.plsess.get(url).text
+        prefix, suffix = self.split_m3u8_url(url)
+        data = self.complete_chunk_urls(data, prefix, suffix)
+        if streaming_type == "direct":
+            return data
+        return self.rewrite_chunk_urls(data)
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
         raise NotImplementedError
@@ -126,21 +152,34 @@ class SourceBase:
         return sess
 
     @staticmethod
-    def sub_m3u8(m3u8: str, prefix: str, suffix: str = None) -> str:
+    def split_m3u8_url(url: str) -> tuple[str, str]:
+        """Split m3u8 url into prefix and suffix for url completion."""
+        base, suffix = url.split(".m3u8", 1)
+        return base.rsplit("/", 1)[0] + "/", suffix
+
+    @staticmethod
+    def b64url(u: str) -> str:
+        """returns base64url encoded string"""
+        return urlsafe_b64encode(u.encode()).decode()
+
+    @staticmethod
+    def complete_m3u8_urls(m3u8: str, prefix: str, suffix: str = None) -> str:
+        """completes incomplete/relative m3u8 media playlist urls in the given m3u8 string"""
         m3u8 = SourceBase.PTN_M3U8_ALL.sub(rf"{prefix}\g<0>", m3u8)
         if suffix is None:
             return m3u8
         return SourceBase.PTN_M3U8_END.sub(rf"\g<0>{suffix}", m3u8)
 
-    def rewrite_m3u8_urls(self, m3u8: str, **params) -> str:
-        q = urlencode({"s": self.source_id, **params})
+    def rewrite_m3u8_urls(self, m3u8: str, streaming_type: str) -> str:
+        q = urlencode({"s": self.source_id, "t": streaming_type})
         return SourceBase.PTN_M3U8_URL.sub(
-            lambda m: f"/alive/proxy/hls/playlist?{q}&url={urlsafe_b64encode(m.group(1).encode()).decode()}",
+            lambda m: f"/alive/proxy/hls/playlist?{q}&url={self.b64url(m.group(1))}",
             m3u8,
         )
 
     @staticmethod
-    def sub_ts(m3u8: str, prefix: str, suffix: str = None) -> str:
+    def complete_chunk_urls(m3u8: str, prefix: str, suffix: str = None) -> str:
+        """completes incomplete/relative chunk urls in the given m3u8 string"""
         m3u8 = SourceBase.PTN_CHUNK_ALL.sub(rf"{prefix}\g<0>", m3u8)
         if suffix is None:
             return m3u8
@@ -149,6 +188,6 @@ class SourceBase:
     def rewrite_chunk_urls(self, m3u8: str) -> str:
         q = urlencode({"s": self.source_id})
         return SourceBase.PTN_URL.sub(
-            lambda m: f"/alive/proxy/hls/chunk?{q}&url={urlsafe_b64encode(m.group(1).encode()).decode()}",
+            lambda m: f"/alive/proxy/hls/chunk?{q}&url={self.b64url(m.group(1))}",
             m3u8,
         )

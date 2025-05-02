@@ -1,6 +1,5 @@
 import re
 from collections import OrderedDict
-from functools import lru_cache
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
@@ -23,7 +22,6 @@ class SourceTving(SourceBase):
     mod = None
     ttl = 60 * 60 * 3  # 3시간
 
-    PTN_BANDWIDTH = re.compile(r"BANDWIDTH=(\d+)", re.MULTILINE)
     PTN_HTTP = re.compile(r"^http:\/\/")
 
     def __init__(self):
@@ -42,9 +40,8 @@ class SourceTving(SourceBase):
             headers=self.mod._SupportTving__headers,
             proxies=self.mod._SupportTving__proxies,
         )
-        # cached methods
-        self.get_url = URLCacher(self.ttl)(self.__get_url)  # master playlist url
-        self.get_m3u8 = lru_cache(maxsize=10)(self.__get_m3u8)  # contents of master playlist
+        # caching master playlist url
+        self.get_url = URLCacher(self.ttl)(self.__get_url)
 
     def load_support_module(self):
         from support_site import SupportTving as ST  # type: ignore
@@ -107,18 +104,6 @@ class SourceTving(SourceBase):
         self.plsess.headers.update({"Cookie": cookies})  # tvn 같은 몇몇 채널은 쿠키 인증이 필요
         return data["url"]
 
-    def __get_m3u8(self, url: str, **params) -> str:
-        logger.debug("opening url: %s", url)
-        data = self.plsess.get(url).text
-        prefix, suffix = url.split("playlist.m3u8")
-        data = self.sub_m3u8(data, prefix, suffix)
-        return self.rewrite_m3u8_urls(data, **params)
-
-    def repack_m3u8(self, url: str) -> str:
-        data = self.plsess.get(url).text
-        data = self.sub_ts(data, url.split("chunklist_")[0], url.split(".m3u8")[1])
-        return data
-
     def make_drm(self, data: dict, mode: str) -> tuple[str, dict]:
         if mode == "web_play":
             return "drm+web", {
@@ -144,5 +129,4 @@ class SourceTving(SourceBase):
         if self.channels[channel_id].is_drm:
             return self.make_drm(url, mode)
         stype = "proxy" if mode == "web_play" else "direct"
-        params = {"i": channel_id, "t": stype}
-        return stype, self.get_m3u8(url, **params)
+        return stype, self.get_m3u8(url, stype)  # direct, proxy(web_play)

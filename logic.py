@@ -365,17 +365,14 @@ def license_proxy():
 def proxy_playlist():
     try:
         sid = request.args["s"]
-        cid = request.args["i"]
         stype = request.args["t"]
         src = LogicKlive.get_source(sid)
         url = urlsafe_b64decode(request.args["url"]).decode()
     except Exception:
         abort(404)
     try:
-        m3u8 = src.repack_m3u8(url)
-        if stype == "proxy":
-            m3u8 = src.rewrite_chunk_urls(m3u8)
-        logger.debug("%s", " -> ".join([f"{sid} {cid}", f"({stype})", request.remote_addr]))
+        m3u8 = src.repack_m3u8(url, stype)
+        logger.debug("%s", " -> ".join([sid, f"({stype})", request.remote_addr]))
         return Response(m3u8, content_type="application/vnd.apple.mpegurl")
     except Exception:
         # 어떤 예외든 404로 위장
@@ -394,7 +391,7 @@ def proxy_chunk():
         r = src.plsess.get(url, stream=True, timeout=30)
         return Response(
             r.iter_content(chunk_size=1048576),
-            r.status_code,
+            status=r.status_code,
             content_type=r.headers["Content-Type"],
             direct_passthrough=True,
         )
