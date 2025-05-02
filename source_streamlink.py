@@ -26,7 +26,7 @@ class SourceStreamlink(SourceBase):
             # cached streamlink stream
             self.get_stream = URLCacher(self.ttl)(self.__get_stream)
         except ImportError:
-            logger.error("streamlink<6.6 패키지가 필요합니다.")
+            logger.error("streamlink 패키지가 필요합니다.")
             self.is_installed = False
 
     def load_channels(self) -> None:

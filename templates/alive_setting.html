@@ -79,7 +79,7 @@
     {{ macros.m_tab_content_end() }}
 
     {{ macros.m_tab_content_start('streamlink', false) }}
-      {{ macros.setting_checkbox('use_streamlink', 'Streamlink', value=arg['use_streamlink'], desc=['pip install \'streamlink<6.6\'로 직접 설치 후 사용', '최신 버전은 에러가 납니다. 6.6 미만 설치']) }}
+      {{ macros.setting_checkbox('use_streamlink', 'Streamlink', value=arg['use_streamlink'], desc=['pip install streamlink로 직접 설치 후 사용']) }}
       <div id="use_streamlink_div" class="collapse">
         {{ macros.info_text('is_streamlink_installed', '설치상태', value=arg['is_streamlink_installed']) }}
         {{ macros.setting_radio_with_value('streamlink_streaming_type', '스트리밍 타입', [['redirect', 'Redirect'], ['direct', 'Direct'], ['stream', 'Stream']], value=arg['streamlink_streaming_type'], desc=[' - Redirect: Playlist url을 302 redirect로 플레이어에 전달', ' - Direct: FF가 Playlist를 대신 열어서 플레이어에 전달', ' - Stream: FF가 방송 데이터를 받아서 플레이어에 보냅니다. mpv나 팟플레이어 추천']) }}
