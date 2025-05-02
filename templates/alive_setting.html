@@ -106,7 +106,7 @@
       {{ macros.m_hr() }}
       {{ macros.setting_checkbox('use_plex_proxy', 'Plex Proxy 사용', value=arg['use_plex_proxy'], desc=['On: Plex Proxy 사용.', '/alive/proxy/plex/lineup.json 주소를 통한 apikey 노출 됨.']) }}
       <div id="use_plex_proxy_div" class="collapse">
-        {{ macros.setting_input_text('plex_proxy_host', 'Plex Proxy Host', value=arg['plex_proxy_host'], desc=['요청 헤더의 값과 일치할 때만 연결합니다. 비워두면 제한 없음.']) }}
+        {{ macros.setting_input_textarea('plex_proxy_host', 'Plex Proxy Host', value=arg['plex_proxy_host'], desc=['요청 헤더의 값과 일치할 때만 연결합니다. 비워두면 제한 없음.', '구분자: Enter, 빈칸과 #으로 시작하는 줄은 무시']) }}
         {{ macros.info_text_go_buttons('plex_proxy', 'Plex Proxy', [['globalCliboardBtn','클립보드에 복사', [['text', arg['plex_proxy']]]]], value=arg['plex_proxy']) }}
       </div>
     {{ macros.m_tab_content_end() }}

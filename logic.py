@@ -279,9 +279,10 @@ def plex_proxy(sub):
     logger.debug("/alive/proxy/plex %s", sub)
     if not ModelSetting.get_bool("use_plex_proxy"):
         abort(403)
-    allowed_host = ModelSetting.get("plex_proxy_host").strip()
-    if allowed_host and allowed_host != request.host:
-        logger.debug("request host %s does not match with allowed host: %s", request.host, allowed_host)
+    allowed_hosts = map(str.strip, ModelSetting.get("plex_proxy_host").splitlines())
+    allowed_hosts = [x for x in allowed_hosts if x and not x.startswith("#")]
+    if allowed_hosts and request.host not in allowed_hosts:
+        logger.debug("request host %s NOT allowed: %s", request.host, allowed_hosts)
         abort(403)
     try:
         sub_root = f"{request.url_root}alive/proxy/plex"
