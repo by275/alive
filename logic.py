@@ -296,29 +296,7 @@ def plex_proxy(sub):
             data = {"ScanInProgress": 0, "ScanPossible": 1, "Source": "Cable", "SourceList": ["Antenna", "Cable"]}
             return jsonify(data)
         if sub == "lineup.json":
-            lineup = []
-            guide_num = 1
-            apikey = None
-            if SystemModelSetting.get_bool("use_apikey"):
-                apikey = SystemModelSetting.get("apikey")
-            ddns = SystemModelSetting.get("ddns")
-            for group in LogicAlive.get_group_list(reload=True):
-                if group["no_m3u"]:
-                    continue
-                for c in group["channels"]:
-                    if not (s := c.get("src")):
-                        continue
-                    url = s.svc_url(apikey=apikey, ddns=ddns, mode="plex")
-                    url = url.replace("&apikey", "&q=default&apikey")
-                    _lineup = {
-                        "GuideNumber": str(guide_num),
-                        "GuideName": s.name,
-                        "URL": url,
-                        "tvg-id": f"{s.channel_id}.{s.source}",
-                    }
-                    lineup.append(_lineup)
-                    guide_num += 1
-            return jsonify(lineup)
+            return jsonify(LogicAlive.get_lineup())
     except Exception:
         logger.exception("Exception proxing for plex:")
     abort(403)

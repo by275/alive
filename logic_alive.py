@@ -245,3 +245,29 @@ class LogicAlive:
                 m3u.append(s.as_m3u(**kwargs))
                 idx += 1
         return "".join(m3u)
+
+    @classmethod
+    def get_lineup(cls) -> list[dict]:
+        lineup = []
+        guide_num = 1
+        apikey = None
+        if SystemModelSetting.get_bool("use_apikey"):
+            apikey = SystemModelSetting.get("apikey")
+        ddns = SystemModelSetting.get("ddns")
+        for group in LogicAlive.get_group_list(reload=True):
+            if group["no_m3u"]:
+                continue
+            for c in group["channels"]:
+                if not (s := c.get("src")):
+                    continue
+                url = s.svc_url(apikey=apikey, ddns=ddns, mode="plex")
+                url = url.replace("&apikey", "&q=default&apikey")
+                _lineup = {
+                    "GuideNumber": str(guide_num),
+                    "GuideName": s.name,
+                    "URL": url,
+                    "tvg-id": f"{s.channel_id}.{s.source}",
+                }
+                lineup.append(_lineup)
+                guide_num += 1
+        return lineup
