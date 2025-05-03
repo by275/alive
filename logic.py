@@ -3,7 +3,6 @@ import os
 import platform
 import shutil
 import subprocess
-import time
 from base64 import urlsafe_b64decode
 from copy import deepcopy
 from datetime import datetime
@@ -33,10 +32,6 @@ blueprint = P.blueprint
 
 @stream_with_context
 def generate(url):
-    startTime = time.time()
-    buffer = []
-    sentBurst = False
-
     if platform.system() == "Windows":
         ffmpeg_bin = os.path.join(path_app_root, "bin", platform.system(), "ffmpeg.exe")
     else:
@@ -63,14 +58,10 @@ def generate(url):
     # logger.debug('command : %s', ffmpeg_cmd)
     with subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=-1) as proc:
         while True:
-            line = proc.stdout.read(1024)
-            buffer.append(line)
-            if not sentBurst and time.time() > startTime + 1 and len(buffer) > 0:
-                sentBurst = True
-                for _ in range(0, len(buffer) - 2):
-                    yield buffer.pop(0)
-            elif time.time() > startTime + 1 and len(buffer) > 0:
-                yield buffer.pop(0)
+            chunk = proc.stdout.read(1024)
+            if not chunk:
+                break
+            yield chunk  # 데이터를 받는 즉시 바로바로 내보냄
             proc.poll()
             if isinstance(proc.returncode, int):
                 if proc.returncode > 0:
