@@ -303,15 +303,20 @@ def plex_proxy(sub):
                 apikey = SystemModelSetting.get("apikey")
             ddns = SystemModelSetting.get("ddns")
             for group in LogicAlive.get_group_list(reload=True):
-                if group["type"] == "nogroup":
+                if group["no_m3u"]:
                     continue
                 for c in group["channels"]:
-                    if not c.get("src"):
+                    if not (s := c.get("src")):
                         continue
-                    s = c["src"]
                     url = s.svc_url(apikey=apikey, ddns=ddns, mode="plex")
                     url = url.replace("&apikey", "&q=default&apikey")
-                    lineup.append({"GuideNumber": str(guide_num), "GuideName": s.name, "URL": url})
+                    _lineup = {
+                        "GuideNumber": str(guide_num),
+                        "GuideName": s.name,
+                        "URL": url,
+                        "tvg-id": f"{s.channel_id}.{s.source}",
+                    }
+                    lineup.append(_lineup)
                     guide_num += 1
             return jsonify(lineup)
     except Exception:
