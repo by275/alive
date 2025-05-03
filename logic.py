@@ -232,10 +232,9 @@ class Logic(PluginModuleBase):
         try:
             if sub in ["m3uall", "m3u", "m3utvh"]:
                 return self.process_m3u(sub, args)
+            if (mode := args["m"]) == "plex":
+                return Response(generate(req.url.replace("m=plex", "m=url")), mimetype="video/MP2T")
             if sub == "url.m3u8":
-                if (mode := args["m"]) == "plex":
-                    return Response(generate(req.url.replace("m=plex", "m=url")), mimetype="video/MP2T")
-
                 stype, sdata = LogicKlive.get_source(source := args["s"]).make_m3u8(
                     channel_id := args["i"], mode, args.get("q")
                 )
@@ -250,13 +249,15 @@ class Logic(PluginModuleBase):
                 logger.debug("%s", " -> ".join([f"{source} {channel_id}", f"({stype})", req.remote_addr]))
                 return r
             if sub == "url.mpd":
-                stype, data = LogicKlive.get_source(source := args["s"]).make_m3u8(
-                    channel_id := args["i"], args["m"], args.get("q")
+                stype, sdata = LogicKlive.get_source(source := args["s"]).make_m3u8(
+                    channel_id := args["i"], mode, args.get("q")
                 )
-                if isinstance(data, str):
-                    data = json.loads(data)
+                if isinstance(sdata, str):
+                    sdata = json.loads(sdata)
                 logger.debug("%s", " -> ".join([f"{source} {channel_id}", f"({stype})", req.remote_addr]))
-                return jsonify(data)
+                return jsonify(sdata)
+            logger.error("잘못된 sub: %s", sub)
+            abort(400)
         except Exception:
             logger.exception("API 요청 처리 중 예외:")
 
