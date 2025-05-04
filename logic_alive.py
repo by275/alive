@@ -260,7 +260,10 @@ class LogicAlive:
                     "GuideNumber": str(guide_num),
                     "GuideName": s.name,
                     "URL": url,
+                    # 표준은 아니지만 정렬이나 다른 앱에서 참조할 때 필요
                     "tvg-id": f"{s.channel_id}.{s.source}",
+                    "tvg-chno": str(guide_num),
+                    "tvg-chnum": str(guide_num),
                 }
                 lineup.append(_lineup)
                 guide_num += 1
