@@ -22,35 +22,33 @@ M3U_FORMAT = '#EXTINF:-1 tvg-id="%s" tvg-name="%s" tvg-logo="%s" group-title="%s
 M3U_RADIO_FORMAT = '#EXTINF:-1 tvg-id="%s" tvg-name="%s" tvg-logo="%s" group-title="%s" radio="true" tvg-chno="%s" tvh-chnum="%s",%s\n%s\n'
 
 
-def is_name_same(a, b) -> bool:
+def is_name_same(a: str, b: str) -> bool:
     return a.replace(" ", "").lower() == b.replace(" ", "").lower()
 
 
-def is_name_in(a, b) -> bool:
+def is_name_in(a: str, b: str) -> bool:
     return a.replace(" ", "").lower() in b.replace(" ", "").lower()
 
 
-def find_channels_from_src(ch_info, src_list):
-    ret = []
-    for m in src_list:
-        if any(is_name_same(m.name, x) for x in [ch_info["name"]] + ch_info.get("alias", [])):
-            ret.append(m)
-    return ret
+def find_channels_from_src(ch_info: dict, src_list: list) -> list:
+    names = [ch_info["name"]] + ch_info.get("alias", [])
+    return [m for m in src_list if any(is_name_same(m.name, x) for x in names)]
 
 
-def sort_srcs(srcs, priority_list):
+def sort_srcs(srcs: list, priority_list: list) -> list:
     src_known = [s for s in srcs if s.source_name in priority_list]
     src_unknown = [s for s in srcs if s.source_name not in priority_list]
-    return sorted(src_known, key=lambda v: priority_list.index(v.source_name)) + src_unknown
+    src_known.sort(key=lambda v: priority_list.index(v.source_name))
+    return src_known + src_unknown
 
 
-def get_source(ch, priority_list):
+def get_source(ch: dict, priority_list: list):
     srcs = sort_srcs(ch["srcs"], priority_list)
-    if "force" in ch:
-        for src in srcs:
-            if src.source_name.lower() == ch["force"].lower():
-                logger.debug("%-10s: 강제로 다음 소스를 선택: %s", ch["name"], src.source_name)
-                return deepcopy(src), srcs
+    force = ch.get("force", "").lower()
+    for src in srcs:
+        if force and src.source_name.lower() == force:
+            logger.debug("%-10s: 강제로 다음 소스를 선택: %s", ch["name"], src.source_name)
+            return deepcopy(src), srcs
     for src in srcs:
         if not src.program.onair:
             logger.debug("%-10s: 현재 방송불가: %s", src.source, ch["name"])
@@ -59,7 +57,7 @@ def get_source(ch, priority_list):
     return deepcopy(srcs[0]), srcs
 
 
-def get_src_item(ch, priority_list, attrib):
+def get_src_item(ch: dict, priority_list: list, attrib: str):
     for src in sort_srcs(ch["srcs"], priority_list):
         if hasattr(src, attrib):
             return getattr(src, attrib)
@@ -67,7 +65,7 @@ def get_src_item(ch, priority_list, attrib):
 
 
 class LogicAlive:
-    epg_names: list = []
+    epg_names: list[str] = []
     group_list: list = []
     prefs: dict = {}
 
@@ -82,7 +80,7 @@ class LogicAlive:
         return False
 
     @classmethod
-    def __get_epg_names(cls, epg_urls: list) -> list:
+    def __get_epg_names(cls, epg_urls: list[str]) -> list[str]:
         epg_names = []
         for epg_url in epg_urls:
             try:
@@ -153,10 +151,8 @@ class LogicAlive:
 
         # handling nogroup sources
         no_m3u_if_no_group = cls.prefs.get("no_m3u", {}).get("if_no_group", False)
-        nogroup_names = set()
-        for x in src_tv + src_radio:
-            nogroup_names.add(x.source_name)
-        for group_name in list(nogroup_names):
+        nogroup_names = {x.source_name for x in src_tv + src_radio}
+        for group_name in nogroup_names:
             channel_group.append(
                 {
                     "type": "nogroup",
@@ -197,12 +193,10 @@ class LogicAlive:
                 if src_base is None:
                     continue
                 # name 결정
-                if c.get("dname"):
-                    src_base.name = c.get("dname")
-                else:
-                    default_name = get_src_item(c, priority["name"], "name")
-                    dnames = list(filter(lambda n: n in cls.epg_names, [default_name, c["name"]] + c.get("alias", [])))
-                    src_base.name = dnames[0] if dnames else default_name
+                src_base.name = c.get("dname") or get_src_item(c, priority["name"], "name")
+                dnames = [n for n in [src_base.name, c["name"]] + c.get("alias", []) if n in cls.epg_names]
+                if dnames:
+                    src_base.name = dnames[0]
                 # icon 결정
                 src_base.icon = get_src_item(c, priority["icon"], "icon")
                 c["src"] = src_base
@@ -210,7 +204,7 @@ class LogicAlive:
         cls.group_list = channel_group
 
     @classmethod
-    def get_group_list(cls, reload=False):
+    def get_group_list(cls, reload: bool = False):
         try:
             updated = cls.load_prefs()
             if not cls.group_list or reload or updated:
@@ -220,7 +214,7 @@ class LogicAlive:
         return cls.group_list
 
     @classmethod
-    def get_m3u(cls, src_char: bool = False, for_tvh: bool = False):
+    def get_m3u(cls, src_char: bool = False, for_tvh: bool = False) -> str:
         idx = 1
         m3u = ["#EXTM3U\n"]
         apikey = None
@@ -254,7 +248,7 @@ class LogicAlive:
         if SystemModelSetting.get_bool("use_apikey"):
             apikey = SystemModelSetting.get("apikey")
         ddns = SystemModelSetting.get("ddns")
-        for group in LogicAlive.get_group_list(reload=True):
+        for group in cls.get_group_list(reload=True):
             if group["no_m3u"]:
                 continue
             for c in group["channels"]:
