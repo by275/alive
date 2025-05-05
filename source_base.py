@@ -102,6 +102,8 @@ class SourceBase:
     channels: OrderedDict[str, ChannelItem] = OrderedDict()
     plsess: requests.Session = None
 
+    BASE_URL = f"{SystemModelSetting.get('ddns')}/{package_name}"
+
     PTN_M3U8_ALL: re.Pattern = re.compile(r"^[^#].*\.m3u8.*$", re.MULTILINE)
     PTN_M3U8_END: re.Pattern = re.compile(r"^[^#].*\.m3u8$", re.MULTILINE)
     PTN_M3U8_URL: re.Pattern = re.compile(r'(https?:\/\/(?=.*\.m3u8)[^\s"\']+)')
@@ -173,7 +175,7 @@ class SourceBase:
     def rewrite_m3u8_urls(self, m3u8: str, streaming_type: str) -> str:
         q = urlencode({"s": self.source_id, "t": streaming_type})
         return SourceBase.PTN_M3U8_URL.sub(
-            lambda m: f"/alive/proxy/hls/playlist?{q}&url={self.b64url(m.group(1))}",
+            lambda m: f"{self.BASE_URL}/proxy/hls/playlist?{q}&url={self.b64url(m.group(1))}",
             m3u8,
         )
 
@@ -188,6 +190,6 @@ class SourceBase:
     def rewrite_chunk_urls(self, m3u8: str) -> str:
         q = urlencode({"s": self.source_id})
         return SourceBase.PTN_URL.sub(
-            lambda m: f"/alive/proxy/hls/chunk?{q}&url={self.b64url(m.group(1))}",
+            lambda m: f"{self.BASE_URL}/proxy/hls/chunk?{q}&url={self.b64url(m.group(1))}",
             m3u8,
         )
