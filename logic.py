@@ -245,7 +245,9 @@ class Logic(PluginModuleBase):
                 elif stype == "stream":
                     r = Response(_streamlink(sdata), mimetype="video/MP2T", direct_passthrough=True)
                 else:
-                    r = Response(sdata, content_type="application/vnd.apple.mpegurl")
+                    stargs = {**args, "t": stype}
+                    m3u8 = LogicKlive.get_source(source).rewrite_m3u8_urls(sdata, stargs)
+                    r = Response(m3u8, content_type="application/vnd.apple.mpegurl")
                 logger.debug("%s", " -> ".join([f"{source} {channel_id}", f"({stype})", req.remote_addr]))
                 return r
             if sub == "url.mpd":
@@ -340,15 +342,23 @@ def license_proxy():
 @blueprint.route("/proxy/hls/playlist", methods=["GET"])
 def proxy_playlist():
     try:
+        # m s i apikey t
         sid = request.args["s"]
+        cid = request.args["i"]
+        mode = request.args["m"]
+        quality = request.args.get("q")
         stype = request.args["t"]
         src = LogicKlive.get_source(sid)
-        url = urlsafe_b64decode(request.args["url"]).decode()
+        # url = urlsafe_b64decode(request.args["url"]).decode()
+        idx = int(request.args["st"])
     except Exception:
         abort(404)
     try:
+        m3u8 = src.make_m3u8(cid, mode, quality)[1]
+        m3u8 = [x for x in m3u8.splitlines() if x and not x.startswith("#")]
+        url = m3u8[idx]
         m3u8 = src.repack_m3u8(url, stype)
-        logger.debug("%s", " -> ".join([sid, f"({stype})", request.remote_addr]))
+        logger.debug("%s", " -> ".join([f"{sid} {cid}", f"({stype})", request.remote_addr]))
         return Response(m3u8, content_type="application/vnd.apple.mpegurl")
     except Exception:
         # 어떤 예외든 404로 위장

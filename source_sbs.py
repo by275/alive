@@ -71,4 +71,4 @@ class SourceSBS(SourceBase):
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
         stype = ModelSetting.get("sbs_streaming_type")
         url = self.get_url(channel_id)
-        return stype, self.get_m3u8(url, stype)  # direct, proxy
+        return stype, self.get_m3u8(url)  # direct, proxy
