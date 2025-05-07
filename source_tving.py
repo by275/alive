@@ -129,4 +129,4 @@ class SourceTving(SourceBase):
         if self.channels[channel_id].is_drm:
             return self.make_drm(url, mode)
         stype = "proxy" if mode == "web_play" else "direct"
-        return stype, self.get_m3u8(url)  # direct, proxy(web_play)
+        return stype, self.get_m3u8(url, stype)  # direct, proxy(web_play)

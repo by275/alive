@@ -116,11 +116,12 @@ class SourceBase:
         raise NotImplementedError
 
     @CachedMethod
-    def get_m3u8(self, url: str) -> str:
+    def get_m3u8(self, url: str, streaming_type: str) -> str:
         logger.debug("opening url: %s", url)
         data = self.plsess.get(url).text
         prefix, suffix = self.split_m3u8_url(url)
-        return self.complete_m3u8_urls(data, prefix, suffix)
+        data = self.complete_m3u8_urls(data, prefix, suffix)
+        return self.rewrite_m3u8_urls(data, streaming_type)
 
     def repack_m3u8(self, url: str, streaming_type: str) -> str:
         """repack m3u8 media playlist"""
@@ -171,18 +172,12 @@ class SourceBase:
             return m3u8
         return SourceBase.PTN_M3U8_END.sub(rf"\g<0>{suffix}", m3u8)
 
-    def rewrite_m3u8_urls(self, m3u8: str, stargs: dict) -> str:
-        # q = urlencode({"s": self.source_id, "t": streaming_type})
-        q = urlencode(stargs)
-        logger.error("%s", q)
-        idx = 0
-
-        def repl():
-            nonlocal idx
-            idx += 1
-            return f"{self.BASE_URL}/proxy/hls/playlist?{q}&st={idx}"
-
-        return SourceBase.PTN_M3U8_URL.sub(repl(), m3u8)
+    def rewrite_m3u8_urls(self, m3u8: str, streaming_type: str) -> str:
+        q = urlencode({"s": self.source_id, "t": streaming_type})
+        return SourceBase.PTN_M3U8_URL.sub(
+            lambda m: f"{self.BASE_URL}/proxy/hls/playlist?{q}&url={self.b64url(m.group(1))}",
+            m3u8,
+        )
 
     @staticmethod
     def complete_chunk_urls(m3u8: str, prefix: str, suffix: str = None) -> str:

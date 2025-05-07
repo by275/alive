@@ -84,4 +84,4 @@ class SourceWavve(SourceBase):
         url = self.get_url(channel_id, quality)
         if stype == "redirect":
             return stype, url
-        return stype, self.get_m3u8(url)  # direct, proxy(web_play)
+        return stype, self.get_m3u8(url, stype)  # direct, proxy(web_play)
