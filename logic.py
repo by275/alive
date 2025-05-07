@@ -226,6 +226,20 @@ class Logic(PluginModuleBase):
             raise NotImplementedError(f"잘못된 sub: {sub}")
         return Response(m3u, content_type="audio/mpegurl")
 
+    def _process_m3u8(self, args) -> Response:
+        src = LogicKlive.get_source(source_id := args["s"])
+        stype, sdata = src.make_m3u8(channel_id := args["i"], args["m"], args.get("q"))
+        if sdata is None:
+            return Response(status=204)
+        if stype == "redirect":
+            r = redirect(sdata, code=302)
+        elif stype == "stream":
+            r = Response(_streamlink(sdata), mimetype="video/MP2T", direct_passthrough=True)
+        else:
+            r = Response(sdata, content_type="application/vnd.apple.mpegurl")
+        logger.debug("%s", " -> ".join([f"{source_id} {channel_id}", f"({stype})", request.remote_addr]))
+        return r
+
     def process_api(self, sub, req):
         args = req.args.to_dict()
         # logger.debug("args: %s", args)
@@ -235,19 +249,7 @@ class Logic(PluginModuleBase):
             if (mode := args["m"]) == "plex":
                 return Response(generate(req.url.replace("m=plex", "m=url")), mimetype="video/MP2T")
             if sub == "url.m3u8":
-                stype, sdata = LogicKlive.get_source(source := args["s"]).make_m3u8(
-                    channel_id := args["i"], mode, args.get("q")
-                )
-                if sdata is None:
-                    return Response(status=204)
-                if stype == "redirect":
-                    r = redirect(sdata, code=302)
-                elif stype == "stream":
-                    r = Response(_streamlink(sdata), mimetype="video/MP2T", direct_passthrough=True)
-                else:
-                    r = Response(sdata, content_type="application/vnd.apple.mpegurl")
-                logger.debug("%s", " -> ".join([f"{source} {channel_id}", f"({stype})", req.remote_addr]))
-                return r
+                return self._process_m3u8(args)
             if sub == "url.mpd":
                 stype, sdata = LogicKlive.get_source(source := args["s"]).make_m3u8(
                     channel_id := args["i"], mode, args.get("q")
