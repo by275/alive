@@ -8,7 +8,7 @@ db = F.db
 SystemModelSetting = F.SystemModelSetting
 
 # local
-from .setup import P
+from .setup import P, default_headers
 
 logger = P.logger
 package_name = P.package_name
@@ -103,8 +103,8 @@ class ChannelItem:
 
         if for_tvh:
             return (
-                f'pipe://ffmpeg -loglevel quiet -i "{url}" -c copy '
-                f'-metadata service_provider=sjva_klive -metadata service_name="{self.name}" '
+                f'pipe://ffmpeg -user_agent "{default_headers["user-agent"]}" -loglevel quiet -i "{url}" -c copy '
+                f'-metadata service_provider=flaskfarm_alive -metadata service_name="{self.name}" '
                 f"-c:v copy -c:a aac -b:a 128k -f mpegts -tune zerolatency pipe:1"
             )
         return url
