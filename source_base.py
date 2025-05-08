@@ -1,3 +1,4 @@
+import itertools
 import json
 import re
 import time
@@ -6,7 +7,7 @@ from collections import OrderedDict
 from datetime import timedelta
 from functools import lru_cache
 from typing import Callable
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import parse_qs, urlparse
 
 import requests
 from plugin import F  # type: ignore # pylint: disable=import-error
@@ -102,8 +103,6 @@ class SourceBase:
     channels: OrderedDict[str, ChannelItem] = OrderedDict()
     plsess: requests.Session = None
 
-    BASE_URL = f"{SystemModelSetting.get('ddns')}/{package_name}"
-
     PTN_M3U8_ALL: re.Pattern = re.compile(r"^[^#].*\.m3u8.*$", re.MULTILINE)
     PTN_M3U8_END: re.Pattern = re.compile(r"^[^#].*\.m3u8$", re.MULTILINE)
     PTN_M3U8_URL: re.Pattern = re.compile(r'(https?:\/\/(?=.*\.m3u8)[^\s"\']+)')
@@ -116,12 +115,13 @@ class SourceBase:
         raise NotImplementedError
 
     @CachedMethod
-    def get_m3u8(self, url: str, streaming_type: str) -> str:
+    def get_m3u8(self, url: str) -> dict:
         logger.debug("opening url: %s", url)
         data = self.plsess.get(url).text
         prefix, suffix = self.split_m3u8_url(url)
         data = self.complete_m3u8_urls(data, prefix, suffix)
-        return self.rewrite_m3u8_urls(data, streaming_type)
+        streams = [{"url": u} for u in self.PTN_M3U8_URL.findall(data)]
+        return {"contents": data, "streams": streams}
 
     def repack_m3u8(self, url: str, streaming_type: str) -> str:
         """repack m3u8 media playlist"""
@@ -130,7 +130,7 @@ class SourceBase:
         data = self.complete_chunk_urls(data, prefix, suffix)
         if streaming_type == "direct":
             return data
-        return self.rewrite_chunk_urls(data)
+        return self.rewrite_chunk_urls(data, self.source_id)
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
         raise NotImplementedError
@@ -172,12 +172,15 @@ class SourceBase:
             return m3u8
         return SourceBase.PTN_M3U8_END.sub(rf"\g<0>{suffix}", m3u8)
 
-    def rewrite_m3u8_urls(self, m3u8: str, streaming_type: str) -> str:
-        q = urlencode({"s": self.source_id, "t": streaming_type})
-        return SourceBase.PTN_M3U8_URL.sub(
-            lambda m: f"{self.BASE_URL}/proxy/hls/playlist?{q}&url={self.b64url(m.group(1))}",
-            m3u8,
-        )
+    @staticmethod
+    def rewrite_m3u8_urls(m3u8: str, path: str) -> str:
+        counter = itertools.count()
+
+        def repl(_match):
+            t = next(counter)
+            return f"{path}&t={t}"
+
+        return SourceBase.PTN_M3U8_URL.sub(repl, m3u8)
 
     @staticmethod
     def complete_chunk_urls(m3u8: str, prefix: str, suffix: str = None) -> str:
@@ -187,9 +190,9 @@ class SourceBase:
             return m3u8
         return SourceBase.PTN_CHUNK_END.sub(rf"\g<0>{suffix}", m3u8)
 
-    def rewrite_chunk_urls(self, m3u8: str) -> str:
-        q = urlencode({"s": self.source_id})
+    @staticmethod
+    def rewrite_chunk_urls(m3u8: str, source: str) -> str:
         return SourceBase.PTN_URL.sub(
-            lambda m: f"{self.BASE_URL}/proxy/hls/chunk?{q}&url={self.b64url(m.group(1))}",
+            lambda m: f"/alive/proxy/hls/chunk?s={source}&url={SourceBase.b64url(m.group(1))}",
             m3u8,
         )

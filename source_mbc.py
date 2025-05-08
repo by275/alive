@@ -78,9 +78,9 @@ class SourceMBC(SourceBase):
             return self.apisess.get(url).text
         return self.get_data(channel_id)["MediaInfo"]["MediaURL"]
 
-    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
         url = self.get_url(channel_id)
         if not self.channels[channel_id].is_tv:
             return "redirect", url
         stype = "proxy"  # chunk를 받아올 때도 referer가 필요하기 때문에 proxy만 가능
-        return stype, self.get_m3u8(url, stype)
+        return stype, self.get_m3u8(url)

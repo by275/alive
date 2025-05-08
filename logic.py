@@ -236,6 +236,12 @@ class Logic(PluginModuleBase):
         elif stype == "stream":
             r = Response(_streamlink(sdata), mimetype="video/MP2T", direct_passthrough=True)
         else:
+            if isinstance(sdata, dict):
+                if stream_id := args.get("t"):  # media playlist
+                    url = sdata["streams"][int(stream_id)]["url"]
+                    sdata = src.repack_m3u8(url, stype)
+                else:
+                    sdata = src.rewrite_m3u8_urls(sdata["contents"], request.full_path)
             r = Response(sdata, content_type="application/vnd.apple.mpegurl")
         logger.debug("%s", " -> ".join([f"{source_id} {channel_id}", f"({stype})", request.remote_addr]))
         return r
@@ -339,25 +345,6 @@ def license_proxy():
 #########################################################
 # hls proxy
 #########################################################
-@blueprint.route("/proxy/hls/playlist", methods=["GET"])
-def proxy_playlist():
-    try:
-        sid = request.args["s"]
-        stype = request.args["t"]
-        src = LogicKlive.get_source(sid)
-        url = urlsafe_b64decode(request.args["url"]).decode()
-    except Exception:
-        abort(404)
-    try:
-        m3u8 = src.repack_m3u8(url, stype)
-        logger.debug("%s", " -> ".join([sid, f"({stype})", request.remote_addr]))
-        return Response(m3u8, content_type="application/vnd.apple.mpegurl")
-    except Exception:
-        # 어떤 예외든 404로 위장
-        logger.debug("Exception proxing for playlists", exc_info=True)
-        abort(404)
-
-
 @blueprint.route("/proxy/hls/chunk", methods=["GET"])
 def proxy_chunk():
     try:

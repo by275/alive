@@ -68,7 +68,7 @@ class SourceSBS(SourceBase):
         data = self.get_data(channel_id)
         return data["onair"]["source"]["mediasource"]["mediaurl"]  # master playlist url
 
-    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
         stype = ModelSetting.get("sbs_streaming_type")
         url = self.get_url(channel_id)
-        return stype, self.get_m3u8(url, stype)  # direct, proxy
+        return stype, self.get_m3u8(url)  # direct, proxy

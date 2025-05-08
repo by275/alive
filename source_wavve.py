@@ -79,9 +79,9 @@ class SourceWavve(SourceBase):
         data = self.mod.streaming("live", channel_id, quality, isabr="y")
         return data["play_info"].get("hls")
 
-    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
+    def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
         stype = "proxy" if mode == "web_play" else ModelSetting.get("wavve_streaming_type")
         url = self.get_url(channel_id, quality)
         if stype == "redirect":
             return stype, url
-        return stype, self.get_m3u8(url, stype)  # direct, proxy(web_play)
+        return stype, self.get_m3u8(url)  # direct, proxy(web_play)
