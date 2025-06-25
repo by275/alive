@@ -76,6 +76,8 @@
           {{ macros.setting_checkbox('sbs_use_proxy_for_playlist', '재생 시 Proxy', value=arg['sbs_use_proxy_for_playlist'], desc=['On: 재생할 때도 사용, Off: URL 얻을 때만 사용']) }}
         </div>
       </div>
+      {{ macros.m_hr() }}
+      {{ macros.setting_checkbox('use_spotv', 'SPOTV', value=arg['use_spotv'], desc=None) }}
     {{ macros.m_tab_content_end() }}
 
     {{ macros.m_tab_content_start('streamlink', false) }}

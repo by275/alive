@@ -131,6 +131,8 @@ class Logic(PluginModuleBase):
         # etc
         "use_plex_proxy": "False",
         "plex_proxy_host": "",
+        # spotv
+        "use_spotv": "False",
     }
 
     def __init__(self, PM):
