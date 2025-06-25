@@ -102,16 +102,16 @@ class ChannelItem:
 
         path = "url.mpd" if self.is_drm else "url.m3u8"
         url = f"{url_base}/api/{path}?{urlencode(params)}"
-        try:
-            if self.is_drm and (request.headers.get("User-Agent", "").lower().startswith("tivimate") or request.headers.get("User-Agent", "").lower().startswith("kodi")):
-                from .logic_klive import LogicKlive
-                source_ins = LogicKlive.get_source(self.source)
-                ret = source_ins.make_m3u8(self.channel_id, "kodi", "")
-                url = ret[1]
-        except Exception as e:
-            logger.exception("Error while making drm m3u8 for %s: %s", self.channel_id, e)
-            return "error", str(e)
-
+        if not F.config['run_celery']: # epg에서 m3u 요청시 request 사용으로 인해 문제발생
+            try:
+                if self.is_drm and (request.headers.get("User-Agent", "").lower().startswith("tivimate") or request.headers.get("User-Agent", "").lower().startswith("kodi")):
+                    from .logic_klive import LogicKlive
+                    source_ins = LogicKlive.get_source(self.source)
+                    ret = source_ins.make_m3u8(self.channel_id, "kodi", "")
+                    url = ret[1]
+            except Exception as e:
+                logger.exception("Error while making drm m3u8 for %s: %s", self.channel_id, e)
+                return "error", str(e)
 
         if for_tvh:
             return (
