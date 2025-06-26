@@ -67,7 +67,10 @@ class SourceTving(SourceBase):
                 if "KBO" in name:  # KBO 프로야구 중복 채널명 문제
                     count = name_counter.setdefault(name, 0) + 1
                     name_counter[name] = count
-                    name = f"{name} {count}"
+                    # 2025-06-26 by soju6jan 
+                    # epg가 없어 내용 파악이 어려움. 채널에 팀 표시. 
+                    #name = f"{name} {count}"
+                    name = f"[KBO{count}] {item['episode_title']}"
 
                 p = ProgramItem(title=item["episode_title"], onair=not item.get("block", False))
                 c = ChannelItem(
@@ -115,7 +118,7 @@ class SourceTving(SourceBase):
                 "type": "application/dash+xml",
                 "keySystems": {
                     "com.widevine.alpha": {
-                        "url": "/alive/proxy/license",
+                        "url": f"/alive/tvinglicense/{data['id']}",
                         "licenseHeaders": {
                             "Real-Url": data["drm_license_uri"],
                             "Real-Origin": data["drm_key_request_properties"]["origin"],
@@ -128,7 +131,8 @@ class SourceTving(SourceBase):
             }
         elif mode == "kodi":
             self.license_info[data['id']] = data
-            license_url =ToolUtil.make_apikey_url(f"/alive/tvinglicense/{data['id']}")
+            license_url = P.ModelSetting.get("tving_proxy_licenseurl")
+            license_url = license_url + f"/{data['id']}" if license_url.startswith("http") else ToolUtil.make_apikey_url(f"{license_url}/{data['id']}") 
             text = f"""#KODIPROP:inputstream=inputstream.adaptive
 #KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha
 #KODIPROP:inputstream.adaptive.license_key={license_url}
@@ -154,12 +158,11 @@ def proxy_license(channel_id):
             LogicKlive.sources['tving'].license_info[channel_id] = data
         data = LogicKlive.sources['tving'].license_info[channel_id]
         headers = {
-            "origin": data["drm_key_request_properties"]["origin"],
-            "referer": data["drm_key_request_properties"]["referer"],
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+            "Origin": data["drm_key_request_properties"]["origin"],
+            "Referer": data["drm_key_request_properties"]["referer"],
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
             "Pallycon-Customdata-V2": data["drm_key_request_properties"]["pallycon-customdata-v2"],
         }
-        
         res = requests.request(
             method=request.method,
             url=data["drm_license_uri"],
