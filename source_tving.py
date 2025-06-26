@@ -149,6 +149,9 @@ class SourceTving(SourceBase):
 def proxy_license(channel_id):
     try:
         from .logic_klive import LogicKlive
+        if LogicKlive.sources['tving'].license_info.get(channel_id, None) == None:
+            data = LogicKlive.sources['tving'].get_url(channel_id, "")
+            LogicKlive.sources['tving'].license_info[channel_id] = data
         data = LogicKlive.sources['tving'].license_info[channel_id]
         headers = {
             "origin": data["drm_key_request_properties"]["origin"],
