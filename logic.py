@@ -134,10 +134,13 @@ class Logic(PluginModuleBase):
         "plex_proxy_host": "",
         # spotv
         "use_spotv": "False",
+        # bot
+        "use_bot": "False",
     }
 
     def __init__(self, PM):
         super().__init__(PM, None)
+        self.name = "setting"
 
     def plugin_load(self):
         alive_prefs = Path(F.path_data).joinpath("db", "alive.yaml")
@@ -271,6 +274,11 @@ class Logic(PluginModuleBase):
             abort(400)
         except Exception:
             logger.exception("API 요청 처리 중 예외:")
+
+    def process_discord_data(self, data):
+        ins = LogicKlive.get_source('bot')
+        if ins:
+            ins.process_discord_data(data)
 
 
 #########################################################

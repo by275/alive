@@ -16,6 +16,7 @@ from .source_streamlink import SourceStreamlink
 from .source_tving import SourceTving
 from .source_wavve import SourceWavve
 from .source_spotv import SourceSpotv
+from .source_bot import SourceBot
 
 logger = P.logger
 package_name = P.package_name
@@ -48,6 +49,8 @@ class LogicKlive:
             srcs.append(SourceFixURL())
         if ModelSetting.get_bool("use_spotv"):
             srcs.append(SourceSpotv())
+        if ModelSetting.get_bool("use_bot"):
+            srcs.append(SourceBot())
 
         cls.sources = OrderedDict((s.source_id, s) for s in srcs)
 

@@ -25,6 +25,7 @@ source_id2name = {
     "streamlink": "StreamLink",
     "fix_url": "고정주소",
     "spotv": "SPOTV",
+    'bot': "BOT",
 }
 source_id2char = {
     "wavve": "w",
@@ -35,6 +36,7 @@ source_id2char = {
     "streamlink": "l",
     "fix_url": "f",
     "spotv": "p",
+    'bot': "b",
 }
 circled_alphabet = "ⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"
 
