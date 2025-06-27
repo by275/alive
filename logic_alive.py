@@ -5,6 +5,7 @@ from pathlib import Path
 
 import requests
 import yaml
+import re
 from plugin import F  # type: ignore # pylint: disable=import-error
 
 SystemModelSetting = F.SystemModelSetting
@@ -134,6 +135,11 @@ class LogicAlive:
             if gtype == "search":
                 keyword = group.get("keyword") or gname
                 src_found = [c for c in src_tv if is_name_in(keyword, c.name)]
+                src_tv = [c for c in src_tv if c not in src_found]
+                group["channels"] = [{"name": c.name, "srcs": [c]} for c in src_found]
+            elif gtype == "pattern":
+                pattern = group.get("pattern") or gname
+                src_found = [c for c in src_tv if re.search(pattern, c.name)]
                 src_tv = [c for c in src_tv if c not in src_found]
                 group["channels"] = [{"name": c.name, "srcs": [c]} for c in src_found]
             elif gtype == "regular" and not radio:
