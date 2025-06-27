@@ -8,15 +8,15 @@ from plugin import F  # type: ignore # pylint: disable=import-error
 from .model import ChannelItem
 from .setup import P
 from .source_base import SourceBase
+from .source_bot import SourceBot
 from .source_fix_url import SourceFixURL
 from .source_kbs import SourceKBS
 from .source_mbc import SourceMBC
 from .source_sbs import SourceSBS
+from .source_spotv import SourceSpotv
 from .source_streamlink import SourceStreamlink
 from .source_tving import SourceTving
 from .source_wavve import SourceWavve
-from .source_spotv import SourceSpotv
-from .source_bot import SourceBot
 
 logger = P.logger
 package_name = P.package_name

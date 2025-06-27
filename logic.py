@@ -276,7 +276,7 @@ class Logic(PluginModuleBase):
             logger.exception("API 요청 처리 중 예외:")
 
     def process_discord_data(self, data):
-        ins = LogicKlive.get_source('bot')
+        ins = LogicKlive.get_source("bot")
         if ins:
             ins.process_discord_data(data)
 

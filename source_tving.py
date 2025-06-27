@@ -1,10 +1,10 @@
 import re
 from collections import OrderedDict
-from urllib.parse import urlencode
-from flask import Response, request
-import requests
 
-from tool import ToolUtil 
+import requests
+from flask import Response, request
+from tool import ToolUtil  # type: ignore # pylint: disable=import-error
+
 from .model import ChannelItem, ProgramItem
 from .setup import P
 from .source_base import SourceBase, URLCacher
@@ -28,6 +28,7 @@ class SourceTving(SourceBase):
 
     PTN_HTTP = re.compile(r"^http:\/\/")
     license_info = {}
+
     def __init__(self):
         if self.mod is not None:
             return
@@ -67,9 +68,8 @@ class SourceTving(SourceBase):
                 if "KBO" in name:  # KBO 프로야구 중복 채널명 문제
                     count = name_counter.setdefault(name, 0) + 1
                     name_counter[name] = count
-                    # 2025-06-26 by soju6jan 
-                    # epg가 없어 내용 파악이 어려움. 채널에 팀 표시. 
-                    #name = f"{name} {count}"
+                    # 2025-06-26 by soju6jan
+                    # epg가 없어 내용 파악이 어려움. 채널에 팀 표시.
                     name = f"[KBO{count}] {item['episode_title']}"
 
                 p = ProgramItem(title=item["episode_title"], onair=not item.get("block", False))
@@ -129,10 +129,14 @@ class SourceTving(SourceBase):
                     }
                 },
             }
-        elif mode == "kodi":
-            self.license_info[data['id']] = data
+        if mode == "kodi":
+            self.license_info[data["id"]] = data
             license_url = P.ModelSetting.get("tving_proxy_licenseurl")
-            license_url = license_url + f"/{data['id']}" if license_url.startswith("http") else ToolUtil.make_apikey_url(f"{license_url}/{data['id']}") 
+            license_url = (
+                license_url + f"/{data['id']}"
+                if license_url.startswith("http")
+                else ToolUtil.make_apikey_url(f"{license_url}/{data['id']}")
+            )
             text = f"""#KODIPROP:inputstream=inputstream.adaptive
 #KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha
 #KODIPROP:inputstream.adaptive.license_key={license_url}
@@ -143,7 +147,7 @@ class SourceTving(SourceBase):
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
         url = self.get_url(channel_id, quality)
         if self.channels[channel_id].is_drm:
-            url['id'] = channel_id
+            url["id"] = channel_id
             return self.make_drm(url, mode)
         stype = "proxy" if mode == "web_play" else "direct"
         return stype, self.get_m3u8(url)  # direct, proxy(web_play)
@@ -153,10 +157,11 @@ class SourceTving(SourceBase):
 def proxy_license(channel_id):
     try:
         from .logic_klive import LogicKlive
-        if LogicKlive.sources['tving'].license_info.get(channel_id, None) == None:
-            data = LogicKlive.sources['tving'].get_url(channel_id, "")
-            LogicKlive.sources['tving'].license_info[channel_id] = data
-        data = LogicKlive.sources['tving'].license_info[channel_id]
+
+        if LogicKlive.sources["tving"].license_info.get(channel_id, None) is None:
+            data = LogicKlive.sources["tving"].get_url(channel_id, "")
+            LogicKlive.sources["tving"].license_info[channel_id] = data
+        data = LogicKlive.sources["tving"].license_info[channel_id]
         headers = {
             "Origin": data["drm_key_request_properties"]["origin"],
             "Referer": data["drm_key_request_properties"]["referer"],
@@ -178,7 +183,7 @@ def proxy_license(channel_id):
             "transfer-encoding",
             "connection",
         ]
-        headers = [(k, v) for k, v in res.raw.headers.items() if k.lower() not in excluded_headers]        
+        headers = [(k, v) for k, v in res.raw.headers.items() if k.lower() not in excluded_headers]
         response = Response(res.content, res.status_code, headers)
         return response
     except Exception as e:

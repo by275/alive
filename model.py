@@ -1,6 +1,7 @@
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
+
 from flask import request
 from plugin import F  # type: ignore # pylint: disable=import-error
 
@@ -25,7 +26,7 @@ source_id2name = {
     "streamlink": "StreamLink",
     "fix_url": "고정주소",
     "spotv": "SPOTV",
-    'bot': "BOT",
+    "bot": "BOT",
 }
 source_id2char = {
     "wavve": "w",
@@ -36,7 +37,7 @@ source_id2char = {
     "streamlink": "l",
     "fix_url": "f",
     "spotv": "p",
-    'bot': "b",
+    "bot": "b",
 }
 circled_alphabet = "ⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"
 
@@ -104,10 +105,14 @@ class ChannelItem:
 
         path = "url.mpd" if self.is_drm else "url.m3u8"
         url = f"{url_base}/api/{path}?{urlencode(params)}"
-        if not F.config['run_celery']: # epg에서 m3u 요청시 request 사용으로 인해 문제발생
+        if not F.config["run_celery"]:  # epg에서 m3u 요청시 request 사용으로 인해 문제발생
             try:
-                if self.is_drm and (request.headers.get("User-Agent", "").lower().startswith("tivimate") or request.headers.get("User-Agent", "").lower().startswith("kodi")):
+                if self.is_drm and (
+                    request.headers.get("User-Agent", "").lower().startswith("tivimate")
+                    or request.headers.get("User-Agent", "").lower().startswith("kodi")
+                ):
                     from .logic_klive import LogicKlive
+
                     source_ins = LogicKlive.get_source(self.source)
                     ret = source_ins.make_m3u8(self.channel_id, "kodi", "")
                     url = ret[1]

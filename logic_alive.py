@@ -1,3 +1,4 @@
+import re
 import xml.etree.ElementTree as ET
 from copy import deepcopy
 from datetime import datetime
@@ -5,7 +6,6 @@ from pathlib import Path
 
 import requests
 import yaml
-import re
 from plugin import F  # type: ignore # pylint: disable=import-error
 
 SystemModelSetting = F.SystemModelSetting
