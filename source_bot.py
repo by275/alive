@@ -81,7 +81,9 @@ class SourceBot(SourceBase):
                     pass
 
     def process_discord_data(self, msg):
-        ModelBot.process(msg['msg']['data'])
+        refresh = ModelBot.process(msg['msg']['data'])
+        if refresh:
+            self.load_channels()
 
 
 @F.app.route('/alive/bot/proxy')
@@ -155,16 +157,17 @@ class ModelBot(ModelBase):
                     db_item.ott = data['id'].split('_', 1)[0]
                     db_item.save()
                     logger.debug(f"새로운 방송 등록: {data['t']}")
+                    return True
                 else:
                     logger.info(f"이미 등록된 방송입니다. {data['t']}")
             elif data['s'] == 'end':
                 if db_item is not None:
                     db_item.delete_by_id(db_item.id)
-
+                    return True
         except Exception as e: 
             logger.error(f'Exception:{str(e)}')
             logger.error(traceback.format_exc())
-           
+        return False
 
     @classmethod
     def get_by_code(cls, code):
