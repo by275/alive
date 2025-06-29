@@ -1,3 +1,4 @@
+import hashlib
 import re
 import xml.etree.ElementTree as ET
 from copy import deepcopy
@@ -69,16 +70,27 @@ class LogicAlive:
     epg_names: list[str] = []
     group_list: list = []
     prefs: dict = {}
+    _hash: str = ""
+    _file: Path = Path(F.path_data).joinpath("db", "alive.yaml")
+
+    @classmethod
+    def hash(cls, data: dict) -> str:
+        normalized_yaml = yaml.dump(data, sort_keys=True, allow_unicode=True)
+        return hashlib.sha256(normalized_yaml.encode("utf-8")).hexdigest()
 
     @classmethod
     def load_prefs(cls) -> bool:
-        file = Path(F.path_data).joinpath("db", "alive.yaml")
-        with file.open("r", encoding="utf-8") as strm:
-            prefs = yaml.full_load(strm.read())
-        if prefs != cls.prefs:
-            cls.prefs = prefs
-            return True
-        return False
+        changed = False
+        try:
+            with cls._file.open("r", encoding="utf-8") as strm:
+                prefs = yaml.full_load(strm.read())
+            _hash = cls.hash(prefs)
+            if changed := cls._hash != _hash:
+                cls.prefs = prefs
+                cls._hash = _hash
+        except Exception:
+            logger.exception("alive.yaml 파일을 읽어오는 중 에러. 기존 설정을 유지합니다:")
+        return changed
 
     @classmethod
     def __get_epg_names(cls, epg_urls: list[str]) -> list[str]:
