@@ -2,7 +2,7 @@
 
 # 문법
 # channel_group[].name = 필수. 그룹명
-# channel_group[].type = 필수. (search, regular) 만 가능
+# channel_group[].type = 필수. (search, pattern, regular) 만 가능
 # channel_group[].radio = 라디오 그룹인지 표시. true/false 없으면 TV 채널
 # channel_group[].keyword = type이 search인 경우 사용될 일괄 채널 검색어
 # channel_group[].no_m3u = 해당 그룹을 m3u에 노출시키고 싶지 않을 때 true나 false로 입력
@@ -18,6 +18,11 @@ channel_group:
 - name: 2024 KBO 리그
   type: search
   keyword:
+
+# regex pattern도 가능
+- name: OTT 스포츠
+  type: pattern
+  pattern: "\\[.*?\\]"
 
 - name: 지상파
   type: regular
