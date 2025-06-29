@@ -27,16 +27,8 @@ class SourceBot(SourceBase):
         logger.debug("SourceBot.load_channels %d items found", len(items))
         ret = []
         for item in items:
-            p = ProgramItem(title=f"{item['start_time_str']} ~ {item['end_time_str']}")
-            c = ChannelItem(
-                self.source_id,
-                item["code"],
-                item["title"],
-                item["poster"],
-                True,
-                item["is_drm"],
-                program=p,
-            )
+            c = ChannelItem(self.source_id, item["code"], item["title"], item["poster"], True, item["is_drm"])
+            c.program = ProgramItem(title=f"{item['start_time_str']} ~ {item['end_time_str']}")
             ret.append(c)
         self.channels = OrderedDict((c.channel_id, c) for c in ret)
 
