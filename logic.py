@@ -109,7 +109,7 @@ class Logic(PluginModuleBase):
         "kbs_use_proxy_for_playlist": "False",
         # mbc
         "use_mbc": "False",
-        "mbc_streaming_type": "direct",
+        "mbc_streaming_type": "proxy",
         "mbc_use_proxy": "False",
         "mbc_proxy_url": "",
         "mbc_use_proxy_for_playlist": "False",
