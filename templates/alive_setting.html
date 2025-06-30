@@ -10,9 +10,9 @@
       {{ macros.m_tab_head('basic', '기본', true) }}
       {{ macros.m_tab_head('wavve', '웨이브', false) }}
       {{ macros.m_tab_head('tving', '티빙', false) }}
-      {{ macros.m_tab_head('ott_etc', '기타', false) }}
+      {{ macros.m_tab_head('ota', '지상파', false) }}
+      {{ macros.m_tab_head('etc', '기타', false) }}
       {{ macros.m_tab_head('streamlink', 'Streamlink', false) }}
-      {{ macros.m_tab_head('direct', '고정주소', false) }}
       {{ macros.m_tab_head('api', 'API', false) }}
     {{ macros.m_tab_head_end() }}
   </nav>
@@ -45,7 +45,7 @@
       </div>
     {{ macros.m_tab_content_end() }}
 
-    {{ macros.m_tab_content_start('ott_etc', false) }}
+    {{ macros.m_tab_content_start('ota', false) }}
       {{ macros.setting_checkbox('use_kbs', 'KBS', value=arg['use_kbs'], desc=None) }}
       <div id="use_kbs_div" class="collapse">
         {{ macros.setting_checkbox('kbs_include_vod_ch', '정주행 채널 포함', value=arg['kbs_include_vod_ch'], desc=None) }}
@@ -77,10 +77,17 @@
           {{ macros.setting_checkbox('sbs_use_proxy_for_playlist', '재생 시 Proxy', value=arg['sbs_use_proxy_for_playlist'], desc=['On: 재생할 때도 사용, Off: URL 얻을 때만 사용']) }}
         </div>
       </div>
-      {{ macros.m_hr() }}
+    {{ macros.m_tab_content_end() }}
+
+    {{ macros.m_tab_content_start('etc', false) }}
       {{ macros.setting_checkbox('use_spotv', 'SPOTV', value=arg['use_spotv'], desc=None) }}
       {{ macros.m_hr() }}
       {{ macros.setting_checkbox('use_bot', 'BOT', value=arg['use_bot'], desc=None) }}
+      {{ macros.m_hr() }}
+      {{ macros.setting_checkbox('use_fix_url', '고정주소', value=arg['use_fix_url'], desc=None) }}
+      <div id="use_fix_url_div" class="collapse">
+        {{ macros.setting_input_textarea_wide('fix_url_list', '채널 목록', desc=['형식: 채널ID|채널이름|채널URL|{TV면 Y, 라디오면 N}', '구분자: Enter', '참고: https://iptvcat.com/south_korea'], value=arg['fix_url_list'], row='20') }}
+      </div>
     {{ macros.m_tab_content_end() }}
 
     {{ macros.m_tab_content_start('streamlink', false) }}
@@ -93,13 +100,6 @@
           {{ macros.setting_input_text('streamlink_proxy_url', 'Proxy URL', value=arg['streamlink_proxy_url'], desc=None) }}
         </div>
         {{ macros.setting_input_textarea_wide('streamlink_list', '채널 목록', desc=['형식: 채널ID|채널이름|채널URL|화질(생략하면 best)', '구분자: Enter'], value=arg['streamlink_list'], row='20') }}
-      </div>
-    {{ macros.m_tab_content_end() }}
-
-    {{ macros.m_tab_content_start('direct', false) }}
-      {{ macros.setting_checkbox('use_fix_url', '고정주소', value=arg['use_fix_url'], desc=None) }}
-      <div id="use_fix_url_div" class="collapse">
-        {{ macros.setting_input_textarea_wide('fix_url_list', '채널 목록', desc=['형식: 채널ID|채널이름|채널URL|{TV면 Y, 라디오면 N}', '구분자: Enter', '참고: https://iptvcat.com/south_korea'], value=arg['fix_url_list'], row='20') }}
       </div>
     {{ macros.m_tab_content_end() }}
 
