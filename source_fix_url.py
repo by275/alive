@@ -30,28 +30,6 @@ class SourceFixURL(SourceBase):
     def get_url(self, channel_id: str) -> str:
         return self.channels[channel_id].url
 
-    def make_drm(self, data: dict, mode: str) -> tuple[str, dict]:
-        if mode == "web_play":
-            return "drm+web", {
-                "src": data["uri"],
-                "type": "application/x-mpegurl",
-                "keySystems": {
-                    "com.widevine.alpha": {
-                        "url": "/alive/proxy/license",
-                        "licenseHeaders": {
-                            "Real-Url": data["drm_license_uri"],
-                            "Real-Origin": data["drm_key_request_properties"]["origin"],
-                            "Real-Referer": data["drm_key_request_properties"]["referer"],
-                        },
-                        "persistentState": "required",
-                    }
-                },
-            }
-        return "drm", data
-
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
         url = self.get_url(channel_id)
-        if self.channels[channel_id].is_drm:
-            # 매우 좋지 않지만 spotv만 .....
-            return self.make_drm(json.loads(url), mode)
         return "redirect", url
