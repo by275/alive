@@ -59,7 +59,12 @@ class LogicKlive:
         with ThreadPoolExecutor(max_workers=5) as exe:
             f2s = {exe.submit(s.load_channels): s for s in cls.sources.values()}
             for f in as_completed(f2s):
-                logger.debug("%-10s: %s", f2s[f].source_id, len(f2s[f].channels))
+                s = f2s[f]
+                try:
+                    f.result()
+                    logger.debug("%-10s: %s", s.source_id, len(s.channels))
+                except Exception:
+                    logger.exception("%-10s: 채널 로딩 예외:", s.source_id)
 
         ModelSetting.set("channel_list_updated_at", datetime.now().isoformat())
 
