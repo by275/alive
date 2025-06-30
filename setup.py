@@ -1,3 +1,8 @@
+from pathlib import Path
+
+import yaml
+from plugin import F, create_plugin_instance  # type: ignore # pylint: disable=import-error
+
 __menu = {
     "uri": __package__,
     "name": "ALive",
@@ -25,8 +30,22 @@ default_headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36",
 }
 
-# pylint: disable=import-error
-from plugin import create_plugin_instance  # type: ignore
+alive_prefs = Path(F.path_data) / "db" / "alive.yaml"
+
+
+class Loader(yaml.SafeLoader):
+    def __init__(self, stream):
+        self._root = Path(stream.name).parent
+        super().__init__(stream)
+
+    def include(self, node):
+        filename = self._root / self.construct_scalar(node)
+        with open(filename, "r", encoding="utf-8") as f:
+            return yaml.load(f, Loader)
+
+
+Loader.add_constructor("!include", Loader.include)
+
 
 P = create_plugin_instance(setting)
 

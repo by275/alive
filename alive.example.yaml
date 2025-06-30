@@ -1,10 +1,20 @@
-# 채널 그룹 정의
+# 이 파일의 최신 버전은 다음 링크에서 확인할 수 있습니다.
+# https://github.com/by275/alive/blob/main/alive.example.yaml
 
+# YAML 작성 시 참고사항
+# bool 값은 따옴표로 묶지 않은 true/false 짧게는 yes/no로 응답 가능
+# 1과 "1"은 서로 다른 값. 전자는 정수, 후자는 문자열
+# true와 "true"는 서로 다른 값. 전자는 boolean, 후자는 문자열
+# 키 아래 !include file.yaml을 입력하면 동일 폴더에 존재하는 file.yaml의 내용을 자식으로 가짐
+
+# 채널 그룹 정의
+# 
 # 문법
 # channel_group[].name = 필수. 그룹명
 # channel_group[].type = 필수. (search, pattern, regular) 만 가능
 # channel_group[].radio = 라디오 그룹인지 표시. true/false 없으면 TV 채널
 # channel_group[].keyword = type이 search인 경우 사용될 일괄 채널 검색어
+# channel_group[].pattern = type이 pattern인 경우 사용될 정규식
 # channel_group[].no_m3u = 해당 그룹을 m3u에 노출시키고 싶지 않을 때 true나 false로 입력
 # channel_group[].channels[].name = 매칭 채널명. 필수
 # channel_group[].channels[].alias = 추가 매칭 채널명

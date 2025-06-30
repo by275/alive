@@ -3,7 +3,6 @@ import re
 import xml.etree.ElementTree as ET
 from copy import deepcopy
 from datetime import datetime
-from pathlib import Path
 
 import requests
 import yaml
@@ -13,7 +12,7 @@ SystemModelSetting = F.SystemModelSetting
 
 # local
 from .logic_klive import LogicKlive
-from .setup import P
+from .setup import Loader, P, alive_prefs
 
 logger = P.logger
 package_name = P.package_name
@@ -71,7 +70,6 @@ class LogicAlive:
     group_list: list = []
     prefs: dict = {}
     _hash: str = ""
-    _file: Path = Path(F.path_data).joinpath("db", "alive.yaml")
 
     @classmethod
     def hash(cls, data: dict) -> str:
@@ -82,8 +80,8 @@ class LogicAlive:
     def load_prefs(cls) -> bool:
         changed = False
         try:
-            with cls._file.open("r", encoding="utf-8") as strm:
-                prefs = yaml.full_load(strm.read())
+            with alive_prefs.open("r", encoding="utf-8") as f:
+                prefs = yaml.load(f, Loader=Loader)
             _hash = cls.hash(prefs)
             if changed := cls._hash != _hash:
                 cls.prefs = prefs

@@ -22,7 +22,7 @@ SystemModelSetting = F.SystemModelSetting
 # local
 from .logic_alive import LogicAlive
 from .logic_klive import LogicKlive
-from .setup import P, default_headers
+from .setup import P, alive_prefs, default_headers
 
 logger = P.logger
 package_name = P.package_name
@@ -143,7 +143,6 @@ class Logic(PluginModuleBase):
         self.name = "setting"
 
     def plugin_load(self):
-        alive_prefs = Path(F.path_data).joinpath("db", "alive.yaml")
         if not alive_prefs.exists():
             shutil.copyfile(Path(__file__).with_name("alive.example.yaml"), alive_prefs)
 
@@ -177,7 +176,7 @@ class Logic(PluginModuleBase):
 
                 arg["streamlink_ver"] = SourceStreamlink.streamlink_ver()
             if sub == "group":
-                arg["alive_prefs"] = str(Path(F.path_data).joinpath("db", "alive.yaml"))
+                arg["alive_prefs"] = alive_prefs.resolve()
             return render_template(f"{package_name}_{sub}.html", sub=sub, arg=arg)
         except Exception:
             logger.exception("메뉴 처리 중 예외:")
