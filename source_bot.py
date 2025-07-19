@@ -143,8 +143,8 @@ class ModelBot(ModelBase):
                 logger.debug("이미 등록된 방송: %s", data["t"])
             elif data["s"] == "end":
                 if db_item is not None:
+                    logger.debug("종료된 방송: %s", db_item.title)
                     db_item.delete_by_id(db_item.id)
-                    logger.debug("종료된 방송: %s", data["t"])
                     return True
 
         except Exception as e:
