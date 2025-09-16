@@ -110,6 +110,7 @@ class ChannelItem:
                 if self.is_drm and (
                     request.headers.get("User-Agent", "").lower().startswith("tivimate")
                     or request.headers.get("User-Agent", "").lower().startswith("kodi")
+                    or request.headers.get("User-Agent", "").lower().startswith("iptvplay")
                 ):
                     from .logic_klive import LogicKlive
 
