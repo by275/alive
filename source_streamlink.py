@@ -38,19 +38,23 @@ class SourceStreamlink(SourceBase):
 
     def load_channels(self) -> None:
         ret = []
-        for item in map(str.strip, ModelSetting.get(f"{self.source_id}_list").splitlines()):
-            if not item:
-                continue
-            if len(tmp := item.split("|")) == 3:
-                (cid, cname, url), quality = tmp, ""
-            elif len(tmp) == 4:
-                cid, cname, url, quality = tmp
-            else:
-                continue
-            c = ChannelItem(self.source_id, cid, cname, None, True)
-            c.url = url
-            c.quality = quality.strip() or None
-            ret.append(c)
+        for cid, channels in self.load_channel_source().items():
+            try:
+                if not channels.get("use", True):
+                    continue
+                if not (name := channels.get("name") or ""):
+                    logger.warning("채널 이름이 유효하지 않음: %s: %s", cid, channels)
+                    continue
+                if not (url := channels.get("url") or ""):
+                    logger.warning("스트리밍 URL이 유효하지 않음: %s: %s", cid, channels)
+                    continue
+                kwargs = {"source": self.source_id, "channel_id": cid, "name": name, "url": url}
+                kwargs["icon"] = channels.get("icon")
+                kwargs["is_tv"] = channels.get("is_tv", True)
+                kwargs["quality"] = (channels.get("quality") or "").strip() or None
+                ret.append(ChannelItem(**kwargs))
+            except Exception:
+                logger.exception("채널 분석 중 예외: %s: %s", cid, channels)
         self.channels = OrderedDict((c.channel_id, c) for c in ret)
 
     def __get_stream(self, channel_id: str, quality: str):

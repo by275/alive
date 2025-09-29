@@ -10,10 +10,11 @@ from typing import Callable
 from urllib.parse import parse_qs, urlparse
 
 import requests
+import yaml
 from plugin import F  # type: ignore # pylint: disable=import-error
 
 from .model import ChannelItem
-from .setup import P, default_headers
+from .setup import Loader, P, alive_prefs, default_headers
 
 logger = P.logger
 package_name = P.package_name
@@ -113,6 +114,10 @@ class SourceBase:
 
     def load_channels(self) -> None:
         raise NotImplementedError
+
+    def load_channel_source(self) -> dict:
+        with alive_prefs.open("r", encoding="utf-8") as f:
+            return (yaml.load(f, Loader=Loader) or {}).get("channel_source", {}).get(self.source_id, {})
 
     @CachedMethod
     def get_m3u8(self, url: str) -> dict:

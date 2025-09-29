@@ -414,3 +414,31 @@ epg:
   urls: []
   # 해당 유효시간 이후에는 epg를 다시 가져옵니다. 단위: 분
   max_age: 60
+
+
+# 사용자 채널 정의
+
+# 문법
+# <>안의 값은 사용자가 직접 입력해야 하는 값
+# channel_source.<source_id>: fix_url, streamlink만 사용 가능
+# channel_source.<source_id>.<channel_id> = 해당 소스에 속하는 채널의 id
+# channel_source.<source_id>.<channel_id>.use: bool = 사용 여부. 기본값 true
+# channel_source.<source_id>.<channel_id>.name: str = 채널 이름. 필수
+# channel_source.<source_id>.<channel_id>.icon: str = icon URL. 없으면 값을 비워두거나 필드 생략 가능
+# channel_source.<source_id>.<channel_id>.is_tv: bool = tv or radio. 기본값 true
+# channel_source.<source_id>.<channel_id>.url: str = 스트리밍 URL. 필수
+# channel_source.<source_id>.<channel_id>.quality: str = 화질. 소스마다 사용/지원 여부가 다름
+
+channel_source:
+  # 고정주소
+  # quality 지원 안 함
+  fix_url:
+    kfn:
+      name: 국방TV
+      url: http://mediaworks.dema.mil.kr:1935/live_edge/cudo.sdp/playlist.m3u8
+  # StreamLink
+  # quality: 기본값 best
+  streamlink:
+    twch1:
+      name: LeakBeats - Twitch
+      url: https://www.twitch.tv/leekbeats

@@ -154,6 +154,7 @@ class Logic(PluginModuleBase):
         apikey = SystemModelSetting.get("apikey")
         try:
             arg["package_name"] = package_name
+            arg["alive_prefs"] = alive_prefs.resolve()
             if sub == "setting":
                 url_base = f"{ddns}/{package_name}"
                 arg["api_m3u"] = url_base + "/api/m3u"
@@ -175,8 +176,6 @@ class Logic(PluginModuleBase):
                 from .source_streamlink import SourceStreamlink
 
                 arg["streamlink_ver"] = SourceStreamlink.streamlink_ver()
-            if sub == "group":
-                arg["alive_prefs"] = alive_prefs.resolve()
             return render_template(f"{package_name}_{sub}.html", sub=sub, arg=arg)
         except Exception:
             logger.exception("메뉴 처리 중 예외:")
