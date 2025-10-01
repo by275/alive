@@ -158,10 +158,8 @@ def proxy_license(channel_id):
     try:
         from .logic_klive import LogicKlive
 
-        if LogicKlive.sources["tving"].license_info.get(channel_id, None) is None:
-            data = LogicKlive.sources["tving"].get_url(channel_id, "")
-            LogicKlive.sources["tving"].license_info[channel_id] = data
-        data = LogicKlive.sources["tving"].license_info[channel_id]
+        src = LogicKlive.get_source("tving")
+        data = src.license_info.setdefault(channel_id, src.get_url(channel_id, ""))
         headers = {
             "Origin": data["drm_key_request_properties"]["origin"],
             "Referer": data["drm_key_request_properties"]["referer"],

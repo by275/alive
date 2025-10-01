@@ -107,10 +107,8 @@ class ChannelItem:
         url = f"{url_base}/api/{path}?{urlencode(params)}"
         if not F.config["run_celery"]:  # epg에서 m3u 요청시 request 사용으로 인해 문제발생
             try:
-                if self.is_drm and (
-                    request.headers.get("User-Agent", "").lower().startswith("tivimate")
-                    or request.headers.get("User-Agent", "").lower().startswith("kodi")
-                    or request.headers.get("User-Agent", "").lower().startswith("iptvplay")
+                if self.is_drm and request.headers.get("User-Agent", "").lower().startswith(
+                    ("tivimate", "kodi", "iptvplay")
                 ):
                     from .logic_klive import LogicKlive
 
