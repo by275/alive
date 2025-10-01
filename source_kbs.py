@@ -63,10 +63,7 @@ class SourceKBS(SourceBase):
         return self.apisess.get(tmp).json()
 
     def __get_url(self, channel_id: str) -> str:
-        url = self.get_data(channel_id)["channel_item"][0]["service_url"]
-        if "dokdo" in url:  # 독도
-            url = url.replace("playlist.m3u8", "chunklist.m3u8")
-        return url
+        return self.get_data(channel_id)["channel_item"][0]["service_url"]
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
         stype = ModelSetting.get("kbs_streaming_type")
