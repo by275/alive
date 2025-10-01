@@ -104,11 +104,11 @@ class SourceBase:
     channels: OrderedDict[str, ChannelItem] = OrderedDict()
     plsess: requests.Session = None
 
-    PTN_M3U8_ALL: re.Pattern = re.compile(r"^[^#].*\.m3u8.*$", re.MULTILINE)
+    PTN_M3U8_ALL: re.Pattern = re.compile(r"^(?!#|https?).*\.m3u8.*$", re.MULTILINE)
     PTN_M3U8_END: re.Pattern = re.compile(r"^[^#].*\.m3u8$", re.MULTILINE)
     PTN_M3U8_URL: re.Pattern = re.compile(r'(https?:\/\/(?=.*\.m3u8)[^\s"\']+)')
 
-    PTN_CHUNK_ALL: re.Pattern = re.compile(r"^[^#].*\.(ts|aac).*$", re.MULTILINE)
+    PTN_CHUNK_ALL: re.Pattern = re.compile(r"^(?!#|https?).*\.(ts|aac).*$", re.MULTILINE)
     PTN_CHUNK_END: re.Pattern = re.compile(r"^[^#].*\.(ts|aac)$", re.MULTILINE)
     PTN_URL: re.Pattern = re.compile(r"^(https?:\/\/[^\/\s]+(?::\d+)?\/[^\s#]*)$", re.MULTILINE)
 
