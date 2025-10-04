@@ -113,6 +113,7 @@ class SourceTving(SourceBase):
 
     def make_drm(self, data: dict, mode: str) -> tuple[str, dict]:
         if mode == "web_play":
+            data["uri"] = f"/alive/proxy/hls/chunk?s=tving&url={SourceBase.b64url(data['uri'])}"
             return "drm+web", {
                 "src": data["uri"],
                 "type": "application/dash+xml",
