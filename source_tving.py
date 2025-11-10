@@ -142,7 +142,7 @@ class SourceTving(SourceBase):
 #KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha
 #KODIPROP:inputstream.adaptive.license_key={license_url}
 {data['uri']}"""
-            return "m3u8", text
+            return "drm+kodi", text
         return "drm", data
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:

@@ -57,7 +57,7 @@ class SourceSpotv(SourceBase):
 #KODIPROP:inputstream.adaptive.license_key={channel['drm_license_uri']}
 #KODIPROP:inputstream.adaptive.stream_headers=Origin={BASE_HEADERS['Origin']}&User-Agent={BASE_HEADERS['User-Agent']}&Referer={channel['referer']}
 {channel['uri']}"""
-            return "m3u8", text
+            return "drm+kodi", text
         return "drm", {
             "uri": channel["uri"],
             "drm_scheme": "widevine",
