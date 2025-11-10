@@ -27,7 +27,6 @@ class SourceTving(SourceBase):
     ttl = 60 * 60 * 3  # 3시간
 
     PTN_HTTP = re.compile(r"^http:\/\/")
-    license_info = {}
 
     def __init__(self):
         if self.mod is not None:
@@ -106,6 +105,7 @@ class SourceTving(SourceBase):
         self.upgrade_http(data)
         if self.channels[channel_id].is_drm:
             del data["play_info"]["mpd_headers"]
+            data["play_info"]["id"] = channel_id
             return data["play_info"]
         cookies = "; ".join("CloudFront-" + c for c in data["url"].split("?")[1].split("&"))
         self.plsess.headers.update({"Cookie": cookies})  # tvn 같은 몇몇 채널은 쿠키 인증이 필요
@@ -113,9 +113,10 @@ class SourceTving(SourceBase):
 
     def make_drm(self, data: dict, mode: str) -> tuple[str, dict]:
         if mode == "web_play":
-            data["uri"] = f"/alive/proxy/hls/chunk?s=tving&url={SourceBase.b64url(data['uri'])}"
+            # 1. CORS 때문에 proxy를 거쳐야 함
+            # 2. data는 cached, mutable이므로 그 값을 변경하면 안된다.
             return "drm+web", {
-                "src": data["uri"],
+                "src": f"/alive/proxy/hls/chunk?s=tving&url={SourceBase.b64url(data['uri'])}",
                 "type": "application/dash+xml",
                 "keySystems": {
                     "com.widevine.alpha": {
@@ -131,7 +132,6 @@ class SourceTving(SourceBase):
                 },
             }
         if mode == "kodi":
-            self.license_info[data["id"]] = data
             license_url = P.ModelSetting.get("tving_proxy_licenseurl")
             license_url = (
                 license_url + f"/{data['id']}"
@@ -148,7 +148,6 @@ class SourceTving(SourceBase):
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
         url = self.get_url(channel_id, quality)
         if self.channels[channel_id].is_drm:
-            url["id"] = channel_id
             return self.make_drm(url, mode)
         stype = "proxy" if mode == "web_play" else "direct"
         return stype, self.get_m3u8(url)  # direct, proxy(web_play)
@@ -160,7 +159,7 @@ def proxy_license(channel_id):
         from .logic_klive import LogicKlive
 
         src = LogicKlive.get_source("tving")
-        data = src.license_info.setdefault(channel_id, src.get_url(channel_id, ""))
+        data = src.get_url(channel_id, "")
         headers = {
             "Origin": data["drm_key_request_properties"]["origin"],
             "Referer": data["drm_key_request_properties"]["referer"],

@@ -57,7 +57,7 @@ class URLCacher:
             p = self.b64decode(policy)
             return p["Statement"][0]["Condition"]["DateLessThan"]["AWS:EpochTime"]
         if token := q.get("token", [None])[0]:
-            # sbs
+            # sbs, tving
             for t in token.split("."):
                 try:
                     return self.b64decode(t)["exp"]
@@ -65,7 +65,9 @@ class URLCacher:
                     pass
         return None
 
-    def expires_in(self, url: str) -> None:
+    def expires_in(self, url: str | dict) -> None:
+        if isinstance(url, dict):
+            url = url.get("uri", "")  # tving drm
         if not isinstance(url, str):
             return
         try:
