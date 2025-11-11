@@ -111,7 +111,9 @@ class SourceTving(SourceBase):
         self.plsess.headers.update({"Cookie": cookies})  # tvn 같은 몇몇 채널은 쿠키 인증이 필요
         return data["url"]
 
-    def make_drm(self, data: dict, mode: str) -> tuple[str, dict]:
+    def make_drm(self, channel_id: str, mode: str) -> tuple[str, dict]:
+        # mpd가 이미 다양한 비트레이트/해상도의 스트림 목록을 포함하므로 get_url에서 quality는 None
+        data = self.get_url(channel_id, None)
         if mode == "web_play":
             # 1. CORS 때문에 proxy를 거쳐야 함
             # 2. data는 cached, mutable이므로 그 값을 변경하면 안된다.
@@ -146,9 +148,9 @@ class SourceTving(SourceBase):
         return "drm", data
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
-        url = self.get_url(channel_id, quality)
         if self.channels[channel_id].is_drm:
-            return self.make_drm(url, mode)
+            return self.make_drm(channel_id, mode)
+        url = self.get_url(channel_id, quality)
         stype = "proxy" if mode == "web_play" else "direct"
         return stype, self.get_m3u8(url)  # direct, proxy(web_play)
 
@@ -159,7 +161,7 @@ def proxy_license(channel_id):
         from .logic_klive import LogicKlive
 
         src = LogicKlive.get_source("tving")
-        data = src.get_url(channel_id, "")
+        data = src.make_drm(channel_id, None)[1]
         headers = {
             "Origin": data["drm_key_request_properties"]["origin"],
             "Referer": data["drm_key_request_properties"]["referer"],
