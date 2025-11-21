@@ -41,9 +41,53 @@ class SourceWavve(SourceBase):
 
         return SW
 
+    def _map_channel(self, old: dict, new: dict) -> None:
+        """map new api channel to old one"""
+        live = new.get("live", {})
+        old.update(
+            {
+                "channelname": live.get("name") or "",
+                "title": live.get("program_title") or "",
+                "image": live.get("thumbnail_url") or "",
+                "tvimage": live.get("main_image") or "",
+                "targetage": new.get("personal", {}).get("targetage") or "",
+            }
+        )
+
+    def _upgrade_channels(self, data: dict) -> None:
+        if not (ctx_list := data["context_list"]):
+            logger.warning("v2 API로부터 빈 채널 목록")
+            return
+        new_dict = {cid: c for c in ctx_list if (cid := c.get("context_id"))}
+        old_list = []
+        for old in data["list"]:
+            try:
+                if not (new := new_dict.pop(old["channelid"], None)):
+                    continue  # 2025.11.20 현재 2개 채널 타요TV 뽀로로TV
+                self._map_channel(old, new)
+            except Exception:
+                logger.exception("채널 업데이트 중 예외: old=%s", old)
+            old_list.append(old)
+        for newid, new in new_dict.items():
+            old = {
+                "channelid": newid,
+                "programid": "",
+                "type": "video",  # 다행히 새 채널들은 모두 video
+                "starttime": "00:00",
+                "endtime": "00:00",
+                "license": "y",
+            }
+            self._map_channel(old, new)
+            old_list.append(old)
+        data["list"] = old_list
+
     def load_channels(self) -> None:
         ret = []
         data = self.mod.live_all_channels()
+        try:
+            self._upgrade_channels(data)
+        except Exception:
+            logger.exception("v2 API 로직 실패. 기존 데이터로 채널을 파싱합니다.")
         for item in data["list"]:
             try:
                 p = ProgramItem(
@@ -85,3 +129,53 @@ class SourceWavve(SourceBase):
         if stype == "redirect":
             return stype, url
         return stype, self.get_m3u8(url)  # direct, proxy(web_play)
+
+
+old1 = {
+    "isnextpagegroup": "n",
+    "pagecount": "110",
+    "count": "110",
+    "list": [
+        {
+            "channelid": "M01",
+            "channelname": "MBC",
+            "programid": "",
+            "title": "",
+            "image": "image.cdn.wavve.com/live/thumbnail/M01.jpg",
+            "tvimage": "",
+            "type": "video",
+            "price": "0",
+            "starttime": "00:00",
+            "endtime": "00:00",
+            "playratio": "0.0",
+            "license": "y",
+            "livemarks": [],
+            "targetage": "",
+        }
+    ],
+}
+new1 = {
+    "description": "라이브 채널 밴드",
+    "version": "1.0",
+    "type": "live",
+    "top_context": {"title": "LIVE 전체", "count": "121", "pagecount": "121"},
+    "context_list": {
+        "index": "0",
+        "context_type": "live",
+        "context_id": "C2101",
+        "live": {
+            "thumbnail_url": "image.cdn.wavve.com/live/thumbnail/C2101.jpg?timestamp=1763275776571",
+            "main_image": "http://img.pooq.co.kr/BMS/Channelimage30/image/C2101.jpg",
+            "logo_image": "https://image.wavve.com/channel_mgmt/image/C2101_logo_20250731141328.png",
+            "square_image": "https://image.wavve.com/channel_mgmt/image/C2101_square_20250731141328.png",
+            "bg_color": "#1A4880",
+            "name": "YTN",
+            "program_title": "YTN24",
+            "ratings": "11.7",
+            "button_text": "",
+        },
+        "tag": {"free": "free", "live": ""},
+        "personal": {"targetage": "", "viewratio": "0.99"},
+        "additional_information": {"info_url": "channelid=C2101", "play_url": "contentid=C2101", "rank": "1"},
+    },
+}
