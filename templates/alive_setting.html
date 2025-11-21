@@ -86,8 +86,7 @@
       {{ macros.m_hr() }}
       {{ macros.setting_checkbox('use_fix_url', '고정주소', value=arg['use_fix_url'], desc=None) }}
       <div id="use_fix_url_div" class="collapse">
-        {{ macros.setting_button_with_info([['globalEditBtn', '편집', [['file', arg['alive_prefs']]]]], left='채널 목록', desc=None) }}
-        {{ macros.setting_input_textarea_wide('fix_url_list', '채널 목록 - 더이상 사용되지 않으며 곧 삭제될 예정이니 새로운 설정으로 옮기세요', desc=['형식: 채널ID|채널이름|채널URL|{TV면 Y, 라디오면 N}', '구분자: Enter', '참고: https://iptvcat.com/south_korea'], value=arg['fix_url_list'], row='20', disabled=true) }}
+        {{ macros.setting_button_with_info([['globalEditBtn', '편집', [['file', arg['alive_prefs']]]]], left='채널 목록', desc=['alive.yaml > channel_source.fix_url', '참고 https://github.com/by275/alive/blob/main/alive.example.yaml']) }}
       </div>
     {{ macros.m_tab_content_end() }}
 
@@ -100,7 +99,7 @@
         <div id="streamlink_use_proxy_div" class="collapse">
           {{ macros.setting_input_text('streamlink_proxy_url', 'Proxy URL', value=arg['streamlink_proxy_url'], desc=None) }}
         </div>
-        {{ macros.setting_input_textarea_wide('streamlink_list', '채널 목록 - 더이상 사용되지 않으며 곧 삭제될 예정이니 새로운 설정으로 옮기세요', desc=['형식: 채널ID|채널이름|채널URL|화질(생략하면 best)', '구분자: Enter'], value=arg['streamlink_list'], row='20', disabled=true) }}
+        {{ macros.setting_button_with_info([['globalEditBtn', '편집', [['file', arg['alive_prefs']]]]], left='채널 목록', desc=['alive.yaml > channel_source.streamlink', '참고 https://github.com/by275/alive/blob/main/alive.example.yaml']) }}
       </div>
     {{ macros.m_tab_content_end() }}
 
