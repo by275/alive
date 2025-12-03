@@ -4,6 +4,7 @@ import platform
 import shutil
 import subprocess
 from base64 import urlsafe_b64decode
+from contextlib import closing
 from copy import deepcopy
 from datetime import datetime
 from itertools import chain
@@ -71,16 +72,11 @@ def generate(url):
 
 @stream_with_context
 def _streamlink(stream):
-    fd = None
-    try:
-        fd = stream.open()
+    with closing(stream.open()) as fd:
         while True:
             if (chunk := fd.read(8192)) == b"":
                 break
             yield chunk
-    finally:
-        if fd:
-            fd.close()
 
 
 class Logic(PluginModuleBase):
