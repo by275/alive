@@ -76,16 +76,19 @@ class SourceBot(SourceBase):
 @F.check_api
 def tving_proxy():
     try:
-        url = request.args.get("url")
+        if not (url := request.args.get("url")):
+            return Response(status=400, response="'url' parameter is missing")
         url = unquote(url)
         res = requests.get(url, timeout=5)
-        if res.status_code != 200:
-            return Response(status=res.status_code)
+        if not res.ok:
+            return res
+        if "application/vnd.apple.mpegurl" not in res.headers.get("Content-Type", ""):
+            return Response(status=500, response=f"invalid response from source: {url}")
 
         # streaming type - direct
         prefix = url.split("chunklist_")[0]
-        postfix = url.split("?")[-1]
-        ret = re.sub(r"media_.*?\.ts", lambda m: f"{prefix}{m.group(0)}?{postfix}", res.text)
+        suffix = url.split("?")[-1]
+        ret = re.sub(r"media_.*?\.ts", lambda m: f"{prefix}{m.group(0)}?{suffix}", res.text)
         ret = ret.replace("http://", "https://")
         response = Response(ret, content_type="application/vnd.apple.mpegurl")
         response.headers["Content-Disposition"] = 'attachment; filename="chunklist.m3u8"'
