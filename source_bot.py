@@ -73,6 +73,7 @@ class SourceBot(SourceBase):
 
 
 @F.app.route("/alive/bot/proxy")
+@F.check_api
 def tving_proxy():
     try:
         url = request.args.get("url")
