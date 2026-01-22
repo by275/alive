@@ -98,14 +98,19 @@ class SourceWavve(SourceBase):
         새로운 playlist는 최신의/연속된 MEDIA SEQUENCE를 보장할 수 없다. (Error: Received stale playlist)
         따라서 한 번 얻은 playlist url을 최대한 유지해야 한다. (cache를 사용하는 이유)
         """
-        if quality in [None, "default"]:
-            quality = ModelSetting.get("wavve_quality")
-        data = self.mod.streaming("live", channel_id, quality, isabr="y")
-        return data["play_info"].get("hls")
+        if quality is None or quality == "default":
+            quality = self.quality
+        if quality == "auto":
+            data = self.mod.streaming("live", channel_id, quality, isabr="y")
+        else:
+            data = self.mod.streaming("live", channel_id, quality, isabr="n")
+        return data["play_info"]["hls"]
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
-        stype = "proxy" if mode == "web_play" else ModelSetting.get("wavve_streaming_type")
+        stype = "proxy" if mode == "web_play" else self.streaming_type
         url = self.get_url(channel_id, quality)
         if stype == "redirect":
             return stype, url
+        if self.quality != "auto":
+            return stype, self.repack_m3u8(url, stype)
         return stype, self.get_m3u8(url)  # direct, proxy(web_play)

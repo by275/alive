@@ -87,7 +87,7 @@ class Logic(PluginModuleBase):
         "web_player_target": "blank",
         # wavve
         "use_wavve": "False",
-        "wavve_quality": "HD",
+        "wavve_quality": "auto",
         "wavve_include_nonfree": "True",
         "wavve_streaming_type": "direct",
         "wavve_use_proxy_for_playlist": "False",

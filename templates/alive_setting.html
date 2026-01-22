@@ -28,7 +28,7 @@
       {{ macros.setting_checkbox('use_wavve', '웨이브', value=arg['use_wavve'], desc=['support site 플러그인을 설치하고 계정 정보를 입력하세요','credential 유무, 스트리밍 타입, 플레이어에 따라 달라질 수 있음']) }}
       <div id="use_wavve_div" class="collapse">
         {{ macros.setting_checkbox('wavve_include_nonfree', '유료 채널 포함', value=arg['wavve_include_nonfree'], desc=['무료 계정은 미리보기 허용 횟수 제한이 있어 사실상 시청 불가']) }}
-        {{ macros.setting_select('wavve_quality', '화질', [['FHD','FHD'], ['HD','HD'], ['SD', 'SD']], col='3', value=arg['wavve_quality'])}}
+        {{ macros.setting_select('wavve_quality', '화질', [['auto','Auto'], ['FHD','FHD'], ['HD','HD'], ['SD', 'SD']], col='3', value=arg['wavve_quality'])}}
         {{ macros.setting_radio_with_value('wavve_streaming_type', '스트리밍 타입', [['redirect', 'Redirect'], ['direct', 'Direct'], ['proxy', 'Proxy']], value=arg['wavve_streaming_type'], desc=['다음 스트리밍 타입 중 가능한 것을 선택하세요.', ' - Redirect: 가장 좋은 성능. 하지만 일정시간 후 중지될 수 있습니다. 동일 네트워크의 Tvheadend에 연결할 때 사용합니다.', ' - Direct: FF와 Player가 동일 네트워크 일 때 사용합니다. Proxy 옵션보다 성능이 좋습니다.', ' - Proxy: 타 네트워크에서 재생할 때 사용합니다. FF가 방송 데이터를 받아서 Player에 보냅니다.']) }}
         {% if arg['site_wavve_use_proxy'] %}
         {{ macros.setting_checkbox('wavve_use_proxy_for_playlist', '재생 시 Proxy', value=arg['wavve_use_proxy_for_playlist'], desc=['Proxy 사용 및 URL은 support_site 설정을 따름', 'On: 재생할 때(Direct, Proxy)도 사용', 'Off: URL 얻을 때(Redirect)만 사용']) }}
