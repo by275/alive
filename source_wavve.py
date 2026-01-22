@@ -59,8 +59,11 @@ class SourceWavve(SourceBase):
     def load_channels(self) -> None:
         ret = []
         data = self.mod.live_all_channels()
+        include_nonfree = ModelSetting.get_bool("wavve_include_nonfree")
         for item in data["context_list"]:
             try:
+                if not include_nonfree and item["tag"]["free"] != "free":
+                    continue
                 channel_id = item["context_id"]
                 live = item["live"]
 
