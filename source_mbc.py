@@ -1,5 +1,6 @@
 import time
 from collections import OrderedDict
+from datetime import datetime
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
@@ -9,20 +10,21 @@ logger = P.logger
 package_name = P.package_name
 ModelSetting = P.ModelSetting
 
+CODE_MAP = {  # maps ScheduleCode to channel id
+    "MBC": "0",
+    "P_everyone": "2",
+    "P_drama": "1",
+    "P_music": "3",
+    "P_on": "6",
+    "MBCNET": "17",
+    "FM": "sfm",
+    "FM4U": "mfm",
+    "ALLTHAT": "chm",
+}
+
 
 class SourceMBC(SourceBase):
     source_id = "mbc"
-    code = {
-        "MBC": "0",
-        "P_everyone": "2",
-        "P_drama": "1",
-        "P_music": "3",
-        "P_on": "6",
-        "P_allthekpop": "4",
-        "FM": "sfm",
-        "FM4U": "mfm",
-        "ALLTHAT": "chm",
-    }
     ttl = 180  # 3분
 
     def __init__(self):
@@ -37,46 +39,52 @@ class SourceMBC(SourceBase):
 
     def load_channels(self) -> None:
         ret = []
-        url = "https://control.imbc.com/Schedule/PCONAIR"
+        now = datetime.now()
+        t = f"{now.day}{now.hour}{now.minute}"
+        url = f"https://control.imbc.com/Schedule/ONAIRWITHNVOD?t={t}"
         data = self.apisess.get(url).json()
-        for cate in ["TVList", "RadioList"]:
-            for item in data[cate]:
-                if item["ScheduleCode"] not in self.code:
-                    continue
-                try:
-                    p = ProgramItem(
-                        title=item["Title"],
-                        image=item["OnAirImage"],
-                        stime=item["FullStartTime"],
-                        etime=item["FullEndTime"],
-                        targetage=int(item["TargetAge"] or "0"),
-                        onair=item["IsOnAirNow"] is None or bool(item["IsOnAirNow"]),
-                    )
-                    c = ChannelItem(
-                        self.source_id,
-                        self.code[item["ScheduleCode"]],
-                        item["TypeTitle"],
-                        None,
-                        cate == "TVList",
-                        program=p,
-                    )
-                    ret.append(c)
-                except Exception:
-                    logger.exception("라이브 채널 분석 중 예외: %s", item)
+        for item in data:
+            try:
+                p = ProgramItem(
+                    title=item["Title"],
+                    image=item["OnAirImage"],
+                    stime=item["FullStartTime"],
+                    etime=item["FullEndTime"],
+                    targetage=int(item["TargetAge"] or "0"),
+                    onair=item["IsOnAirNow"] is None or bool(item["IsOnAirNow"]),
+                )
+                c = ChannelItem(
+                    self.source_id,
+                    CODE_MAP[item["ScheduleCode"]],
+                    item["TypeTitle"],
+                    None,
+                    item["Type"] != "RADIO",
+                    program=p,
+                )
+                ret.append(c)
+            except Exception:
+                logger.exception("라이브 채널 분석 중 예외: %s", item)
         self.channels = OrderedDict((c.channel_id, c) for c in ret)
 
     def get_data(self, channel_id: str) -> dict:
-        path = "OnAirURLUtil" if channel_id == "0" else "OnAirPlusURLUtil"
-        now = int(time.time() * 1000)  # timestamp in ms
-        url = f"https://mediaapi.imbc.com/Player/{path}?ch={channel_id}&type=PC&t={now}"
+        mapping = {
+            "0": f"OnAirURLUtil?ch={channel_id}",  # MBC
+            "17": f"NVodURLUtil?chid={channel_id}",  # MBCNET
+        }
+        path = mapping.get(channel_id, f"OnAirPlusURLUtil?ch={channel_id}")
+
+        now = int(time.time() * 1000)
+        url = f"https://mediaapi.imbc.com/Player/{path}&type=PC&t={now}"
         data = self.apisess.get(url).json()
-        return data
+        if channel_id == "17":
+            return data
+        return data["MediaInfo"]
 
     def __get_url(self, channel_id: str) -> str:
         if not self.channels[channel_id].is_tv:  # radio
             url = f"https://sminiplay.imbc.com/aacplay.ashx?channel={channel_id}&protocol=M3U8&agent=webapp"
             return self.apisess.get(url).text
-        return self.get_data(channel_id)["MediaInfo"]["MediaURL"]
+        return self.get_data(channel_id)["MediaURL"]
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
         url = self.get_url(channel_id)
