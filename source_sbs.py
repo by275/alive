@@ -51,10 +51,10 @@ class SourceSBS(SourceBase):
         self.channels = OrderedDict((c.channel_id, c) for c in ret)
 
     def get_data(self, channel_id: str) -> dict:
+        prefix = "virtual/"
         if channel_id.startswith("EVENT"):
             prefix = ""
         else:
-            prefix = "virtual/"
             try:
                 if int(channel_id[1:]) < 21:
                     prefix = ""
@@ -69,6 +69,6 @@ class SourceSBS(SourceBase):
         return data["onair"]["source"]["mediasource"]["mediaurl"]  # master playlist url
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
-        stype = ModelSetting.get("sbs_streaming_type")
+        stype = self.streaming_type
         url = self.get_url(channel_id)
         return stype, self.get_m3u8(url)  # direct, proxy
