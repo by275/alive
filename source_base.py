@@ -121,6 +121,16 @@ class SourceBase:
         with alive_prefs.open("r", encoding="utf-8") as f:
             return (yaml.load(f, Loader=Loader) or {}).get("channel_source", {}).get(self.source_id, {})
 
+    @property
+    def streaming_type(self) -> str:
+        """shortcuts to db settings"""
+        return ModelSetting.get(f"{self.source_id}_streaming_type")
+
+    @property
+    def quality(self) -> str:
+        """shortcuts to db settings"""
+        return ModelSetting.get(f"{self.source_id}_quality")
+
     @CachedMethod
     def get_m3u8(self, url: str) -> dict:
         logger.debug("opening url: %s", url)
