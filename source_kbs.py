@@ -66,8 +66,10 @@ class SourceKBS(SourceBase):
         return self.get_data(channel_id)["channel_item"][0]["service_url"]
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str]:
-        stype = ModelSetting.get("kbs_streaming_type")
+        stype = self.streaming_type
         url = self.get_url(channel_id)
         if stype == "redirect":
             return stype, url
+        if channel_id in ["cctv01"]:  # 독도 채널은 multivariant
+            return stype, self.get_m3u8(url)
         return stype, self.repack_m3u8(url, stype)  # direct, proxy
