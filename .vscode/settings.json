@@ -1,8 +1,9 @@
 {
     "editor.formatOnSave": false,
     "editor.minimap.enabled": false,
-    "python.defaultInterpreterPath": "~/dev/flaskfarm/venv/bin/python",
+    "python.defaultInterpreterPath": "${workspaceFolder}/../../../venv/bin/python",    
     "python.languageServer": "Pylance",
+    "pylint.path": ["${interpreter}", "-m", "pylint"],
     "pylint.args": [
         "--disable",
         "C0103,C0114,C0115,C0116,C0301,C0413,C0415,W0703",
