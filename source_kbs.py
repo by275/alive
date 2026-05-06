@@ -34,7 +34,7 @@ class SourceKBS(SourceBase):
         include_vod_ch = ModelSetting.get_bool("kbs_include_vod_ch")
         url = "https://onair.kbs.co.kr"
         data = self.apisess.get(url).text
-        data = self.__parse_var(data, ("var channelList = JSON.parse('", "');"))
+        data = self.__parse_var(data, ("adminChannelList = JSON.parse('", "');"))
         for channel in data["channel"]:
             for cm in channel["channel_master"]:
                 if "_" in cm["channel_code"]:
