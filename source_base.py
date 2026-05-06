@@ -13,7 +13,7 @@ import requests
 import yaml
 from plugin import F  # type: ignore # pylint: disable=import-error
 
-from .model import ChannelItem
+from .model import ChannelItem, ChannelMap
 from .setup import Loader, P, alive_prefs, default_headers
 
 logger = P.logger
@@ -103,7 +103,6 @@ class SourceBase:
     ttl: int = None
 
     # instance variables
-    channels: OrderedDict[str, ChannelItem] = OrderedDict()
     plsess: requests.Session = None
 
     PTN_M3U8_ALL: re.Pattern = re.compile(r"^(?!#|https?).*\.m3u8.*$", re.MULTILINE)
@@ -113,6 +112,16 @@ class SourceBase:
     PTN_CHUNK_ALL: re.Pattern = re.compile(r"^(?!#|https?).*\.(ts|aac).*$", re.MULTILINE)
     PTN_CHUNK_END: re.Pattern = re.compile(r"^[^#].*\.(ts|aac)$", re.MULTILINE)
     PTN_URL: re.Pattern = re.compile(r"^(https?:\/\/[^\/\s]+(?::\d+)?\/[^\s#]*)$", re.MULTILINE)
+
+    @property
+    def channels(self) -> ChannelMap:
+        if not hasattr(self, "_channels"):
+            self._channels = ChannelMap(source_id=self.source_id)
+        return self._channels
+
+    @channels.setter
+    def channels(self, channels: OrderedDict[str, ChannelItem]) -> None:
+        self._channels = ChannelMap(channels, source_id=self.source_id)
 
     def load_channels(self) -> None:
         raise NotImplementedError

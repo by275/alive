@@ -1,9 +1,11 @@
+from collections import OrderedDict
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 from flask import request
 from plugin import F  # type: ignore # pylint: disable=import-error
+from werkzeug.exceptions import NotFound
 
 db = F.db
 SystemModelSetting = F.SystemModelSetting
@@ -94,6 +96,17 @@ class ChannelItem:
         char = source_id2char.get(self.source, "x").lower()
         return circled_alphabet[ord(char) - ord("a")]
 
+    @staticmethod
+    def make_resource_id(channel_id: str, source: str) -> str:
+        return f"{channel_id}.{source}"
+
+    @property
+    def resource_id(self) -> str:
+        return self.make_resource_id(self.channel_id, self.source)
+
+    def __str__(self) -> str:
+        return self.resource_id
+
     def svc_url(self, apikey=None, ddns=None, mode="url", for_tvh=False):
         if apikey is None and SystemModelSetting.get_bool("use_apikey"):
             apikey = SystemModelSetting.get("apikey")
@@ -143,3 +156,14 @@ class ChannelItem:
         if self.is_tv:
             return M3U_FORMAT % data
         return M3U_RADIO_FORMAT % data
+
+
+class ChannelMap(OrderedDict):
+    def __init__(self, *args, source_id: str = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.source_id = source_id
+
+    def __missing__(self, channel_id):
+        resource_id = ChannelItem.make_resource_id(channel_id, self.source_id)
+        logger.warning("채널 목록에 없는 채널 요청: %s", resource_id)
+        raise NotFound(f"Channel: {resource_id}")

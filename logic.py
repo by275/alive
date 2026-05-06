@@ -13,6 +13,7 @@ from pathlib import Path
 import requests
 from flask import Response, abort, jsonify, redirect, render_template, request, stream_with_context
 from plugin import F, PluginModuleBase  # type: ignore # pylint: disable=import-error
+from werkzeug.exceptions import HTTPException
 
 db = F.db
 scheduler = F.scheduler
@@ -264,8 +265,11 @@ class Logic(PluginModuleBase):
                 return jsonify(sdata)
             logger.error("잘못된 sub: %s", sub)
             abort(400)
+        except HTTPException as e:
+            return e.get_response()
         except Exception:
             logger.exception("API 요청 처리 중 예외:")
+            return Response("API 요청 처리 중 예외가 발생했습니다.", status=500, mimetype="text/plain")
 
     def process_discord_data(self, data):
         ins = LogicKlive.get_source("bot")

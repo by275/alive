@@ -4,6 +4,7 @@ from collections import OrderedDict
 import requests
 from flask import Response, request
 from tool import ToolUtil  # type: ignore # pylint: disable=import-error
+from werkzeug.exceptions import HTTPException
 
 from .model import ChannelItem, ProgramItem
 from .setup import P
@@ -112,6 +113,8 @@ class SourceTving(SourceBase):
         return data["url"]
 
     def make_drm(self, channel_id: str, mode: str) -> tuple[str, dict]:
+        # make_drm()은 라이선스 프록시에서도 직접 호출되므로 캐시된 DRM 데이터 사용 전에 검증한다.
+        _ = self.channels[channel_id]
         # mpd가 이미 다양한 비트레이트/해상도의 스트림 목록을 포함하므로 get_url에서 quality는 None
         data = self.get_url(channel_id, None)
         if mode == "web_play":
@@ -186,5 +189,7 @@ def proxy_license(channel_id):
         headers = [(k, v) for k, v in res.raw.headers.items() if k.lower() not in excluded_headers]
         response = Response(res.content, res.status_code, headers)
         return response
+    except HTTPException as e:
+        return e.get_response()
     except Exception as e:
         return Response(str(e), status=500, mimetype="text/plain")
