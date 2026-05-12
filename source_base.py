@@ -5,6 +5,7 @@ from base64 import b64decode, urlsafe_b64encode
 from collections import OrderedDict
 from datetime import timedelta
 from functools import lru_cache
+from threading import Lock
 from typing import Callable
 from urllib.parse import parse_qs, urljoin, urlparse
 
@@ -228,8 +229,26 @@ class SourceBase:
 
     def repack_m3u8(self, url: str, streaming_type: str) -> str:
         """repack m3u8 media playlist"""
-        data = self.plsess.get(url).text
-        data = self.complete_hls_media_urls(data, url)
+        if not hasattr(self, "_repack_cache"):
+            self._repack_cache = {}
+            self._repack_lock = Lock()
+
+        now = time.time()
+        with self._repack_lock:
+            if url in self._repack_cache:
+                data, ts, ttl = self._repack_cache[url]
+                if now - ts < ttl:
+                    return data
+
+        raw = self.plsess.get(url, timeout=5).text
+        data, ttl = self.parse_hls_media_playlist(raw, url)
+
+        now = time.time()
+        with self._repack_lock:
+            self._repack_cache[url] = (data, now, ttl)
+            for expired in [k for k, (_, ts, _) in self._repack_cache.items() if now - ts > 10.0]:
+                del self._repack_cache[expired]
+
         if streaming_type == "direct":
             return data
         return self.rewrite_hls_media_urls(data, self.source_id)
@@ -270,17 +289,35 @@ class SourceBase:
         return contents
 
     @staticmethod
-    def complete_hls_media_urls(m3u8: str, media_url: str) -> str:
-        """completes incomplete/relative media playlist urls in the given m3u8 string"""
+    def parse_hls_media_playlist(m3u8: str, media_url: str) -> tuple[str, float]:
+        """Parse and complete media playlist URLs, returning contents and cache TTL."""
         output = []
+        target_duration = None
+        part_target = None
         for raw in str(m3u8 or "").splitlines():
             line = raw.strip()
-            if line.startswith(("#EXT-X-MAP:", "#EXT-X-KEY:")):
+            if line.startswith("#EXT-X-TARGETDURATION:"):
+                try:
+                    target_duration = float(line.split(":", 1)[1])
+                except Exception:
+                    pass
+            elif line.startswith("#EXT-X-PART-INF:"):
+                try:
+                    part_target = float(_parse_hls_attrs(line)["PART-TARGET"])
+                except Exception:
+                    pass
+            elif line.startswith(("#EXT-X-MAP:", "#EXT-X-KEY:")):
                 raw = _rewrite_hls_uri_attr(raw, lambda uri: _complete_hls_media_url(media_url, uri))
             elif line and not line.startswith("#") and _is_hls_media_uri(line):
                 raw = _complete_hls_media_url(media_url, line)
             output.append(raw)
-        return "\n".join(output) + "\n"
+        if part_target:
+            ttl = max(0.25, min(1.0, part_target))
+        elif target_duration:
+            ttl = max(0.5, min(2.0, target_duration * 0.5))
+        else:
+            ttl = 1.0
+        return "\n".join(output) + "\n", ttl
 
     @staticmethod
     def rewrite_hls_media_urls(m3u8: str, source: str) -> str:
