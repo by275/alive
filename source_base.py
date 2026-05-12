@@ -1,4 +1,3 @@
-import itertools
 import json
 import re
 import time
@@ -7,7 +6,7 @@ from collections import OrderedDict
 from datetime import timedelta
 from functools import lru_cache
 from typing import Callable
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urljoin, urlparse
 
 import requests
 import yaml
@@ -20,6 +19,10 @@ logger = P.logger
 package_name = P.package_name
 ModelSetting = P.ModelSetting
 SystemModelSetting = F.SystemModelSetting
+
+PTN_HLS_ATTR: re.Pattern = re.compile(r'([A-Z0-9-]+)=("([^"]*)"|[^,]*)')
+PTN_HLS_URI_ATTR: re.Pattern = re.compile(r'URI="([^"]+)"')
+HLS_MEDIA_EXTS = (".ts", ".aac", ".m4s", ".mp4", ".m4a", ".cmfv", ".cmfa")
 
 
 class URLCacher:
@@ -85,6 +88,91 @@ class URLCacher:
                 self.ttl = ttl
 
 
+def _parse_hls_attrs(line: str) -> dict[str, str]:
+    attrs = {}
+    payload = line.split(":", 1)[1] if ":" in line else line
+    for match in PTN_HLS_ATTR.finditer(payload):
+        key = match.group(1)
+        raw = match.group(2)
+        if raw.startswith('"') and raw.endswith('"'):
+            raw = raw[1:-1]
+        attrs[key] = raw
+    return attrs
+
+
+def _is_hls_media_uri(uri: str) -> bool:
+    return urlparse(uri).path.lower().endswith(HLS_MEDIA_EXTS)
+
+
+def _complete_hls_media_url(media_url: str, uri: str) -> str:
+    url = urljoin(media_url, uri)
+    suffix = media_url.partition(".m3u8")[2]
+    if suffix and _is_hls_media_uri(url) and not urlparse(url).query:
+        return f"{url}{suffix}"
+    return url
+
+
+def _rewrite_hls_uri_attr(line: str, repl) -> str:
+    return PTN_HLS_URI_ATTR.sub(lambda m: f'URI="{repl(m.group(1))}"', line, count=1)
+
+
+def parse_hls_master_playlist(data: str, master_url: str) -> dict:
+    lines = str(data or "").splitlines()
+    streams = []
+    renditions = []
+    idx = 0
+    stream_order = 0
+    rendition_order = 0
+    while idx < len(lines):
+        raw = lines[idx]
+        line = raw.strip()
+        if line.startswith("#EXT-X-MEDIA:"):
+            attrs = _parse_hls_attrs(line)
+            if uri := attrs.get("URI"):
+                renditions.append({"uri": uri, "order": rendition_order, "attrs": attrs})
+                rendition_order += 1
+        if line.startswith("#EXT-X-STREAM-INF:"):
+            attrs = _parse_hls_attrs(line)
+            uri_line = lines[idx + 1] if idx + 1 < len(lines) else ""
+            uri = uri_line.strip()
+            if uri and not uri.startswith("#"):
+                streams.append(
+                    {
+                        "uri": uri,
+                        "bandwidth": int(attrs.get("BANDWIDTH") or "0"),
+                        "height": int((attrs.get("RESOLUTION") or "0x0").lower().rsplit("x", 1)[-1] or 0),
+                        "order": stream_order,
+                        "attrs": attrs,
+                    }
+                )
+                stream_order += 1
+                idx += 2
+                continue
+        idx += 1
+
+    if not streams:
+        raise ValueError(f"HLS master playlist has no EXT-X-STREAM-INF variants: {master_url}")
+
+    # Keep streams ordered by preferred playback quality; streams[0] is the best variant.
+    streams.sort(key=lambda item: (-item["height"], -item["bandwidth"], item["order"]))
+
+    # Complete only parsed child playlist URIs while preserving manifest formatting and comments.
+    contents = data
+    suffix = master_url.partition(".m3u8")[2]
+    for item in renditions + streams:
+        url = urljoin(master_url, item["uri"])
+        if suffix and url.endswith(".m3u8"):
+            url = f"{url}{suffix}"
+        contents = contents.replace(item["uri"], url, 1)
+        item["url"] = url
+    return {
+        "raw": {"url": master_url, "manifest": data},
+        "contents": contents,
+        "streams": streams,
+        "renditions": renditions,
+    }
+
+
 class CachedMethod:
     def __init__(self, func):
         self.func = func
@@ -104,14 +192,6 @@ class SourceBase:
 
     # instance variables
     plsess: requests.Session = None
-
-    PTN_M3U8_ALL: re.Pattern = re.compile(r"^(?!#|https?).*\.m3u8.*$", re.MULTILINE)
-    PTN_M3U8_END: re.Pattern = re.compile(r"^[^#].*\.m3u8$", re.MULTILINE)
-    PTN_M3U8_URL: re.Pattern = re.compile(r'(https?:\/\/(?=.*\.m3u8)[^\s"\']+)')
-
-    PTN_CHUNK_ALL: re.Pattern = re.compile(r"^(?!#|https?).*\.(ts|aac).*$", re.MULTILINE)
-    PTN_CHUNK_END: re.Pattern = re.compile(r"^[^#].*\.(ts|aac)$", re.MULTILINE)
-    PTN_URL: re.Pattern = re.compile(r"^(https?:\/\/[^\/\s]+(?::\d+)?\/[^\s#]*)$", re.MULTILINE)
 
     @property
     def channels(self) -> ChannelMap:
@@ -144,19 +224,15 @@ class SourceBase:
     def get_m3u8(self, url: str) -> dict:
         logger.debug("opening url: %s", url)
         data = self.plsess.get(url).text
-        prefix, suffix = self.split_m3u8_url(url)
-        data = self.complete_m3u8_urls(data, prefix, suffix)
-        streams = [{"url": u} for u in self.PTN_M3U8_URL.findall(data)]
-        return {"contents": data, "streams": streams}
+        return parse_hls_master_playlist(data, url)
 
     def repack_m3u8(self, url: str, streaming_type: str) -> str:
         """repack m3u8 media playlist"""
         data = self.plsess.get(url).text
-        prefix, suffix = self.split_m3u8_url(url)
-        data = self.complete_chunk_urls(data, prefix, suffix)
+        data = self.complete_hls_media_urls(data, url)
         if streaming_type == "direct":
             return data
-        return self.rewrite_chunk_urls(data, self.source_id)
+        return self.rewrite_hls_media_urls(data, self.source_id)
 
     def make_m3u8(self, channel_id: str, mode: str, quality: str) -> tuple[str, str | dict]:
         raise NotImplementedError
@@ -180,45 +256,43 @@ class SourceBase:
         return sess
 
     @staticmethod
-    def split_m3u8_url(url: str) -> tuple[str, str]:
-        """Split m3u8 url into prefix and suffix for url completion."""
-        base, suffix = url.split(".m3u8", 1)
-        return base.rsplit("/", 1)[0] + "/", suffix
-
-    @staticmethod
     def b64url(u: str) -> str:
         """returns base64url encoded string"""
         return urlsafe_b64encode(u.encode()).decode()
 
     @staticmethod
-    def complete_m3u8_urls(m3u8: str, prefix: str, suffix: str = None) -> str:
-        """completes incomplete/relative m3u8 media playlist urls in the given m3u8 string"""
-        m3u8 = SourceBase.PTN_M3U8_ALL.sub(rf"{prefix}\g<0>", m3u8)
-        if suffix is None:
-            return m3u8
-        return SourceBase.PTN_M3U8_END.sub(rf"\g<0>{suffix}", m3u8)
+    def rewrite_hls_master_urls(master: dict, path: str) -> str:
+        contents = str(master.get("contents") or "")
+        for idx, rendition in enumerate(master.get("renditions") or []):
+            contents = contents.replace(str(rendition["url"]), f"{path}&r={idx}", 1)
+        for idx, stream in enumerate(master.get("streams") or []):
+            contents = contents.replace(str(stream["url"]), f"{path}&t={idx}", 1)
+        return contents
 
     @staticmethod
-    def rewrite_m3u8_urls(m3u8: str, path: str) -> str:
-        counter = itertools.count()
-
-        def repl(_match):
-            t = next(counter)
-            return f"{path}&t={t}"
-
-        return SourceBase.PTN_M3U8_URL.sub(repl, m3u8)
-
-    @staticmethod
-    def complete_chunk_urls(m3u8: str, prefix: str, suffix: str = None) -> str:
-        """completes incomplete/relative chunk urls in the given m3u8 string"""
-        m3u8 = SourceBase.PTN_CHUNK_ALL.sub(rf"{prefix}\g<0>", m3u8)
-        if suffix is None:
-            return m3u8
-        return SourceBase.PTN_CHUNK_END.sub(rf"\g<0>{suffix}", m3u8)
+    def complete_hls_media_urls(m3u8: str, media_url: str) -> str:
+        """completes incomplete/relative media playlist urls in the given m3u8 string"""
+        output = []
+        for raw in str(m3u8 or "").splitlines():
+            line = raw.strip()
+            if line.startswith(("#EXT-X-MAP:", "#EXT-X-KEY:")):
+                raw = _rewrite_hls_uri_attr(raw, lambda uri: _complete_hls_media_url(media_url, uri))
+            elif line and not line.startswith("#") and _is_hls_media_uri(line):
+                raw = _complete_hls_media_url(media_url, line)
+            output.append(raw)
+        return "\n".join(output) + "\n"
 
     @staticmethod
-    def rewrite_chunk_urls(m3u8: str, source: str) -> str:
-        return SourceBase.PTN_URL.sub(
-            lambda m: f"/alive/proxy/hls/chunk?s={source}&url={SourceBase.b64url(m.group(1))}",
-            m3u8,
-        )
+    def rewrite_hls_media_urls(m3u8: str, source: str) -> str:
+        def proxy_url(url: str) -> str:
+            return f"/alive/proxy/hls/chunk?s={source}&url={SourceBase.b64url(url)}"
+
+        output = []
+        for raw in str(m3u8 or "").splitlines():
+            line = raw.strip()
+            if line.startswith(("#EXT-X-MAP:", "#EXT-X-KEY:")):
+                raw = _rewrite_hls_uri_attr(raw, proxy_url)
+            elif line.startswith(("http://", "https://")) and _is_hls_media_uri(line):
+                raw = proxy_url(line)
+            output.append(raw)
+        return "\n".join(output) + "\n"

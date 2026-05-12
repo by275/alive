@@ -239,8 +239,11 @@ class Logic(PluginModuleBase):
                 if stream_id := args.get("t"):  # media playlist
                     url = sdata["streams"][int(stream_id)]["url"]
                     sdata = src.repack_m3u8(url, stype)
+                elif rendition_id := args.get("r"):  # media rendition playlist
+                    url = sdata["renditions"][int(rendition_id)]["url"]
+                    sdata = src.repack_m3u8(url, stype)
                 else:
-                    sdata = src.rewrite_m3u8_urls(sdata["contents"], request.full_path)
+                    sdata = src.rewrite_hls_master_urls(sdata, request.full_path)
             r = Response(sdata, content_type="application/vnd.apple.mpegurl")
         logger.debug("%s", " -> ".join([f"{source_id} {channel_id}", f"({stype})", request.remote_addr]))
         return r
