@@ -255,7 +255,9 @@ class Logic(PluginModuleBase):
             if sub in ["m3uall", "m3u", "m3utvh"]:
                 return self.process_m3u(sub, args)
             if (mode := args["m"]) == "plex":
-                return Response(generate(req.url.replace("m=plex", "m=url")), mimetype="video/MP2T")
+                # Hair-pinning, aka NAT loopback이 안되는 환경을 위해 local 주소로 변환
+                _url = f"http://127.0.0.1:{req.environ.get('SERVER_PORT') or '80'}{req.full_path.replace('m=plex', 'm=url')}"
+                return Response(generate(_url), mimetype="video/MP2T")
             if sub == "url.m3u8":
                 return self._process_m3u8(args)
             if sub == "url.mpd":
